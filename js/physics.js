@@ -74,8 +74,10 @@ export const createPhysics = async () => {
   // walk over rugs and low clutter, but not onto props (they'd wobble under you)
   controller.enableAutostep(PLAYER.stepHeight, 0.1, false)
   controller.enableSnapToGround(PLAYER.snapDistance)
-  // walking into props pushes them
+  // walking into props pushes them. The push is based on the character's mass:
+  // our capsule has no rigid body, so without this Rapier assumes 0 kg and nothing moves
   controller.setApplyImpulsesToDynamicBodies(true)
+  controller.setCharacterMass(PLAYER.mass)
 
   // try to move by `desired` (Vector3): the capsule is swept along the way and stops at the first
   // contact (sliding along it), so it can't glitch through walls or floors, even when falling fast

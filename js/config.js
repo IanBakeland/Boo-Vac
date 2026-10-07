@@ -24,6 +24,7 @@ export const PLAYER = {
   radius: 0.3,
   height: 1.7,
   skin: 0.01,       // tiny gap the character controller keeps from walls
+  mass: 70,         // kg: how hard you push props when you walk into them
   stepHeight: 0.25, // walk over rugs and small steps up to this height
   snapDistance: 0.1,// stick to the floor when walking down small steps
   jumpSpeed: 3.2,   // m/s upward -> jumps about 0.35 m with gravityScale 1.5
