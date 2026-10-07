@@ -52,7 +52,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 1.4 GitHub Pages deploy
 - [x] 1.5 Submission README skeleton
 - [x] 1.6 Port Ether (S1), 5 sub-steps
-- [ ] 1.7 Suction cone shader (S2) + spin-up
+- [x] 1.7 Suction cone shader (S2) + spin-up
 - [ ] 1.8 ✋ Go / no-go checkpoint
 
 **Phase 2: Room, Blender, flashlight**

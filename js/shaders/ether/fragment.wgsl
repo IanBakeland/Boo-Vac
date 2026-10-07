@@ -1,15 +1,18 @@
 // https://www.shadertoy.com/view/MsjSW3
 // Ether by nimitz 2014 (twitter: @stormoid)
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
-// Ported to WGSL for Boo-Vac. Added: tint, visibility, square-plane centering + round edge fade.
+// Ported to WGSL for Boo-Vac. Added: tint, visibility, stretch, square-plane centering + round edge fade.
 
 // main function first: wgslFn calls the first function in the file
-fn ether(fragCoord: vec2f, iTime: f32, iResolution: vec2f, tint: vec3f, visibility: f32) -> vec4f {
+fn ether(fragCoord: vec2f, iTime: f32, iResolution: vec2f, tint: vec3f, visibility: f32, stretch: vec2f) -> vec4f {
   // original: fragCoord / iResolution.y - vec2(.9, .5) (made for a 16:9 canvas)
   // our plane is square, so center the uv: (0, 0) is the middle of the plane
   let centered = fragCoord / iResolution - 0.5;
+  // stretch: shift the sampling point more the further it is from the center,
+  // so the smoke smears out in the stretch direction (toward the nozzle)
+  let stretched = centered - stretch * length(centered);
   // scale > 1 zooms out, so the drifting blob stays inside the plane
-  let p = centered * 1.8;
+  let p = stretched * 1.8;
   // soft round mask, so the square edge of the plane never shows
   let edgeFade = 1.0 - smoothstep(0.35, 0.5, length(centered));
   var cl = vec3f(0.0);

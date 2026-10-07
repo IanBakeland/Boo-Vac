@@ -2,7 +2,8 @@ import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
-import { ROOM, CAMERA, MAX_DT } from './config.js'
+import { ROOM, CAMERA, MAX_DT, ETHER } from './config.js'
+import { createVacuum } from './objects/vacuum.js'
 import etherShader from './shaders/ether/fragment.wgsl?raw'
 
 const canvas = document.querySelector('canvas.webgl')
@@ -23,6 +24,8 @@ const controls = new OrbitControls(camera, canvas)
 controls.target.set(0, 0, 0)
 controls.enableDamping = true
 controls.dampingFactor = 0.05
+// left mouse is for sucking, so orbit with the right mouse for now
+controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }
 
 const renderer = new THREE.WebGPURenderer({
   canvas: canvas,
@@ -48,6 +51,8 @@ const iResolution = uniform(new THREE.Vector2(1, 1))
 // per-ghost color and how much the flashlight reveals it (0-1), set later
 const tint = uniform(new THREE.Color(1, 1, 1))
 const visibility = uniform(1)
+// screen-space direction x amount the smoke smears toward the nozzle
+const stretch = uniform(new THREE.Vector2(0, 0))
 
 const ether = wgslFn(etherShader)
 // additive: black adds nothing, so the black background of the shader is invisible
@@ -62,11 +67,22 @@ etherMaterial.colorNode = colorSpaceToWorking(ether({
   iTime,
   iResolution,
   tint,
-  visibility
+  visibility,
+  stretch
 }), THREE.SRGBColorSpace)
 const etherPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), etherMaterial)
 etherPlane.position.y = 1.2
 scene.add(etherPlane)
+
+const vacuum = createVacuum({ camera, iTime })
+
+// hold left mouse to suck
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button === 0) vacuum.setSucking(true)
+})
+window.addEventListener('mouseup', (e) => {
+  if (e.button === 0) vacuum.setSucking(false)
+})
 
 // THREE.Clock is deprecated since r183 (it logs a warning), Timer replaces it
 // https://threejs.org/docs/#api/en/core/Timer
@@ -77,6 +93,9 @@ const draw = (timestamp) => {
   const dt = Math.min(timer.getDelta(), MAX_DT)
 
   iTime.value = timer.getElapsed()
+  vacuum.update()
+  // test: smear the ghost down (toward the vacuum) while sucking
+  stretch.value.set(0, -vacuum.state.power * ETHER.maxStretch)
   // billboard: the plane always faces the camera
   etherPlane.quaternion.copy(camera.quaternion)
 

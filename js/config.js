@@ -16,3 +16,22 @@ export const CAMERA = {
 
 // Biggest time step per frame, so a lag spike (or a background tab) doesn't make things jump
 export const MAX_DT = 0.05
+
+export const VACUUM = {
+  // nozzle position relative to the camera (right, down, forward)
+  nozzleOffset: [0.25, -0.3, -0.5],
+  spinUp: { duration: 0.4, ease: 'power2.out' },
+  spinDown: { duration: 0.3, ease: 'power2.out' }
+}
+
+export const SUCTION_CONE = {
+  radiusTop: 0.05,
+  radiusBottom: 0.9,
+  height: 2.5,
+  radialSegments: 32
+}
+
+export const ETHER = {
+  // how far the smoke smears toward the nozzle at full power
+  maxStretch: 0.35
+}
