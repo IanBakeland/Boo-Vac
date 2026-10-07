@@ -241,7 +241,7 @@ Asset paths in code are **relative without a leading slash** (`'models/room.glb'
 
 ### 5.4 Coordinates and scale
 
-- 1 unit = 1 meter. Room about **6 m × 5 m × 2.8 m** (x × z × y), floor at y = 0.
+- 1 unit = 1 meter. Room **6 m × 6 m × 2.8 m** inside (x × z × y), centered on the origin, floor at y = 0 (the downloaded room, scaled via `MODELS.room` in `config.js`; it has no ceiling, add one in code).
 - Player eye height 1.6 m, walk speed 2.2 m/s, keep 0.4 m away from walls.
 - Camera: `PerspectiveCamera(70, aspect, 0.05, 50)`. Add the camera to the scene (`scene.add(camera)`) because the vacuum and flashlight are children of the camera (scene-graph lesson).
 
