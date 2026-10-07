@@ -1,6 +1,6 @@
-# PLAN.md — Night Shift: step-by-step plan
+# PLAN.md — Boo-Vac: step-by-step plan
 
-This is the build order for **Night Shift** (dark room, flashlight, vacuum, ghosts, tug-of-war).
+This is the build order for **Boo-Vac** (dark room, flashlight, vacuum, ghosts, tug-of-war).
 The full spec (what everything should be and how it works) is in [`AGENTS.md`](AGENTS.md). This file says **in which order** to build it and **who** does what.
 
 ---
@@ -113,10 +113,10 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 **Done when:** `node -v`, `npm -v`, `git --version` all print a version; Blender opens.
 
 ### 0.2 GitHub repository · 🧑 · 10 min
-1. On github.com: **New repository** → name e.g. `night-shift` → **Public** (GitHub Pages on free accounts needs public) → no README (we make our own) → Create.
+1. On github.com: **New repository** → name e.g. `Boo-Vac` → **Public** (GitHub Pages on free accounts needs public) → no README (we make our own) → Create.
 2. Keep the page open, you'll need the URL in step 1.3.
 
-**Done when:** you have an empty repo URL like `https://github.com/<you>/night-shift`.
+**Done when:** you have an empty repo URL like `https://github.com/<you>/Boo-Vac`.
 
 ### 0.3 Reread the course chapters · 🧑 · 1 h
 Skim these again, because the project reuses them directly:
@@ -133,7 +133,7 @@ Skim these again, because the project reuses them directly:
 
 ### 1.1 Create the Vite project · 🤖 · 15 min
 *Lesson: threejs/README.md → Aviator → Project setup*
-1. Create the project folder `night-shift` and open it in VS Code and your agent. Put `AGENTS.md` and `PLAN.md` in it.
+1. Create the project folder `Boo-Vac` and open it in VS Code and your agent. Put `AGENTS.md` and `PLAN.md` in it.
 2. Agent runs: `npm init -y`, `npm install three gsap`, `npm install -D vite`.
 3. Scripts in `package.json`: `"dev": "vite"`, `"build": "vite build"`, `"preview": "vite preview"`.
 4. `vite.config.js` with `base: './'`.
@@ -164,7 +164,7 @@ Skim these again, because the project reuses them directly:
 1. 🤖 Add `.github/workflows/deploy.yml` (official Vite workflow, see AGENTS.md §11).
 2. 🧑 On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 3. Push. Watch the **Actions** tab until it's green.
-4. Open `https://<you>.github.io/night-shift/` in an **incognito** window.
+4. Open `https://<you>.github.io/Boo-Vac/` in an **incognito** window.
 
 **Done when:** the live URL shows the same floor plane as locally. 🎉 *From now on, the "online" requirement is covered; keep it that way.*
 **Commit:** `step 1.4: github pages deploy`
@@ -487,7 +487,7 @@ Each stretch goal: own commit + deploy check. Stop if fps drops below ~50.
 ### 6.3 Source zip without node_modules · 🧑 · 5 min
 From the project folder:
 ```bash
-git archive -o night-shift-source.zip HEAD
+git archive -o Boo-Vac-source.zip HEAD
 ```
 This only includes committed files, so there's no `node_modules` and no `dist`. Open the zip and check that `README.md` is at the root.
 

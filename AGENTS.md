@@ -1,4 +1,4 @@
-# AGENTS.md — Night Shift (WebGPU / Three.js ghost-vacuum game)
+# AGENTS.md — Boo-Vac (WebGPU / Three.js ghost-vacuum game)
 
 > **Read this whole file before writing any code.** It is the single source of truth for this project.
 > The step-by-step build order lives in [`PLAN.md`](PLAN.md). When the student says *"do step X.Y"*, open `PLAN.md`, do exactly that step, and nothing beyond it.
@@ -101,7 +101,7 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 
 ### 4.1 Pitch and story
 
-**Night Shift.** You are the new night-shift cleaner at **Dust & Ghost Cleaning Co.**, a dodgy company that also handles "light paranormal nuisance". First job: one dusty old room in a villa, at midnight. Your tools: a flashlight and an overpowered vacuum.
+**Boo-Vac.** You are the new night-shift cleaner at **Dust & Ghost Cleaning Co.**, a dodgy company that also handles "light paranormal nuisance". First job: one dusty old room in a villa, at midnight. Your tools: a flashlight and an overpowered vacuum.
 
 **The twist:** ghosts live in dust and clutter. Cleaning and ghost hunting are the same thing.
 
@@ -421,7 +421,7 @@ Search terms for the rest: `bookshelf`, `grandfather clock`, `old chair`, `armch
 The root `README.md` is for the teacher, not for the agent. Create it in step 1.5 of `PLAN.md` and keep it updated.
 
 ```markdown
-# Night Shift
+# Boo-Vac
 
 A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and WGSL.
 
