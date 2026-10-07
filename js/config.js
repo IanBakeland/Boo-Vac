@@ -131,6 +131,23 @@ export const LAYOUT = {
     { model: 'candle', position: [2.65, 0, -0.1] }
   ],
   // fake window on the right wall (the room has none): a glowing plane for moonlight
-  window: { position: [2.99, 1.5, -0.6], width: 1.2, height: 1.0, color: 0x8fa8d8 },
+  window: { position: [2.99, 1.5, -0.6], width: 1.2, height: 1.0, color: 0x50648f },
   ceilingColor: 0xd0dadd
+}
+
+export const FLASHLIGHT = {
+  // lamp position relative to the camera (left hand: left, down, forward)
+  offset: [-0.2, -0.15, -0.25],
+  color: 0xfff1d6,      // warm white
+  intensity: 20,        // candela (three's physical light units)
+  angle: 25,            // half-angle of the cone in degrees
+  penumbra: 0.4,        // 0 = hard edge, 1 = very soft edge
+  distance: 10,         // light reaches 0 here
+  decay: 2,             // inverse square falloff (physically correct)
+  // moonlight: the only light outside the beam
+  ambientColor: 0x8fa8ff,
+  ambientIntensity: 0.25,
+  // visible beam in the air: very faint, it must not wash out the room
+  beamLength: 6,
+  beamIntensity: 0.08
 }

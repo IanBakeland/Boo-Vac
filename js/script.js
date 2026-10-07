@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { CAMERA, MAX_DT, ETHER, LAYOUT } from './config.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
+import { createFlashlight } from './objects/flashlight.js'
 import { createVacuum } from './objects/vacuum.js'
 import etherShader from './shaders/ether/fragment.wgsl?raw'
 
@@ -42,11 +43,6 @@ scene.add(room.mesh)
 const props = await createProps()
 scene.add(props.mesh)
 
-// temporary lights so we can see the room (replaced by the flashlight in 2.6)
-scene.add(new THREE.AmbientLight(0xffffff, 1.2))
-const tempLight = new THREE.DirectionalLight(0xffffff, 2)
-tempLight.position.set(2, 4, 3)
-scene.add(tempLight)
 
 // uniforms are TSL nodes, we update their .value every frame
 const iTime = uniform(0)
@@ -81,6 +77,11 @@ scene.add(etherPlane)
 
 const vacuum = createVacuum({ camera, iTime })
 
+// the flashlight is the only real light: the room gets the flashlight shader, props get the SpotLight
+const flashlight = createFlashlight({ camera, iTime })
+scene.add(flashlight.ambientLight)
+flashlight.lightUp(room.mesh)
+
 // hold left mouse to suck
 canvas.addEventListener('mousedown', (e) => {
   if (e.button === 0) vacuum.setSucking(true)
@@ -105,6 +106,9 @@ const draw = (timestamp) => {
   etherPlane.quaternion.copy(camera.quaternion)
 
   controls.update(dt)
+  // the camera moved: update its matrices before reading the lamp position
+  camera.updateMatrixWorld()
+  flashlight.update()
   renderer.render(scene, camera)
 }
 
