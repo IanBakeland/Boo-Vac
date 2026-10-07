@@ -160,3 +160,49 @@ body
     border-radius: 50%;
     background: rgba(223, 230, 255, 0.7);
 }
+
+/* tug-of-war meter: bottom-center, with an arrow showing which way YOU must move the mouse */
+#tug
+{
+    position: absolute;
+    left: 50%;
+    bottom: 60px;
+    width: 320px;
+    margin-left: -160px;
+    color: #dfe6ff;
+    font-family: system-ui, sans-serif;
+    text-align: center;
+}
+
+#tug .tug-arrow
+{
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+#tug .tug-bar
+{
+    height: 14px;
+    margin-top: 6px;
+    border: 2px solid rgba(223, 230, 255, 0.7);
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+#tug .tug-fill
+{
+    width: 0%;
+    height: 100%;
+    background: #8fb7ff;
+}
+
+#tug.correct .tug-arrow
+{
+    color: #9be35b;
+}
+
+#tug.correct .tug-fill
+{
+    background: #9be35b;
+}

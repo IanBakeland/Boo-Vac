@@ -113,6 +113,29 @@ export const GHOST = {
   hoverSpeed: 1.5           // per second
 }
 
+// Tug-of-war (Dusty's numbers; every ghost gets its own in 4.6)
+export const TUG = {
+  minPower: 0.5,         // you must be sucking (motor at least half spun up)
+  startStrength: 0.05,   // the suction must reach the ghost at least this much...
+  startVisibility: 0.5,  // ...and it must be (half) visible in your beam
+  startMeter: 0.25,      // the meter starts here (0 = it escapes, 1 = captured)
+  dirInterval: [1.5, 2.5], // s: the ghost picks a new pull direction this often
+  fillRate: 0.45,        // per second while you pull the right way and suck
+  drainRate: 0.2,        // per second otherwise
+  inputWindow: 0.15,     // s: mouse movement is added up over this time...
+  inputThreshold: 6,     // px: ...and must be at least this much, in the right direction
+  driftSpeed: 0.6,       // m/s: the ghost drifts sideways in its pull direction
+  driftResist: 0.3,      // drift x this while you pull correctly
+  driftRange: 1.0,       // m: how far it can drift sideways...
+  wallMargin: 0.4,       // m: ...but it stays this far from walls and furniture
+  pullIn: 0.6,           // m: the full meter pulls the ghost this much closer
+  lostTime: 1.0,         // s out of the beam: the tug ends (it escapes, step 4.5)
+  lostVisibility: 0.3,   // "out of the beam" below this visibility
+  aimSpeed: 6,           // per second: how fast the camera turns to follow the ghost
+  shake: 0.015,          // m: screen shake at a full meter
+  stretchMin: 0.4        // Ether stretch at an empty meter (x the suction), 1 at a full meter
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],

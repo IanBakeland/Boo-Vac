@@ -3,7 +3,7 @@ import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import gsap from 'gsap'
 
-import { MODELS, GHOST, ETHER, FLASHLIGHT } from '../config.js'
+import { MODELS, GHOST, ETHER, FLASHLIGHT, TUG } from '../config.js'
 import { suctionStrength } from '../physics.js'
 import etherShader from '../shaders/ether/fragment.wgsl?raw'
 
@@ -18,8 +18,8 @@ const CLIPS = {
 // these play once and then hold their last pose
 const PLAY_ONCE = ['captured', 'giggle']
 
-// hidingSpots: the Hide_* furniture
-export const createGhost = async ({ iTime, hidingSpots }) => {
+// hidingSpots: the Hide_* furniture, castAim: physics ray (how far until something is in the way)
+export const createGhost = async ({ iTime, hidingSpots, castAim }) => {
   const gltf = await new GLTFLoader().loadAsync(MODELS.ghost.file)
 
   // root: position + rotation of the ghost; the model inside is scaled to real size
@@ -94,7 +94,8 @@ export const createGhost = async ({ iTime, hidingSpots }) => {
   setState('emerged')
 
   // --- hiding: the ghost is invisible inside its spot until exposure reaches 1 ---
-  // phase: 'hidden' (in the spot, trembling, only a small Ether wisp) or 'emerged' (out, visible in the beam)
+  // phase: 'hidden' (in the spot, trembling, only a small Ether wisp), 'emerged' (out, visible in the beam)
+  // or 'tug' (tug-of-war with the player)
   let phase = 'hidden'
   let exposure = 0
   // presence: 0 while hidden, fades to 1 when emerging (the model's opacity follows it)
@@ -116,6 +117,8 @@ export const createGhost = async ({ iTime, hidingSpots }) => {
     if (phase !== 'hidden') return
     phase = 'emerged'
     exposure = 1
+    // measure the spot now (emerge can be called before the first update, e.g. debug key G)
+    spotBox.setFromObject(spot).getCenter(spotCenter)
     spotModel.position.copy(spotModelHome)
     spotModel.rotation.copy(spotModelRotation)
     const toPlayer = new THREE.Vector3().subVectors(playerPosition, spotCenter).setY(0)
@@ -127,6 +130,8 @@ export const createGhost = async ({ iTime, hidingSpots }) => {
     gsap.to(mesh.position, { x: target.x, y: target.y, z: target.z, duration: GHOST.emergeDuration, ease: 'power2.out' })
     gsap.to(mesh.scale, { x: 1, y: 1, z: 1, duration: GHOST.emergeDuration, ease: 'back.out' })
     gsap.to(fade, { presence: 1, duration: GHOST.emergeDuration })
+    fade.emerging = true
+    gsap.delayedCall(GHOST.emergeDuration, () => { fade.emerging = false })
     setState('emerged')
   }
 
@@ -165,8 +170,73 @@ export const createGhost = async ({ iTime, hidingSpots }) => {
   let shown = 0
 
   // camera, lamp (position + direction), nozzle and the vacuum power drive the aura
+  // --- tug-of-war ---
+  const tug = { meter: 0, pullDir: 1, correct: false }
+  let dirTimer = 0
+  let lostTimer = 0
+  let sideOffset = 0
+  // how far the ghost may drift to the right (+) and left (-) before it would hit something
+  const driftLimit = { left: 0, right: 0 }
+  const anchor = new THREE.Vector3()
+  const left = new THREE.Vector3()
+  const tugRight = new THREE.Vector3()
+  const tugToPlayer = new THREE.Vector3()
+
+  const startTug = (camera) => {
+    phase = 'tug'
+    tug.meter = TUG.startMeter
+    tug.pullDir = Math.random() < 0.5 ? -1 : 1
+    dirTimer = randomBetween(TUG.dirInterval)
+    lostTimer = 0
+    sideOffset = 0
+    anchor.copy(mesh.position)
+    // sideways = the camera's right, flat on the floor; and the direction toward the player
+    tugRight.setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize()
+    tugToPlayer.subVectors(camera.position, anchor).setY(0).normalize()
+    // measure the free space on both sides with a ray, so the drift never goes through a wall
+    const reach = TUG.driftRange + TUG.wallMargin
+    driftLimit.right = Math.max(0, castAim(center, tugRight, reach) - TUG.wallMargin)
+    driftLimit.left = Math.max(0, castAim(center, left.copy(tugRight).negate(), reach) - TUG.wallMargin)
+    setState('tug')
+  }
+
+  // for now the tug just stops (step 4.5: escape at 0, capture at 1)
+  const endTug = () => {
+    phase = 'emerged'
+    setState('emerged')
+  }
+
+  // mouseDX: horizontal mouse movement over the last TUG.inputWindow seconds (px)
+  const updateTug = (dt, { camera, power, pull, mouseDX }) => {
+    const sucking = power >= TUG.minPower
+    if (phase === 'emerged') {
+      if (!fade.emerging && sucking && pull > TUG.startStrength && shown > TUG.startVisibility) startTug(camera)
+      return
+    }
+    // every few seconds the ghost picks a (new) direction to pull
+    dirTimer -= dt
+    if (dirTimer <= 0) {
+      dirTimer = randomBetween(TUG.dirInterval)
+      tug.pullDir = Math.random() < 0.5 ? -1 : 1
+    }
+    // correct: sucking, and the mouse moved far enough the other way
+    tug.correct = sucking && Math.sign(mouseDX) === -tug.pullDir && Math.abs(mouseDX) >= TUG.inputThreshold
+    tug.meter = THREE.MathUtils.clamp(tug.meter + (tug.correct ? TUG.fillRate : -TUG.drainRate) * dt, 0, 1)
+
+    // the ghost drifts sideways (slower while you resist) and gets pulled in as the meter fills
+    sideOffset += tug.pullDir * TUG.driftSpeed * (tug.correct ? TUG.driftResist : 1) * dt
+    sideOffset = THREE.MathUtils.clamp(sideOffset, -driftLimit.left, driftLimit.right)
+    mesh.position.copy(anchor)
+      .addScaledVector(tugRight, sideOffset)
+      .addScaledVector(tugToPlayer, tug.meter * TUG.pullIn)
+
+    // out of the beam for too long, or the meter ran empty: the tug ends
+    lostTimer = shown < TUG.lostVisibility ? lostTimer + dt : 0
+    if (lostTimer > TUG.lostTime || tug.meter <= 0) endTug()
+  }
+
   let time = 0
-  const update = (dt, { camera, lampPos, lampDir, nozzle, power }) => {
+  const update = (dt, { camera, lampPos, lampDir, nozzle, power, mouseDX = 0 }) => {
     time += dt
     playerPosition.copy(camera.position)
     // the spot can move (the vase has physics): measure it every frame
@@ -188,7 +258,7 @@ export const createGhost = async ({ iTime, hidingSpots }) => {
       model.position.y = Math.sin(time * GHOST.hoverSpeed) * GHOST.hoverAmount
     }
     // the model only shows once it's out
-    model.visible = phase === 'emerged'
+    model.visible = phase !== 'hidden'
     center.copy(mesh.position)
     center.y += ETHER.centerHeight
 
@@ -220,10 +290,13 @@ export const createGhost = async ({ iTime, hidingSpots }) => {
     camRight.setFromMatrixColumn(camera.matrixWorld, 0)
     camUp.setFromMatrixColumn(camera.matrixWorld, 1)
     stretch.value.set(toNozzle.dot(camRight), toNozzle.dot(camUp)).normalize()
-    // as strong as the suction reaches the ghost (and only while sucking)
+    // as strong as the suction reaches the ghost (and only while sucking); in the tug also with the meter
     const pull = suctionStrength(center, nozzle.position, nozzle.direction, power)
-    stretch.value.multiplyScalar(pull * ETHER.maxStretch)
+    const tugAmount = phase === 'tug' ? THREE.MathUtils.lerp(TUG.stretchMin, 1, tug.meter) : 1
+    stretch.value.multiplyScalar(pull * ETHER.maxStretch * tugAmount)
+
+    if (phase !== 'hidden') updateTug(dt, { camera, power, pull, mouseDX })
   }
 
-  return { mesh, model, setState, getState: () => state, getExposure: () => Math.min(exposure, 1), emerge, onPropCaptured, update }
+  return { mesh, model, center, tug, isTugging: () => phase === 'tug', setState, getState: () => state, getExposure: () => Math.min(exposure, 1), emerge, onPropCaptured, update }
 }

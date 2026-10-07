@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -86,7 +86,7 @@ if (dust) {
 
 // the ghost (model + Blender animations + Ether aura): hides in its spot until exposed,
 // a small Ether wisp shows where it is
-const ghost = await createGhost({ iTime, hidingSpots: room.hidingSpots })
+const ghost = await createGhost({ iTime, hidingSpots: room.hidingSpots, castAim: physics.castAim })
 scene.add(ghost.mesh)
 
 // --- input ---
@@ -120,14 +120,29 @@ const $hud = document.querySelector('#hud')
 const $tankCount = $hud.querySelector('.tank-count')
 const $max = document.querySelector('#max')
 const $crosshair = document.querySelector('#crosshair')
+const $tug = document.querySelector('#tug')
+const $tugArrow = $tug.querySelector('.tug-arrow')
+const $tugFill = $tug.querySelector('.tug-fill')
 const $maxFill = $max.querySelector('.max-fill')
 // HUD: only touch the DOM when the value changed
 let shownTank = -1
 let shownMax = ''
+let shownTug = ''
 const updateHud = () => {
   if (props.tank.length !== shownTank) {
     shownTank = props.tank.length
     $tankCount.textContent = shownTank
+  }
+  // tug meter: the arrow shows which way YOU must move the mouse (against the ghost)
+  const tugging = ghost.isTugging()
+  const { meter, pullDir, correct } = ghost.tug
+  const tugState = tugging ? `${pullDir}-${correct}-${Math.round(meter * 50)}` : 'off'
+  if (tugState !== shownTug) {
+    shownTug = tugState
+    $tug.classList.toggle('hidden', !tugging)
+    $tug.classList.toggle('correct', correct)
+    $tugArrow.textContent = pullDir > 0 ? '◀ PULL' : 'PULL ▶'
+    $tugFill.style.width = `${meter * 100}%`
   }
   // MAX button: charge bar in 5% steps, so the DOM only changes ~20 times per charge
   const maxState = `${maxActive}-${Math.round(maxCharge * 20)}`
@@ -189,6 +204,30 @@ controls.addEventListener('unlock', () => {
   vacuum.setMode(null)
   keys.clear()
 })
+
+// tug-of-war input: horizontal mouse movement, added up over the last TUG.inputWindow seconds
+const mouseMoves = []
+document.addEventListener('mousemove', (e) => {
+  if (controls.isLocked) mouseMoves.push({ time: performance.now(), dx: e.movementX })
+})
+const recentMouseDX = () => {
+  const since = performance.now() - TUG.inputWindow * 1000
+  while (mouseMoves.length && mouseMoves[0].time < since) mouseMoves.shift()
+  return mouseMoves.reduce((sum, move) => sum + move.dx, 0)
+}
+
+// during the tug the camera follows the ghost (the mouse is busy pulling)
+const aimMatrix = new THREE.Matrix4()
+const aimQuaternion = new THREE.Quaternion()
+const followGhost = (dt) => {
+  aimMatrix.lookAt(camera.position, ghost.center, camera.up)
+  aimQuaternion.setFromRotationMatrix(aimMatrix)
+  camera.quaternion.slerp(aimQuaternion, Math.min(1, dt * TUG.aimSpeed))
+  // screen shake: stronger as the meter fills
+  const shake = TUG.shake * ghost.tug.meter
+  camera.position.x += (Math.random() - 0.5) * 2 * shake
+  camera.position.y += (Math.random() - 0.5) * 2 * shake
+}
 
 // left mouse = suck, right mouse = blow
 document.addEventListener('mousedown', (e) => {
@@ -252,6 +291,10 @@ const draw = (timestamp) => {
   iTime.value = timer.getElapsed()
 
   if (controls.isLocked) movePlayer(dt)
+  // tug-of-war: the mouse pulls instead of turning the camera, the camera follows the ghost
+  const tugging = ghost.isTugging()
+  controls.enabled = !tugging
+  if (tugging) followGhost(dt)
   // the camera moved: update its matrices before reading the nozzle and lamp positions
   camera.updateMatrixWorld()
   // what's in the middle of the screen? the suction aims there
@@ -267,7 +310,8 @@ const draw = (timestamp) => {
     lampPos: flashlight.uniforms.lampPos.value,
     lampDir: flashlight.uniforms.lampDir.value,
     nozzle: vacuum.nozzle,
-    power: mode === 'suck' ? power : 0
+    power: mode === 'suck' ? power : 0,
+    mouseDX: recentMouseDX()
   })
 
   // physics, with the suction force applied before every step
