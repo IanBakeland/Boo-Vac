@@ -20,9 +20,19 @@ export const MAX_DT = 0.05
 
 export const PLAYER = {
   walkSpeed: 2.2,   // m/s
-  wallMargin: 0.4,  // keep this far from the walls
+  // collision capsule: 30 cm radius (keeps you ~30 cm from walls), from 15 cm above the floor to 1.7 m
+  radius: 0.3,
+  height: 1.55,
+  floorGap: 0.15,
+  skin: 0.01,       // tiny gap the character controller keeps from walls
   // Chrome refuses to re-lock the mouse within ~1 s after Esc, so wait before "click to resume"
   relockDelay: 1100 // ms
+}
+
+export const PHYSICS = {
+  gravity: -9.81,
+  fixedStep: 1 / 60, // seconds per physics step
+  maxSteps: 3        // max physics steps per frame
 }
 
 export const VACUUM = {

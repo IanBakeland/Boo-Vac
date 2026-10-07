@@ -2,7 +2,8 @@ import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, ETHER, LAYOUT, ROOM, PLAYER } from './config.js'
+import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER } from './config.js'
+import { createPhysics } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
 import { createFlashlight } from './objects/flashlight.js'
@@ -39,6 +40,18 @@ const room = await createRoom()
 scene.add(room.mesh)
 const props = await createProps()
 scene.add(props.mesh)
+
+// physics: the apartment as triangle meshes, our furniture as boxes
+const physics = await createPhysics()
+physics.addTrimesh(room.shell)
+room.furniture.forEach((piece) => physics.addBox(piece))
+
+// ?debug in the URL: show every collider as lines
+const DEBUG = new URLSearchParams(window.location.search).has('debug')
+if (DEBUG) {
+  physics.updateDebugLines()
+  scene.add(physics.debugLines)
+}
 
 
 // uniforms are TSL nodes, we update their .value every frame
@@ -124,19 +137,25 @@ document.addEventListener('mouseup', (e) => {
 // no right-click menu
 window.addEventListener('contextmenu', (e) => e.preventDefault())
 
+const forwardDir = new THREE.Vector3()
+const rightDir = new THREE.Vector3()
+const desired = new THREE.Vector3()
 const movePlayer = (dt) => {
   const forward = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0)
   const right = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0)
+  // where the camera looks, flattened onto the floor
+  camera.getWorldDirection(forwardDir)
+  forwardDir.y = 0
+  forwardDir.normalize()
+  rightDir.crossVectors(forwardDir, camera.up)
   // diagonal walking is not faster
   const length = Math.hypot(forward, right) || 1
   const step = PLAYER.walkSpeed * dt / length
-  controls.moveForward(forward * step)
-  controls.moveRight(right * step)
-  // stay inside the room
-  const maxX = ROOM.width / 2 - PLAYER.wallMargin
-  const maxZ = ROOM.depth / 2 - PLAYER.wallMargin
-  camera.position.x = THREE.MathUtils.clamp(camera.position.x, -maxX, maxX)
-  camera.position.z = THREE.MathUtils.clamp(camera.position.z, -maxZ, maxZ)
+  desired.copy(forwardDir).multiplyScalar(forward * step).addScaledVector(rightDir, right * step)
+  // the physics character controller stops us at walls and furniture (and slides along them)
+  const position = physics.movePlayer(desired)
+  camera.position.x = position.x
+  camera.position.z = position.z
 }
 
 // THREE.Clock is deprecated since r183 (it logs a warning), Timer replaces it
@@ -155,6 +174,7 @@ const draw = (timestamp) => {
   etherPlane.quaternion.copy(camera.quaternion)
 
   if (controls.isLocked) movePlayer(dt)
+  physics.step(dt)
   // the camera moved: update its matrices before reading the lamp position
   camera.updateMatrixWorld()
   flashlight.update()

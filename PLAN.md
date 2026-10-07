@@ -65,7 +65,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 2.7 First-person controls + vacuum in hand
 
 **Phase 3: Physics and dust**
-- [ ] 3.1 Rapier world + static colliders
+- [x] 3.1 Rapier world + static colliders
 - [ ] 3.2 Props as dynamic bodies
 - [ ] 3.3 Shared `suctionForce()` + self-check
 - [ ] 3.4 Sucking: spiral, capture, tank

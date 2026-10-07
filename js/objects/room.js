@@ -63,6 +63,7 @@ export const createRoom = async () => {
   const gltfs = await Promise.all(
     LAYOUT.furniture.map((item) => loader.loadAsync(MODELS.furniture[item.model].file))
   )
+  const furniture = []
   const hidingSpots = []
   LAYOUT.furniture.forEach((item, i) => {
     const piece = placeModel(gltfs[i].scene, {
@@ -72,8 +73,9 @@ export const createRoom = async () => {
     })
     piece.name = item.name
     mesh.add(piece)
+    furniture.push(piece)
     if (item.name.startsWith('Hide_')) hidingSpots.push(piece)
   })
 
-  return { mesh, hidingSpots }
+  return { mesh, shell, furniture, hidingSpots }
 }
