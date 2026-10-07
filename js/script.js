@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER } from './config.js'
+import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS } from './config.js'
 import { createPhysics } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -38,13 +38,18 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 const room = await createRoom()
 scene.add(room.mesh)
-const props = await createProps()
-scene.add(props.mesh)
-
 // physics: the apartment as triangle meshes, our furniture as boxes
 const physics = await createPhysics()
 physics.addTrimesh(room.shell)
+physics.addTrimesh(room.ceiling)
 room.furniture.forEach((piece) => physics.addBox(piece))
+
+// props: every one gets a dynamic physics body
+const props = await createProps({ physics })
+scene.add(props.mesh)
+// one physics step now: Rapier only registers new colliders for collision checks during a step,
+// so without it the player would have no collision in the very first frame
+physics.step(PHYSICS.fixedStep)
 
 // ?debug in the URL: show every collider as lines
 const DEBUG = new URLSearchParams(window.location.search).has('debug')
@@ -95,7 +100,17 @@ flashlight.lightUp(room.mesh)
 // --- input ---
 // e.code is the physical key: WASD also works on AZERTY (there it's ZQSD)
 const keys = new Set()
-window.addEventListener('keydown', (e) => keys.add(e.code))
+let jumpRequested = false
+window.addEventListener('keydown', (e) => {
+  keys.add(e.code)
+  if (e.code === 'Space') {
+    // no page scrolling, and holding space doesn't jump again and again
+    e.preventDefault()
+    if (!e.repeat) jumpRequested = true
+  }
+  // debug: P drops all props from 1 m higher
+  if (DEBUG && e.code === 'KeyP') props.drop()
+})
 window.addEventListener('keyup', (e) => keys.delete(e.code))
 
 // pointer lock needs a click: the start / pause overlays catch it
@@ -137,6 +152,8 @@ document.addEventListener('mouseup', (e) => {
 // no right-click menu
 window.addEventListener('contextmenu', (e) => e.preventDefault())
 
+let verticalSpeed = 0
+let grounded = true
 const forwardDir = new THREE.Vector3()
 const rightDir = new THREE.Vector3()
 const desired = new THREE.Vector3()
@@ -152,10 +169,21 @@ const movePlayer = (dt) => {
   const length = Math.hypot(forward, right) || 1
   const step = PLAYER.walkSpeed * dt / length
   desired.copy(forwardDir).multiplyScalar(forward * step).addScaledVector(rightDir, right * step)
-  // the physics character controller stops us at walls and furniture (and slides along them)
-  const position = physics.movePlayer(desired)
-  camera.position.x = position.x
-  camera.position.z = position.z
+
+  // jumping and falling: gravity pulls the vertical speed down every frame
+  if (jumpRequested && grounded) verticalSpeed = PLAYER.jumpSpeed
+  jumpRequested = false
+  verticalSpeed += PHYSICS.gravity * PLAYER.gravityScale * dt
+  desired.y = verticalSpeed * dt
+
+  // the physics character controller stops us at walls, furniture, floor and ceiling
+  const result = physics.movePlayer(desired)
+  grounded = result.grounded
+  // standing on the floor, or bumped the ceiling: stop the vertical speed
+  if (grounded && verticalSpeed < 0) verticalSpeed = 0
+  if (verticalSpeed > 0 && result.movement.y < desired.y * 0.5) verticalSpeed = 0
+  // the camera sits at eye height above the bottom of the capsule
+  camera.position.set(result.position.x, result.position.y - PLAYER.height / 2 + CAMERA.eyeHeight, result.position.z)
 }
 
 // THREE.Clock is deprecated since r183 (it logs a warning), Timer replaces it
@@ -175,6 +203,8 @@ const draw = (timestamp) => {
 
   if (controls.isLocked) movePlayer(dt)
   physics.step(dt)
+  props.update()
+  if (DEBUG) physics.updateDebugLines()
   // the camera moved: update its matrices before reading the lamp position
   camera.updateMatrixWorld()
   flashlight.update()

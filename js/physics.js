@@ -40,25 +40,53 @@ export const createPhysics = async () => {
     )
   }
 
-  // player: a capsule collider moved by a character controller (no rigid body: we move it ourselves)
-  // it floats a bit above the floor, so rugs and small clutter don't block you
-  const halfHeight = PLAYER.height / 2 - PLAYER.radius
-  const centerY = PLAYER.floorGap + PLAYER.height / 2
-  const playerPosition = new THREE.Vector3(LAYOUT.spawn.position[0], centerY, LAYOUT.spawn.position[2])
-  const playerCollider = world.createCollider(
-    RAPIER.ColliderDesc.capsule(halfHeight, PLAYER.radius).setTranslation(playerPosition.x, playerPosition.y, playerPosition.z)
-  )
-  // the controller keeps a tiny gap (offset) between the capsule and walls
-  const controller = world.createCharacterController(PLAYER.skin)
+  // a dynamic prop: box collider around the (unrotated) model, origin at its bottom-center
+  // CCD = continuous collision detection: fast small objects can't tunnel through walls
+  const up = new THREE.Vector3(0, 1, 0)
+  const addProp = ({ position, rotationY, halfExtents, density }) => {
+    const rotation = new THREE.Quaternion().setFromAxisAngle(up, THREE.MathUtils.degToRad(rotationY))
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(position.x, position.y + PHYSICS.propLift, position.z)
+        .setRotation(rotation)
+        .setCcdEnabled(true)
+    )
+    // the box is shifted up by half its height, so the body's origin is the model's bottom-center
+    world.createCollider(
+      RAPIER.ColliderDesc.cuboid(halfExtents.x, halfExtents.y, halfExtents.z)
+        .setTranslation(0, halfExtents.y, 0)
+        .setDensity(density),
+      body
+    )
+    return body
+  }
 
-  // try to move by `desired` (Vector3), slide along whatever is in the way; returns the new position
+  // player: a capsule standing on the floor, moved by a character controller
+  // (no rigid body: we move it ourselves, the controller tells us how far we can go)
+  const halfHeight = PLAYER.height / 2 - PLAYER.radius
+  const spawn = new THREE.Vector3(LAYOUT.spawn.position[0], PLAYER.height / 2, LAYOUT.spawn.position[2])
+  const playerPosition = spawn.clone()
+  const playerCollider = world.createCollider(
+    RAPIER.ColliderDesc.capsule(halfHeight, PLAYER.radius).setTranslation(spawn.x, spawn.y, spawn.z)
+  )
+  // the controller keeps a tiny gap (offset) between the capsule and everything else
+  const controller = world.createCharacterController(PLAYER.skin)
+  // walk over rugs and low clutter, but not onto props (they'd wobble under you)
+  controller.enableAutostep(PLAYER.stepHeight, 0.1, false)
+  controller.enableSnapToGround(PLAYER.snapDistance)
+  // walking into props pushes them
+  controller.setApplyImpulsesToDynamicBodies(true)
+
+  // try to move by `desired` (Vector3): the capsule is swept along the way and stops at the first
+  // contact (sliding along it), so it can't glitch through walls or floors, even when falling fast
   const movePlayer = (desired) => {
     controller.computeColliderMovement(playerCollider, desired)
     const movement = controller.computedMovement()
-    playerPosition.x += movement.x
-    playerPosition.z += movement.z
+    playerPosition.add(movement)
+    // safety net: if we ever end up under the floor, go back to the spawn point
+    if (playerPosition.y < PLAYER.killY) playerPosition.copy(spawn)
     playerCollider.setTranslation(playerPosition)
-    return playerPosition
+    return { position: playerPosition, movement, grounded: controller.computedGrounded() }
   }
 
   // fixed 60 Hz steps, so physics behaves the same at any framerate (max a few steps per frame)
@@ -86,5 +114,5 @@ export const createPhysics = async () => {
     debugLines.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4))
   }
 
-  return { world, addTrimesh, addBox, movePlayer, step, debugLines, updateDebugLines }
+  return { world, addTrimesh, addBox, addProp, movePlayer, step, debugLines, updateDebugLines }
 }

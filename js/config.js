@@ -20,11 +20,15 @@ export const MAX_DT = 0.05
 
 export const PLAYER = {
   walkSpeed: 2.2,   // m/s
-  // collision capsule: 30 cm radius (keeps you ~30 cm from walls), from 15 cm above the floor to 1.7 m
+  // collision capsule standing on the floor: 30 cm radius (keeps you ~30 cm from walls), 1.7 m tall
   radius: 0.3,
-  height: 1.55,
-  floorGap: 0.15,
+  height: 1.7,
   skin: 0.01,       // tiny gap the character controller keeps from walls
+  stepHeight: 0.25, // walk over rugs and small steps up to this height
+  snapDistance: 0.1,// stick to the floor when walking down small steps
+  jumpSpeed: 3.2,   // m/s upward -> jumps about 0.35 m with gravityScale 1.5
+  gravityScale: 1.5,// the player falls a bit faster than props: snappier jumps
+  killY: -2,        // below this height something went wrong: back to the spawn point
   // Chrome refuses to re-lock the mouse within ~1 s after Esc, so wait before "click to resume"
   relockDelay: 1100 // ms
 }
@@ -32,7 +36,9 @@ export const PLAYER = {
 export const PHYSICS = {
   gravity: -9.81,
   fixedStep: 1 / 60, // seconds per physics step
-  maxSteps: 3        // max physics steps per frame
+  maxSteps: 3,       // max physics steps per frame
+  // props spawn this much above their spot, so they never start inside the table/floor
+  propLift: 0.005
 }
 
 export const VACUUM = {
@@ -80,13 +86,13 @@ export const MODELS = {
     chandelier: { file: 'models/furniture/chandelier.glb', scale: 0.7 / 0.76 }  // 0.7 m wide
   },
   props: {
-    book: { file: 'models/props/book.glb', scale: 0.22 / 0.2 },               // 22 cm long
-    bookStack: { file: 'models/props/book-stack.glb', scale: 0.3 / 0.86 },    // 30 cm wide
-    bottle: { file: 'models/props/bottle.glb', scale: 0.3 / 1.56 },           // 30 cm high
-    candle: { file: 'models/props/candle.glb', scale: 0.2 / 0.43 },           // 20 cm high
-    cup: { file: 'models/props/cup.glb', scale: 0.1 / 0.23 },                 // 10 cm
-    pillow: { file: 'models/props/pillow.glb', scale: 0.5 / 5.24 },           // 50 cm wide
-    plant: { file: 'models/props/plant.glb', scale: 0.8 / 5.93 }              // 80 cm high
+    book: { file: 'models/props/book.glb', scale: 0.22 / 0.2, density: 600 },               // 22 cm long
+    bookStack: { file: 'models/props/book-stack.glb', scale: 0.3 / 0.86, density: 600 },    // 30 cm wide
+    bottle: { file: 'models/props/bottle.glb', scale: 0.3 / 1.56, density: 500 },           // 30 cm high
+    candle: { file: 'models/props/candle.glb', scale: 0.2 / 0.43, density: 400 },           // 20 cm high
+    cup: { file: 'models/props/cup.glb', scale: 0.1 / 0.23, density: 400 },                 // 10 cm
+    pillow: { file: 'models/props/pillow.glb', scale: 0.5 / 5.24, density: 100 },           // 50 cm wide
+    plant: { file: 'models/props/plant.glb', scale: 0.8 / 5.93, density: 300 }              // 80 cm high
   }
 }
 

@@ -122,7 +122,8 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 |---|---|
 | Click "Start" | Enters pointer lock and unlocks audio (both need a user gesture) |
 | Mouse | Look / aim (pointer lock). During the tug-of-war: horizontal mouse movement fights the ghost |
-| W A S D | Walk (clamped inside the room) |
+| W A S D | Walk (Rapier character controller: solid walls and furniture) |
+| Space | Jump |
 | Left mouse (hold) | **Suck** |
 | Right mouse (hold) | **Blow** (pushes props away, shoots sucked props back out of the tank) |
 | Esc | Pause (pointer lock released → pause overlay → click to resume) |
@@ -362,7 +363,7 @@ Start values (tune with lil-gui in debug mode): `range 3.0`, `cosInner cos(15°)
 - **Blow-out spawn:** recreate the body at the nozzle with an impulse along `nozzleDir`.
 - **Librarian throw:** pick the nearest `Prop_Book*` within 2.5 m of the ghost and apply an impulse toward the player (+ small upward component).
 - **Trembling hiding spots:** visual only (small random offset/rotation on the mesh, no physics).
-- **Player:** the apartment has interior walls, so a box clamp is not enough: give the player a Rapier `KinematicCharacterController` with a capsule collider and collide it with the apartment (trimesh collider from the apartment meshes). Done in PLAN step 3.1.
+- **Player:** can jump (Space): vertical speed + gravity through the same character controller, so it can't tunnel through floors or ceilings. The apartment has interior walls, so a box clamp is not enough: give the player a Rapier `KinematicCharacterController` with a capsule collider and collide it with the apartment (trimesh collider from the apartment meshes). Done in PLAN step 3.1.
 - Max ~60 dynamic props. Rapier API names change between versions: check the installed version's docs.
 
 ---

@@ -77,5 +77,5 @@ export const createRoom = async () => {
     if (item.name.startsWith('Hide_')) hidingSpots.push(piece)
   })
 
-  return { mesh, shell, furniture, hidingSpots }
+  return { mesh, shell, ceiling, furniture, hidingSpots }
 }

@@ -12,6 +12,7 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 | Click "Start" | Start the shift (locks the mouse, turns on sound) |
 | Mouse | Look / aim. During the tug-of-war: move the mouse against the ghost's pull |
 | W A S D | Walk |
+| Space | Jump |
 | Left mouse (hold) | Suck |
 | Right mouse (hold) | Blow |
 | Esc | Pause |
