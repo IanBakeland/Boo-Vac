@@ -59,12 +59,26 @@ export const createVacuum = ({ camera, iTime }) => {
   // nozzle in world space: where the suction comes from, and which way it points (where you look)
   const nozzle = { position: new THREE.Vector3(), direction: new THREE.Vector3() }
 
+  const forward = new THREE.Vector3()
+  const aimPoint = new THREE.Vector3()
+  const coneForward = new THREE.Vector3(0, 0, -1)
+  const localAim = new THREE.Vector3()
   // call after the camera moved (needs its world matrix)
-  const update = () => {
+  // aimDistance: how far the thing in the middle of the screen is (from a ray, see physics.castAim)
+  const update = (aimDistance) => {
     // the swirl looks stronger in MAX mode
     power.value = state.power * (state.boost > 1 ? 1.6 : 1)
     mesh.getWorldPosition(nozzle.position)
-    camera.getWorldDirection(nozzle.direction)
+    // aim point: what you look at (the crosshair). The nozzle sits next to your eyes, so pointing it
+    // parallel to your view would miss close things: point it at the aim point instead
+    camera.getWorldDirection(forward)
+    aimPoint.copy(camera.position).addScaledVector(forward, Math.max(aimDistance, VACUUM.minAimDistance))
+    nozzle.direction.subVectors(aimPoint, nozzle.position).normalize()
+    // turn the swirl cone the same way (in camera space, because it's a child of the camera)
+    localAim.copy(aimPoint)
+    camera.worldToLocal(localAim)
+    localAim.sub(mesh.position).normalize()
+    mesh.quaternion.setFromUnitVectors(coneForward, localAim)
   }
 
   return { mesh, model: holder, state, nozzle, setMode, update }

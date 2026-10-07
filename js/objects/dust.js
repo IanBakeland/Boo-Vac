@@ -21,10 +21,6 @@ export const createDust = ({ iTime, nozzle, lamp }) => {
   const seed = uniform(0)
   const nozzlePos = uniform(nozzle.position)
   const nozzleDir = uniform(nozzle.direction)
-  // a puff of dust out of a hiding spot: for one frame, burstAmount of all specks jump there
-  const burstPos = uniform(new THREE.Vector3())
-  const burstAmount = uniform(0)
-  const burstRadius = uniform(0)
 
   // a random spot in the apartment; `s` = seed (every speck and frame gets other random numbers)
   const randomSpot = (s) => vec3(
@@ -69,15 +65,6 @@ export const createDust = ({ iTime, nozzle, lamp }) => {
       position.assign(randomSpot(float(instanceIndex).add(seed)))
       velocity.assign(vec3(0))
     })
-
-    // burst: a random part of the specks (different every frame) puffs out of the hiding spot
-    const s = float(instanceIndex).add(seed).add(8e6)
-    If(hash(s).lessThan(burstAmount), () => {
-      // random direction around the spot (-1..1 on every axis), mostly sideways and a bit down
-      const dir = vec3(hash(s.add(1e6)), hash(s.add(2e6)), hash(s.add(3e6))).mul(2).sub(1)
-      position.assign(burstPos.add(dir.mul(burstRadius)))
-      velocity.assign(dir.mul(vec3(0.6, 0.3, 0.6)))
-    })
   })().compute(count)
 
   // drawing: one tiny round sprite per speck, position straight from the GPU buffer
@@ -113,16 +100,7 @@ export const createDust = ({ iTime, nozzle, lamp }) => {
     // keep the seed below 2^24 so it stays an exact whole number in a float
     seed.value = (frame * 7919) % 1e6 + 1e6
     renderer.compute(update)
-    // a burst only lasts one frame
-    burstAmount.value = 0
   }
 
-  // puff of dust at `position` (Vector3), `amount` = part of all specks (0-1)
-  const burst = (position, amount, radius) => {
-    burstPos.value.copy(position)
-    burstAmount.value = amount
-    burstRadius.value = radius
-  }
-
-  return { mesh, init, update: updateDust, burst }
+  return { mesh, init, update: updateDust }
 }

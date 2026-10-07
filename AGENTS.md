@@ -392,7 +392,7 @@ Names are set **in code** from `LAYOUT` in `config.js` (no Blender).
 | `Hide_Vase`, `Hide_Bookshelf`, `Hide_Clock` | Hiding spots. Static, trembles in code, collider. |
 | `Prop_*` (e.g. `Prop_Book_01`) | Dynamic, suckable props. Keep their own materials (lit by the real `SpotLight`). |
 | `LAYOUT.spawn` | Player start position and look direction. |
-| `VACUUM.nozzleOffset` | Nozzle tip relative to the camera. **Position only.** The suction direction is always the camera's forward vector (you aim with the camera). |
+| `VACUUM.nozzleOffset` | Nozzle tip relative to the camera. **Position only.** The suction direction points from the nozzle to the **aim point** (what's under the crosshair, found with a Rapier ray, at least `minAimDistance` ahead). A direction parallel to the camera missed close targets because the nozzle sits off-center. |
 
 ### 9.3 Bake rules (optional, PLAN 5.5 only; same workflow as the course's baking project)
 

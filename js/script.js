@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -84,8 +84,9 @@ if (dust) {
   renderer.compute(dust.init)
 }
 
-// the ghost (model + Blender animations + Ether aura): hides in its spot until exposed
-const ghost = await createGhost({ iTime, hidingSpots: room.hidingSpots, dust })
+// the ghost (model + Blender animations + Ether aura): hides in its spot until exposed,
+// a small Ether wisp shows where it is
+const ghost = await createGhost({ iTime, hidingSpots: room.hidingSpots })
 scene.add(ghost.mesh)
 
 // --- input ---
@@ -118,6 +119,7 @@ const $resume = $pause.querySelector('.action')
 const $hud = document.querySelector('#hud')
 const $tankCount = $hud.querySelector('.tank-count')
 const $max = document.querySelector('#max')
+const $crosshair = document.querySelector('#crosshair')
 const $maxFill = $max.querySelector('.max-fill')
 // HUD: only touch the DOM when the value changed
 let shownTank = -1
@@ -176,6 +178,7 @@ controls.addEventListener('lock', () => {
   $pause.classList.add('hidden')
   $hud.classList.remove('hidden')
   $max.classList.remove('hidden')
+  $crosshair.classList.remove('hidden')
 })
 controls.addEventListener('unlock', () => {
   // Esc: pause, stop the vacuum and forget held keys
@@ -241,6 +244,7 @@ const movePlayer = (dt) => {
 // https://threejs.org/docs/#api/en/core/Timer
 const timer = new THREE.Timer()
 
+const viewDirection = new THREE.Vector3()
 const draw = (timestamp) => {
   timer.update(timestamp)
   const dt = Math.min(timer.getDelta(), MAX_DT)
@@ -250,7 +254,9 @@ const draw = (timestamp) => {
   if (controls.isLocked) movePlayer(dt)
   // the camera moved: update its matrices before reading the nozzle and lamp positions
   camera.updateMatrixWorld()
-  vacuum.update()
+  // what's in the middle of the screen? the suction aims there
+  camera.getWorldDirection(viewDirection)
+  vacuum.update(physics.castAim(camera.position, viewDirection, SUCTION.range))
   flashlight.update()
 
   updateMax(dt)

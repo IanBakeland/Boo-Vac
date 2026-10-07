@@ -168,5 +168,11 @@ export const createPhysics = async () => {
     debugLines.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4))
   }
 
-  return { world, addTrimesh, addBox, addProp, movePlayer, step, debugLines, updateDebugLines }
+  // how far until the first thing in that direction (walls, furniture, props, not the player itself)
+  const castAim = (origin, direction, maxDistance) => {
+    const hit = world.castRay(new RAPIER.Ray(origin, direction), maxDistance, true, undefined, undefined, playerCollider)
+    return hit ? hit.timeOfImpact : maxDistance
+  }
+
+  return { world, addTrimesh, addBox, addProp, movePlayer, castAim, step, debugLines, updateDebugLines }
 }

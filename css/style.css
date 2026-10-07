@@ -147,3 +147,16 @@ body
     color: #9be35b;
     font: 12px monospace;
 }
+
+/* small crosshair in the middle of the screen: the suction aims there */
+#crosshair
+{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: rgba(223, 230, 255, 0.7);
+}

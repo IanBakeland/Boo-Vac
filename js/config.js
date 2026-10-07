@@ -87,21 +87,27 @@ export const GHOST = {
   crossFade: 0.25,          // s: blend between two animation clips
   // visible only in the flashlight beam: same cone as the lamp (FLASHLIGHT.angle / penumbra)
   visibleRange: [5, 7],     // m: fully visible closer than 5 m, invisible beyond 7 m
+  visibleRadius: 0.4,       // m: the ghost counts as a ball this big (not a point) for "is it in the beam?"
   visibilitySmoothing: 6,   // per second: how fast it fades in/out (no hard popping)
   tint: [0.8, 0.88, 1.0],   // Dusty: pale blue-grey (sRGB), per ghost later (4.6)
   hideSpot: 'Hide_Vase',    // where the (first) ghost hides
-  // hiding: the spot trembles every few seconds and drops a puff of dust
+  // hiding: the spot trembles every few seconds
   trembleInterval: [3, 5],  // s: random time between two trembles
-  trembleDuration: 0.6,     // s
-  trembleAmount: 0.015,     // m: how far the spot shakes
-  burstAmount: 0.03,        // part of all dust specks that puffs out of the spot (0.03 = 3%)
-  burstRadius: 0.25,        // m
+  trembleDuration: 0.8,     // s
+  trembleAmount: 0.03,      // m: how far the spot shakes
+  trembleAngle: 0.06,       // radians: how much it wobbles
+  // hint: a small Ether wisp rising from the top of the hiding spot (visible in the beam),
+  // growing with the exposure. On top, so it shows against the darker background
+  hintStrength: [0.9, 1.5], // brightness at exposure 0 and at exposure 1
+  hintSize: [0.6, 1.0],     // aura scale at exposure 0 and at exposure 1
   // exposure (0 -> 1): the ghost pops out at 1
   exposureRate: 0.25,       // per second while the spot is in your suction cone
   exposurePerProp: 0.2,     // per prop you suck up that stood near the spot
   propRadius: 1.5,          // m: "near the spot"
-  // emerging: flies out of the spot toward you
-  emergeDistance: 0.8,      // m toward the player
+  // emerging: rises out of the spot (and a bit toward you, but never too close)
+  emergeHeight: 0.15,       // m: the ghost's middle ends up this far above the spot
+  emergeDistance: 0.5,      // m toward the player at most
+  minPlayerDistance: 1.5,   // m: never closer to the player than this
   emergeDuration: 0.8,      // s
   hoverAmount: 0.05,        // m: gentle up and down floating
   hoverSpeed: 1.5           // per second
@@ -110,6 +116,9 @@ export const GHOST = {
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],
+  // the suction aims from the nozzle at what's in the middle of the screen (the crosshair),
+  // at least this far in front of your eyes (closer targets would make it point backwards)
+  minAimDistance: 1.2,
   // the upright vacuum in your right hand, held by the handle and tipped forward,
   // diagonally from the bottom-right corner (rotation in degrees, XYZ order)
   model: { position: [0.359, -0.382, -0.504], rotation: [163.3, 62.2, -112.1] },
