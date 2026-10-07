@@ -71,7 +71,7 @@ export const MAX = {
 
 // Dust specks (compute shader on the GPU, WebGPU only)
 export const DUST = {
-  count: 10000,        // specks (raise if the FPS allows, see ?debug)
+  count: 4000,         // specks (more = dustier, see the FPS with ?debug)
   size: 0.015,         // m (bigger than real dust, or you would not see it)
   minY: 0.05,          // m: lowest spawn height
   respawnDistance: 0.25, // m: a speck this close to the nozzle is "sucked in" and respawns elsewhere
