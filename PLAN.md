@@ -53,7 +53,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 1.5 Submission README skeleton
 - [x] 1.6 Port Ether (S1), 5 sub-steps
 - [x] 1.7 Suction cone shader (S2) + spin-up
-- [ ] 1.8 ✋ Go / no-go checkpoint
+- [x] 1.8 ✋ Go / no-go checkpoint
 
 **Phase 2: Room, Blender, flashlight**
 - [ ] 2.1 Download assets from Poly Pizza
@@ -203,9 +203,9 @@ Do this **together**: let the agent explain, and you do the translation as much 
 
 ### 1.8 ✋ Go / no-go checkpoint · 🧑 · 15 min
 Check online (not just locally):
-- [ ] Ether port works and looks right
-- [ ] Suction cone reacts to the mouse
-- [ ] Console clean, deploy green
+- [x] Ether port works and looks right
+- [x] Suction cone reacts to the mouse
+- [x] Console clean, deploy green
 
 **All yes →** continue. **Ether still broken after a full week →** ask the agent for help debugging with the pitfalls table; if still stuck, talk to your teacher before moving on. Everything else builds on this.
 
