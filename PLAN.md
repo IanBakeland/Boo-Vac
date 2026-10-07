@@ -319,7 +319,7 @@ Check online (not just locally):
 
 ### 3.5 Blowing + tank-full mechanic · 🤖 · 1–2 h
 1. RMB: blow force (push, no swirl) + re-spawn props from the tank at the nozzle with a forward impulse.
-2. Tank full (20): suction capped, jitter, HUD message *"Tank full! Blow it out (RMB)"*.
+2. ~~Tank full (20)~~ and ~~blowing props back out~~: removed later (student's decision, no purpose). Replaced by MAX mode (F): 3 s of ×4 force that also moves the table, chair and vase.
 
 **Done when:** you can fill the tank, get the warning, and shoot everything back into the room.
 **Commit:** `step 3.5: blow and tank full`
@@ -395,7 +395,7 @@ Check online (not just locally):
 **Commit:** `step 4.7: screens and hud`
 
 ### 4.8 Audio · 🤖🧑 · 2 h
-1. 🤖 Web Audio motor, plop, sputter (AGENTS.md §4.7). Mute with M.
+1. 🤖 Web Audio motor, plop, MAX boost sound (AGENTS.md §4.7). Mute with M.
 2. 🧑 Find 2–3 CC0 ghost sounds (freesound.org, filter on CC0), put them in `public/sounds/`, add them to the credits.
 
 **Done when:** the vacuum sounds alive and ghosts giggle/moan.

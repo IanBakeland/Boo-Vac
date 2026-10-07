@@ -95,7 +95,7 @@ export const createPhysics = async () => {
   // CCD = continuous collision detection: fast small objects can't tunnel through walls
   const up = new THREE.Vector3(0, 1, 0)
   // mass (kg) instead of density for heavy furniture
-  const addProp = ({ position, rotationY, halfExtents, density, mass, velocity }) => {
+  const addProp = ({ position, rotationY, halfExtents, density, mass }) => {
     const rotation = new THREE.Quaternion().setFromAxisAngle(up, THREE.MathUtils.degToRad(rotationY))
     const body = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
@@ -103,7 +103,6 @@ export const createPhysics = async () => {
         .setRotation(rotation)
         .setCcdEnabled(true)
     )
-    if (velocity) body.setLinvel(velocity, true)
     // the box is shifted up by half its height, so the body's origin is the model's bottom-center
     const collider = RAPIER.ColliderDesc.cuboid(halfExtents.x, halfExtents.y, halfExtents.z).setTranslation(0, halfExtents.y, 0)
     if (mass) collider.setMass(mass)

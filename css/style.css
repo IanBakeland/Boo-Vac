@@ -67,40 +67,15 @@ body
     visibility: hidden;
 }
 
-/* HUD: tank bar in the bottom-left corner */
+/* HUD: sucked-up counter in the bottom-left corner */
 #hud
 {
     position: absolute;
     left: 24px;
     bottom: 24px;
-    width: 180px;
     color: #dfe6ff;
     font-family: system-ui, sans-serif;
-    font-size: 0.85rem;
-}
-
-.tank-bar
-{
-    margin-top: 6px;
-    height: 10px;
-    border: 1px solid rgba(223, 230, 255, 0.6);
-    border-radius: 5px;
-    overflow: hidden;
-}
-
-.tank-fill
-{
-    width: 0%;
-    height: 100%;
-    background: #9be35b;
-    transition: width 0.2s;
-}
-
-.tank-full
-{
-    margin-top: 6px;
-    color: #ffb84d;
-    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 /* MAX button: bottom-right, fills up while recharging, glows while active */

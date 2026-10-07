@@ -125,7 +125,7 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 | W A S D | Walk (Rapier character controller: solid walls and furniture) |
 | Space | Jump |
 | Left mouse (hold) | **Suck** |
-| Right mouse (hold) | **Blow** (pushes props away, shoots sucked props back out of the tank) |
+| Right mouse (hold) | **Blow** (pushes props away) |
 | F | **MAX** (student's idea): 3 s of ×4 force that also pulls the heavy dynamic furniture (table, chair, vase), then 8 s recharge. HUD button bottom-right. |
 | Esc | Pause (pointer lock released → pause overlay → click to resume) |
 | M | Mute |
@@ -160,8 +160,8 @@ Order: Dusty → Librarian → Granny Clock. Only one ghost is "active" (trembli
 - **Suction cone:** range `3.0 m`, inner half-angle `15°`, outer half-angle `35°`.
 - **Capture of props:** a `Prop_*` closer than `0.35 m` to the nozzle and with a bounding-box max dimension `< 0.5 m` is sucked in: tween scale to 0 (0.15 s), remove its Rapier body, push it onto `tank` (store the mesh + body description), play "plop".
 - Heavy or large props are pulled but never captured (they slide and rattle).
-- **Tank:** capacity `20` props. When full, suction power is capped at `0.3`, the vacuum sputters (audio + jitter), and the HUD says *"Tank full! Blow it out (RMB)"*. This makes blowing a real mechanic.
-- **Blow (RMB):** force direction reversed (`push` only, no swirl). Every 0.12 s while blowing, the most recent prop in the tank re-spawns at the nozzle with a forward impulse.
+- **Tank:** no limit (student's decision: blowing items back out had no purpose, so the tank-full mechanic was removed too). It only counts what you sucked up: HUD *"Sucked up: N"*, and the invoice bills it.
+- **Blow (RMB):** force direction reversed (`push` only, no swirl): pushes props (and with MAX, furniture) away.
 
 ### 4.6 HUD and screens (HTML/CSS overlay, no canvas UI)
 
@@ -178,7 +178,7 @@ Order: Dusty → Librarian → Granny Clock. Only one ghost is "active" (trembli
 - **Motor:** sawtooth `OscillatorNode` → `BiquadFilterNode` (lowpass) → gain. Frequency 70→160 Hz and cutoff 400→1800 Hz follow `power` and the tug meter.
 - **Plop:** short noise burst (an `AudioBuffer` of random samples, 60 ms, fast decay).
 - **Ghost giggle / moan:** small CC0 sound files in `public/sounds/` (credit in the README if not CC0).
-- **Sputter** when the tank is full: modulate the motor gain with a square LFO.
+- **MAX** (F): motor pitch and gain up while MAX is active.
 - Create the `AudioContext` on the Start click. Respect the mute toggle.
 
 ---

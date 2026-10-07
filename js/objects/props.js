@@ -33,18 +33,16 @@ export const createProps = async ({ physics }) => {
     mesh.add(prop)
 
     const size = new THREE.Box3().setFromObject(prop, true).getSize(new THREE.Vector3())
-    const halfExtents = size.clone().multiplyScalar(0.5)
-    const density = MODELS.props[item.model].density
     const body = physics.addProp({
       position: new THREE.Vector3().fromArray(item.position),
       rotationY: item.rotationY ?? 0,
-      halfExtents,
-      density
+      halfExtents: size.clone().multiplyScalar(0.5),
+      density: MODELS.props[item.model].density
     })
     // small enough to fit in the vacuum?
     const suckable = Math.max(size.x, size.y, size.z) < TANK.captureMaxSize
     // body = null once the prop is in the tank
-    props.push({ mesh: prop, body, halfExtents, density, suckable, heavy: false })
+    props.push({ mesh: prop, body, suckable, heavy: false })
   })
 
   // copy every body's position and rotation onto its model (after the physics step)
@@ -94,7 +92,7 @@ export const createProps = async ({ physics }) => {
   const capture = (nozzle) => {
     let count = 0
     props.forEach((prop) => {
-      if (!prop.body || !prop.suckable || tank.length >= TANK.capacity) return
+      if (!prop.body || !prop.suckable) return
       const com = prop.body.worldCom()
       const dist = Math.hypot(com.x - nozzle.position.x, com.y - nozzle.position.y, com.z - nozzle.position.z)
       if (dist > TANK.captureDistance) return
@@ -123,23 +121,6 @@ export const createProps = async ({ physics }) => {
     })
   }
 
-  // blowing: the last prop that went in comes out first, shot out of the nozzle
-  const blowOut = (nozzle) => {
-    const prop = tank.pop()
-    if (!prop) return false
-    prop.body = physics.addProp({
-      // body origin = bottom-center, so start half its height below the nozzle
-      position: new THREE.Vector3(nozzle.position.x, nozzle.position.y - prop.halfExtents.y, nozzle.position.z),
-      rotationY: Math.random() * 360,
-      halfExtents: prop.halfExtents,
-      density: prop.density,
-      velocity: nozzle.direction.clone().multiplyScalar(TANK.blowSpeed)
-    })
-    prop.mesh.visible = true
-    gsap.to(prop.mesh.scale, { x: 1, y: 1, z: 1, duration: TANK.regrowDuration, ease: 'power2.out' })
-    return true
-  }
-
   // furniture that moves: physics body, not suckable, only pulled by MAX
   const addMovable = (piece) => {
     const item = piece.userData.layout
@@ -153,5 +134,5 @@ export const createProps = async ({ physics }) => {
     props.push({ mesh: piece, body, suckable: false, heavy: true })
   }
 
-  return { mesh, props, tank, update, applySuction, capture, blowOut, addMovable, drop }
+  return { mesh, props, tank, update, applySuction, capture, addMovable, drop }
 }

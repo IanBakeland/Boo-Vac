@@ -53,20 +53,12 @@ export const SUCTION = {
 }
 
 export const TANK = {
-  capacity: 20,          // props
   captureDistance: 0.5,  // m: a prop this close to the nozzle gets sucked in
   captureMaxSize: 0.5,   // m: bigger props (plants, pillows) are pulled but never sucked in
   captureMinPower: 0.5,  // the motor must be at least half spun up
   shrinkDuration: 0.15,  // s: shrink animation when a prop disappears into the nozzle
   maxPropSpeed: 8,       // m/s: speed limit for sucked props (like the course's per-particle limit)
-  drag: 4,               // per second, at full suction: slows props near the nozzle so they don't overshoot
-  // tank full: the motor chokes
-  fullPowerCap: 0.3,     // max suction power while the tank is full
-  fullJitter: 0.006,     // m: the vacuum shakes in your hand
-  // blowing props back out of the tank (right mouse)
-  blowInterval: 0.12,    // s between two props
-  blowSpeed: 6,          // m/s: how fast they shoot out of the nozzle
-  regrowDuration: 0.15   // s: grow animation when a prop comes back out
+  drag: 4                // per second, at full suction: slows props near the nozzle so they don't overshoot
 }
 
 // MAX mode (F): a short, very strong burst that also moves heavy furniture

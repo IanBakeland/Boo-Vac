@@ -3,14 +3,13 @@ import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import gsap from 'gsap'
 
-import { VACUUM, SUCTION_CONE, MODELS, TANK } from '../config.js'
+import { VACUUM, SUCTION_CONE, MODELS } from '../config.js'
 import suctionShader from '../shaders/suction/fragment.wgsl?raw'
 
 export const createVacuum = ({ camera, iTime }) => {
   // gsap animates object properties, so power lives in an object
-  // mode: 'suck' or 'blow'
-  // cap: max suction power (lower when the tank is full), boost: MAX multiplier (1 = off)
-  const state = { power: 0, mode: 'suck', cap: 1, boost: 1 }
+  // mode: 'suck' or 'blow', boost: MAX multiplier (1 = off)
+  const state = { power: 0, mode: 'suck', boost: 1 }
   const power = uniform(0)
   const flowDir = uniform(1)
 
@@ -60,21 +59,13 @@ export const createVacuum = ({ camera, iTime }) => {
   // nozzle in world space: where the suction comes from, and which way it points (where you look)
   const nozzle = { position: new THREE.Vector3(), direction: new THREE.Vector3() }
 
-  // the power that really reaches the props: the tank-full cap only limits sucking
-  const effectivePower = () => state.mode === 'suck' ? Math.min(state.power, state.cap) : state.power
-
   // call after the camera moved (needs its world matrix)
-  const basePosition = holder.position.clone()
   const update = () => {
     // the swirl looks stronger in MAX mode
-    power.value = effectivePower() * (state.boost > 1 ? 1.6 : 1)
-    // tank full while sucking: the vacuum shakes in your hand
-    const shaking = state.mode === 'suck' && state.cap < 1 && state.power > 0.1
-    holder.position.copy(basePosition)
-    if (shaking) holder.position.addScalar((Math.random() - 0.5) * 2 * TANK.fullJitter)
+    power.value = state.power * (state.boost > 1 ? 1.6 : 1)
     mesh.getWorldPosition(nozzle.position)
     camera.getWorldDirection(nozzle.direction)
   }
 
-  return { mesh, model: holder, state, nozzle, setMode, effectivePower, update }
+  return { mesh, model: holder, state, nozzle, setMode, update }
 }

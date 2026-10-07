@@ -124,11 +124,8 @@ const $pause = document.querySelector('#pause')
 const $resume = $pause.querySelector('.action')
 const $hud = document.querySelector('#hud')
 const $tankCount = $hud.querySelector('.tank-count')
-const $tankFill = $hud.querySelector('.tank-fill')
-const $tankFull = $hud.querySelector('.tank-full')
 const $max = document.querySelector('#max')
 const $maxFill = $max.querySelector('.max-fill')
-$hud.querySelector('.tank-capacity').textContent = TANK.capacity
 // HUD: only touch the DOM when the value changed
 let shownTank = -1
 let shownMax = ''
@@ -136,8 +133,6 @@ const updateHud = () => {
   if (props.tank.length !== shownTank) {
     shownTank = props.tank.length
     $tankCount.textContent = shownTank
-    $tankFill.style.width = `${shownTank / TANK.capacity * 100}%`
-    $tankFull.classList.toggle('hidden', shownTank < TANK.capacity)
   }
   // MAX button: charge bar in 5% steps, so the DOM only changes ~20 times per charge
   const maxState = `${maxActive}-${Math.round(maxCharge * 20)}`
@@ -239,7 +234,6 @@ const movePlayer = (dt) => {
 // https://threejs.org/docs/#api/en/core/Timer
 const timer = new THREE.Timer()
 
-let blowTimer = 0
 const draw = (timestamp) => {
   timer.update(timestamp)
   const dt = Math.min(timer.getDelta(), MAX_DT)
@@ -256,11 +250,8 @@ const draw = (timestamp) => {
   vacuum.update()
   flashlight.update()
 
-  // tank full: the suction is choked until you blow props out
   updateMax(dt)
-  vacuum.state.cap = props.tank.length >= TANK.capacity ? TANK.fullPowerCap : 1
-  const power = vacuum.effectivePower()
-  const { mode, boost } = vacuum.state
+  const { power, mode, boost } = vacuum.state
 
   // physics, with the suction force applied before every step
   physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, power, mode, stepDt, boost))
@@ -268,11 +259,6 @@ const draw = (timestamp) => {
   if (mode === 'suck' && power >= TANK.captureMinPower) {
     // placeholder for the "plop" sound (step 4.8)
     if (props.capture(vacuum.nozzle) > 0 && DEBUG) console.log('plop', props.tank.length)
-  }
-  // blowing at (almost) full power: shoot the tank empty, one prop every blowInterval
-  blowTimer -= dt
-  if (mode === 'blow' && power >= TANK.captureMinPower && blowTimer <= 0) {
-    if (props.blowOut(vacuum.nozzle)) blowTimer = TANK.blowInterval
   }
   props.update()
   if (DEBUG) physics.updateDebugLines()
