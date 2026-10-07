@@ -3,7 +3,52 @@
 import * as THREE from 'three/webgpu'
 import RAPIER from '@dimforge/rapier3d-compat'
 
-import { PHYSICS, PLAYER, LAYOUT } from './config.js'
+import { PHYSICS, PLAYER, LAYOUT, SUCTION } from './config.js'
+
+// --- shared suction model (AGENTS.md §7), the 3D version of the course's compute particle swirl ---
+// Returns the acceleration (m/s²) the vacuum gives a point. Multiply by mass for a force.
+// The WGSL dust shader (step 3.6) uses the exact same formula.
+const cosInner = Math.cos(THREE.MathUtils.degToRad(SUCTION.innerAngle))
+const cosOuter = Math.cos(THREE.MathUtils.degToRad(SUCTION.outerAngle))
+const _dirOut = new THREE.Vector3()
+const _swirl = new THREE.Vector3()
+export const suctionForce = (point, nozzlePos, nozzleDir, power, mode, target = new THREE.Vector3()) => {
+  // from the nozzle to the point
+  _dirOut.subVectors(point, nozzlePos)
+  const dist = _dirOut.length()
+  _dirOut.divideScalar(Math.max(dist, 0.001))
+  // only inside the cone in front of the nozzle: 1 in the inner cone, 0 outside the outer cone
+  const cone = THREE.MathUtils.smoothstep(_dirOut.dot(nozzleDir), cosOuter, cosInner)
+  // strongest close to the nozzle, 0 at `range`
+  const falloff = 1 - THREE.MathUtils.smoothstep(dist, 0, SUCTION.range)
+  const strength = cone * falloff * power
+  if (mode === 'blow') {
+    // blowing: straight away from the nozzle, no swirl
+    return target.copy(_dirOut).multiplyScalar(SUCTION.blowStrength * strength)
+  }
+  // pull: toward the nozzle (like the course's pull toward the mouse)
+  target.copy(_dirOut).multiplyScalar(-SUCTION.pullStrength)
+  // swirl: sideways around the nozzle axis (the 3D version of the course's 90° tangent)
+  _swirl.crossVectors(nozzleDir, _dirOut)
+  // a point exactly on the axis has no "sideways": skip the swirl there
+  if (_swirl.lengthSq() > 1e-8) target.addScaledVector(_swirl.normalize(), SUCTION.swirlStrength)
+  return target.multiplyScalar(strength)
+}
+
+// debug self-check: in front of the nozzle -> pulled toward it, behind it -> nothing
+export const checkSuctionForce = () => {
+  const nozzle = new THREE.Vector3(0, 1, 0)
+  const forward = new THREE.Vector3(0, 0, -1)
+  const front = suctionForce(new THREE.Vector3(0, 1, -1), nozzle, forward, 1, 'suck')
+  const behind = suctionForce(new THREE.Vector3(0, 1, 1), nozzle, forward, 1, 'suck')
+  const blow = suctionForce(new THREE.Vector3(0, 1, -1), nozzle, forward, 1, 'blow')
+  const off = suctionForce(new THREE.Vector3(0, 1, -1), nozzle, forward, 0, 'suck')
+  console.assert(front.z > 0, 'suction: a point in front should be pulled toward the nozzle', front)
+  console.assert(behind.length() === 0, 'suction: a point behind the nozzle should feel nothing', behind)
+  console.assert(blow.z < 0, 'suction: blowing should push away from the nozzle', blow)
+  console.assert(off.length() === 0, 'suction: power 0 should give no force', off)
+  console.log('suctionForce self-check done (no assertion errors = passed)')
+}
 
 export const createPhysics = async () => {
   // the WebAssembly module must be loaded before anything else

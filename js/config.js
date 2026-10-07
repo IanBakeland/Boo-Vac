@@ -42,6 +42,16 @@ export const PHYSICS = {
   propLift: 0.005
 }
 
+// Shared suction model (AGENTS.md §7): one formula for props, dust and the ghost
+export const SUCTION = {
+  range: 3.0,        // m: no force beyond this distance from the nozzle
+  innerAngle: 15,    // degrees: full force inside this cone
+  outerAngle: 35,    // degrees: no force outside this cone (soft edge in between)
+  pullStrength: 14,  // m/s² toward the nozzle
+  swirlStrength: 5,  // m/s² around the nozzle axis (makes the spiral)
+  blowStrength: 18   // m/s² away from the nozzle when blowing
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],

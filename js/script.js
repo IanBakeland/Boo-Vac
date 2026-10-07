@@ -3,7 +3,7 @@ import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
 import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS } from './config.js'
-import { createPhysics } from './physics.js'
+import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
 import { createFlashlight } from './objects/flashlight.js'
@@ -54,6 +54,7 @@ physics.step(PHYSICS.fixedStep)
 // ?debug in the URL: show every collider as lines
 const DEBUG = new URLSearchParams(window.location.search).has('debug')
 if (DEBUG) {
+  checkSuctionForce()
   physics.updateDebugLines()
   scene.add(physics.debugLines)
 }
