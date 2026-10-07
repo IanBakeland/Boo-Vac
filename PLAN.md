@@ -1,0 +1,531 @@
+# PLAN.md — Night Shift: step-by-step plan
+
+This is the build order for **Night Shift** (dark room, flashlight, vacuum, ghosts, tug-of-war).
+The full spec (what everything should be and how it works) is in [`AGENTS.md`](AGENTS.md). This file says **in which order** to build it and **who** does what.
+
+---
+
+## How to use this plan
+
+- Every step has an ID (e.g. **2.5**). Work top to bottom. Don't skip ahead: later steps depend on earlier ones.
+- Owner of each step:
+  - 🧑 **You:** things only you can do (installing, accounts, Blender, playtesting, submitting)
+  - 🤖 **Agent:** your AI agent writes the code; you review and test
+  - 🤝 **Together:** the agent guides and explains, you type or decide (mainly the shader port, so you can explain it to your teacher)
+- Each step ends with **Done when** (how you know it works) and a **Commit** message.
+- **After every step:** commit → push → wait for the GitHub Action to turn green → open the live URL. *"Not online = no marks."*
+- Tick the box in the tracker below when a step is done (or ask the agent to).
+
+### Talking to your agent (copy-paste prompts)
+
+| Situation | Prompt |
+|---|---|
+| Start of a session | `Read AGENTS.md and PLAN.md. Tell me which step is next according to the tracker, and what it involves.` |
+| Do a step | `Do step 2.7 from PLAN.md. Follow AGENTS.md and the course patterns. Explain what you changed and how I can test it.` |
+| Shader steps | `We're doing step 1.6c together. Explain the original GLSL line by line first, then let me translate it to WGSL, and correct me.` |
+| Something broke | `Step 3.4 broke: <paste console error>. Check the pitfalls table in AGENTS.md first.` |
+| Behind schedule | `We're behind. Look at the cut list in PLAN.md and tell me what to drop to finish the core.` |
+| Before submitting | `Run the final checklist (phase 6) and AGENTS.md section 16. List anything that's not done.` |
+
+### Suggested timing (adjust to your deadline)
+
+| Week | Phases |
+|---|---|
+| Week 1 | Phase 0 + Phase 1 (setup, deploy, **Ether port**, suction cone) |
+| Week 2 | Phase 2 (Blender room + bake, first-person, flashlight) |
+| Week 3 | Phase 3 (physics, dust) + Phase 4 (ghosts, game loop) |
+| Week 4 | Phase 5 (polish, stretch) + Phase 6 (submit) |
+
+---
+
+## Progress tracker
+
+**Phase 0: Preparation**
+- [ ] 0.1 Install tools
+- [ ] 0.2 GitHub repository
+- [ ] 0.3 Reread the course chapters
+
+**Phase 1: Foundation, deploy, first shaders**
+- [x] 1.1 Create the Vite project
+- [ ] 1.2 Three.js boilerplate (WebGPU)
+- [ ] 1.3 Git + first push
+- [ ] 1.4 GitHub Pages deploy
+- [ ] 1.5 Submission README skeleton
+- [ ] 1.6 Port Ether (S1), 5 sub-steps
+- [ ] 1.7 Suction cone shader (S2) + spin-up
+- [ ] 1.8 ✋ Go / no-go checkpoint
+
+**Phase 2: Room, Blender, flashlight**
+- [ ] 2.1 Download assets from Poly Pizza
+- [ ] 2.2 Blender: model the room shell (own model)
+- [ ] 2.3 Blender: place and name the furniture
+- [ ] 2.4 Blender: place the props
+- [ ] 2.5 Blender: lights for the bake
+- [ ] 2.6 Blender: UVs + bake + save `baked.jpg`
+- [ ] 2.7 Blender: export the GLB files
+- [ ] 2.8 Load the baked room in Three.js
+- [ ] 2.9 Flashlight: SpotLight + beam (S3) + baked-room lighting shader
+- [ ] 2.10 First-person controls + vacuum in hand
+
+**Phase 3: Physics and dust**
+- [ ] 3.1 Rapier world + static colliders
+- [ ] 3.2 Props as dynamic bodies
+- [ ] 3.3 Shared `suctionForce()` + self-check
+- [ ] 3.4 Sucking: spiral, capture, tank
+- [ ] 3.5 Blowing + tank-full mechanic
+- [ ] 3.6 Compute dust (S4) + fallback
+
+**Phase 4: Ghosts and game loop**
+- [ ] 4.1 Ghost model + animations (AnimationMixer)
+- [ ] 4.2 Ether aura on the ghost + beam visibility
+- [ ] 4.3 Hiding spots: trembling + exposure + emerge
+- [ ] 4.4 Tug-of-war
+- [ ] 4.5 Escape + capture
+- [ ] 4.6 Three ghost personalities
+- [ ] 4.7 Screens: start, HUD, pause, invoice
+- [ ] 4.8 Audio
+
+**Phase 5: Polish and stretch**
+- [ ] 5.1 Playtest with 3 people
+- [ ] 5.2 Tuning pass
+- [ ] 5.3 Stretch goals (pick max 2)
+- [ ] 5.4 Performance + browser pass
+
+**Phase 6: Submission**
+- [ ] 6.1 Final README + credits
+- [ ] 6.2 Final deploy + incognito test
+- [ ] 6.3 Source zip without node_modules
+- [ ] 6.4 Submit both assignments
+- [ ] 6.5 Prepare to explain your project
+
+---
+
+## Phase 0: Preparation
+
+### 0.1 Install tools · 🧑 · 30 min
+1. **Node.js LTS** from https://nodejs.org. Check in a terminal: `node -v` and `npm -v`.
+2. **Git**: on a Mac, `git --version` (installs the command-line tools if missing).
+3. **VS Code** (you have it from the course).
+4. **Blender** (latest stable) from https://www.blender.org.
+5. **Chrome**: the course says to use Chrome for WebGPU (best error messages).
+6. Your AI agent (Claude Code / Cursor / ...), opened in your project folder (created in 1.1).
+
+**Done when:** `node -v`, `npm -v`, `git --version` all print a version; Blender opens.
+
+### 0.2 GitHub repository · 🧑 · 10 min
+1. On github.com: **New repository** → name e.g. `night-shift` → **Public** (GitHub Pages on free accounts needs public) → no README (we make our own) → Create.
+2. Keep the page open, you'll need the URL in step 1.3.
+
+**Done when:** you have an empty repo URL like `https://github.com/<you>/night-shift`.
+
+### 0.3 Reread the course chapters · 🧑 · 1 h
+Skim these again, because the project reuses them directly:
+- `threejs/README.md` → **Shadertoy shader in Three.js** (this is your porting method) and **ThreeJS + Blender + Shader** (this is your bake method)
+- `threejs/projects/blender-three-bake-final/js/script.js`
+- `webgpu/README.md` → **Using a Shadertoy shader**, **Compute shaders**, **WGSL cheat sheet**
+- Rewatch the Blender bake tutorial on the learning platform.
+
+**Done when:** you know what `wgslFn`, `uniform()`, `colorSpaceToWorking` and `baked.jpg` + `flipY = false` are for.
+
+---
+
+## Phase 1: Foundation, deploy, first shaders
+
+### 1.1 Create the Vite project · 🤖 · 15 min
+*Lesson: threejs/README.md → Aviator → Project setup*
+1. Create the project folder `night-shift` and open it in VS Code and your agent. Put `AGENTS.md` and `PLAN.md` in it.
+2. Agent runs: `npm init -y`, `npm install three gsap`, `npm install -D vite`.
+3. Scripts in `package.json`: `"dev": "vite"`, `"build": "vite build"`, `"preview": "vite preview"`.
+4. `vite.config.js` with `base: './'`.
+5. `.gitignore`: `node_modules/`, `dist/`, `.DS_Store`, `*.blend1`.
+6. Folders per AGENTS.md §5.1 (only the ones needed now: `css/`, `js/`, `js/objects/`, `js/shaders/`, `public/`).
+
+**Done when:** `npm run dev` serves an empty page with no errors.
+**Commit:** `step 1.1: vite project setup`
+
+### 1.2 Three.js boilerplate (WebGPU) · 🤖 · 30 min
+*Lesson: Shadertoy shader in Three.js → Three.js boilerplate; bake project script.js*
+1. `index.html` with a fullscreen `<canvas class="webgl">` and an empty `<div id="ui">` overlay.
+2. `js/script.js`: `WebGPURenderer` (`antialias: true, alpha: false`), `PerspectiveCamera(70, aspect, 0.05, 50)`, scene, resize handler, `renderer.setAnimationLoop(draw)`, a `Clock`.
+3. Temporary test: a grey floor plane + `OrbitControls` so you can look around (removed in 2.10).
+4. `js/config.js` with a first few constants.
+
+**Done when:** you see a floor plane, can orbit, and the console is clean.
+**Commit:** `step 1.2: webgpu renderer boilerplate`
+
+### 1.3 Git + first push · 🧑🤖 · 10 min
+1. `git init`, `git add .`, `git commit -m "step 1.2: boilerplate"`.
+2. `git branch -M main`, `git remote add origin <your repo URL>`, `git push -u origin main`.
+3. Check on GitHub that `node_modules` is **not** there and `package-lock.json` **is** there.
+
+**Done when:** your code is on GitHub without `node_modules`.
+
+### 1.4 GitHub Pages deploy · 🤖🧑 · 20 min
+1. 🤖 Add `.github/workflows/deploy.yml` (official Vite workflow, see AGENTS.md §11).
+2. 🧑 On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. Push. Watch the **Actions** tab until it's green.
+4. Open `https://<you>.github.io/night-shift/` in an **incognito** window.
+
+**Done when:** the live URL shows the same floor plane as locally. 🎉 *From now on, the "online" requirement is covered; keep it that way.*
+**Commit:** `step 1.4: github pages deploy`
+
+### 1.5 Submission README skeleton · 🤖 · 10 min
+1. Create the root `README.md` from the template in AGENTS.md §10.
+2. Fill in the **live URL** and the **Shadertoy URL** `https://www.shadertoy.com/view/MsjSW3` now.
+3. Empty credits table, to fill as you download assets.
+
+**Done when:** README.md is on GitHub with both URLs.
+**Commit:** `step 1.5: readme skeleton`
+
+### 1.6 Port Ether (S1) · 🤝 · 3–5 h · ⭐ the most important step
+*Lesson: threejs/README.md → Shadertoy shader in Three.js (follow the same sub-steps!) + webgpu/README.md → WGSL cheat sheet*
+
+Do this **together**: let the agent explain, and you do the translation as much as possible. Your teacher can ask you about this code.
+
+- **1.6a UV test.** Create `js/shaders/ether/fragment.wgsl` with a test function `ether(fragCoord, iResolution)` that returns the UV as a color (like the course's first step). Put it on a `PlaneGeometry(1.6, 1.6)` with `MeshBasicNodeMaterial` + `wgslFn`. *Done when:* you see a red/green gradient.
+- **1.6b Uniforms.** Add `iTime` as a `uniform(0)` and update it in `draw()`. Test with a pulsing blue channel. *Done when:* it pulses.
+- **1.6c Translate.** Open https://www.shadertoy.com/view/MsjSW3, read the code with the agent line by line, then translate it to WGSL using the rules in AGENTS.md §6 S1 (rotation-matrix helper, swizzle fix, loop syntax, renamed helpers, centering for a square plane). Header comment with the URL on line 1. *Done when:* the smoke animates like on Shadertoy.
+- **1.6d Make it a ghost.** `transparent`, `AdditiveBlending`, `depthWrite: false`, billboard (copy camera rotation each frame). Add `tint` and `visibility` parameters. *Done when:* black is invisible and the smoke floats over the floor.
+- **1.6e Colors.** Wrap in `colorSpaceToWorking(..., THREE.SRGBColorSpace)`. Compare with Shadertoy side by side. *Done when:* the colors match.
+
+**Done when:** the Ether ghost floats in your scene online, and you can explain what `etherMap`, the raymarch loop and each uniform do.
+**Commit:** `step 1.6: port Ether shader to WGSL`
+
+### 1.7 Suction cone shader (S2) + spin-up · 🤖 · 2 h
+*Lessons: smoothstep masks (warp effect), gsap (animated effect)*
+1. `js/shaders/suction/fragment.wgsl` per AGENTS.md §6 S2.
+2. `js/objects/vacuum.js` → `createVacuum()` with, for now, only the cone in front of the camera.
+3. LMB down/up → `gsap.to(state, { power: 1, duration: 0.4, ease: 'power2.out' })` / back to 0.
+4. Feed `power` into the shader. Also feed it into Ether's `stretch` as a test.
+
+**Done when:** holding the mouse makes a swirling cone appear and spin up; releasing fades it out.
+**Commit:** `step 1.7: suction cone shader`
+
+### 1.8 ✋ Go / no-go checkpoint · 🧑 · 15 min
+Check online (not just locally):
+- [ ] Ether port works and looks right
+- [ ] Suction cone reacts to the mouse
+- [ ] Console clean, deploy green
+
+**All yes →** continue. **Ether still broken after a full week →** ask the agent for help debugging with the pitfalls table; if still stuck, talk to your teacher before moving on. Everything else builds on this.
+
+---
+
+## Phase 2: Room, Blender, flashlight
+
+> Blender tip: hover any button and press **F1** for help, or search any command with **F3**. Save often (**Ctrl/Cmd+S**). Save the file as `blender/room.blend` inside your project.
+> Quick model check without Blender: drag a `.glb` onto https://gltf-viewer.donmccurdy.com/ to see its size and animation clips.
+
+### 2.1 Download assets from Poly Pizza · 🧑 · 1 h
+1. Download as **GLB** (verified links in AGENTS.md §9.1):
+   - Ghost (Quaternius, CC0, animated): https://poly.pizza/m/Iip30bDHmu
+   - Vacuum Cleaner (Zoe XR, CC BY): https://poly.pizza/m/1_kdZRnuCo8
+2. Furniture: `bookshelf`, `grandfather clock`, `armchair`, `table`, `rug`, `painting`, `chandelier` or `lamp`.
+3. Props: `book` (several), `vase` (one becomes a hiding spot), `pillow`, `cup`, `bottle`, `candle`, `plant`.
+4. Pick one consistent low-poly style.
+5. Put the raw downloads in a folder `assets-raw/` (add it to `.gitignore` if large).
+6. **Immediately** add each one to the README credits table: title, author, license, link.
+7. Drop `ghost.glb` on the glTF viewer and **write down the animation clip names**.
+
+**Done when:** all files are downloaded, the credits table is filled in, and you know the ghost's clip names.
+
+### 2.2 Blender: model the room shell (your own model) · 🧑 · 1–2 h
+1. New file → General. Delete the default cube and light (select → **X** → Delete).
+2. **Shift+A → Mesh → Cube.** Press **N**, in *Item → Dimensions* set X = 6, Y = 5, Z = 2.8. Location Z = 1.4 (floor at 0).
+3. **Ctrl+A → Scale** (apply scale).
+4. **Tab** (Edit Mode) → **A** (select all) → **Mesh → Normals → Flip** (walls now face inward).
+5. **Window:** switch to face select (**3**), click one wall face, press **I** (inset) and drag to make a window-sized face. With that inner face selected: **P → Selection** (separate it into its own object).
+6. **Tab** back to Object Mode. Rename (**F2**): the room → `Room_Shell`, the window face → `Window_Glow`.
+7. Give `Room_Shell` simple materials (Material tab → New → Base Color): you can assign a different material to the floor face (Edit Mode → select floor face → material slot → Assign).
+8. Optional: a door the same way (inset → separate → name `Room_Door`).
+
+**Done when:** you have a closed room with a window, and you can look inside it (in the viewport, Material → Settings → Backface Culling on).
+
+### 2.3 Blender: place and name the furniture · 🧑 · 1–2 h
+1. **File → Import → glTF 2.0** for each furniture model.
+2. Poly Pizza imports often are a parent "empty" with mesh children. Select the mesh parts, **Ctrl+J** (join into one), **Alt+P → Clear and Keep Transformation**, delete the leftover empty.
+3. Scale to real sizes with **S** (check in the **N** panel): bookshelf ~2 m high, clock ~2 m, armchair ~0.9 m, table ~0.75 m. Put everything on the floor (bottom at Z = 0).
+4. **Ctrl+A → All Transforms** on each furniture object.
+5. Rename (**F2**) exactly:
+   - hiding spots: `Hide_Vase`, `Hide_Bookshelf`, `Hide_Clock`
+   - other static furniture: `Furniture_Table`, `Furniture_Armchair`, ...
+6. **Spawn point:** **Shift+A → Empty → Plain Axes**, place it where the player starts, rename `Spawn_Player`.
+
+**Done when:** a cosy cluttered room with correctly named objects. Leave walking space in the middle.
+
+### 2.4 Blender: place the props · 🧑 · 1 h
+1. Import the small props. Join parts / clear parent like in 2.3.
+2. For each prop: **Object → Set Origin → Origin to Geometry**, then **Ctrl+A → Rotation & Scale**. (The physics body is centered on the origin, so this matters.)
+3. Rename `Prop_Book_01`, `Prop_Book_02`, ..., `Prop_Cup_01`, `Prop_Pillow_01`, ... Put several books near the bookshelf (the Librarian throws them) and clutter near each hiding spot.
+4. Aim for 30–50 props.
+5. Put all props in their own collection (**M → New Collection → "Props"**) so you can hide or select them easily.
+
+**Done when:** all props are placed, centered and named `Prop_*`.
+
+### 2.5 Blender: lights for the bake · 🧑 · 30 min
+**Remember: bake BRIGHT, the darkness comes from the code later.**
+1. Hide the Props collection (eye icon): props are **not** baked.
+2. **Shift+A → Light → Area** in front of the window, pointing in, size ~2 m, power ~300–500 W, slightly blue.
+3. World tab → Color light grey, Strength ~0.5 (soft fill).
+4. Optional: a warm point light near the clock.
+5. Render tab → **Render Engine: Cycles** (Device: GPU if available).
+6. Render tab → **Color Management → View Transform: Standard**.
+7. Viewport: press **Z → Rendered** to preview. You want: evenly lit, soft shadows, not dark.
+
+**Done when:** the rendered preview looks bright and soft.
+
+### 2.6 Blender: UVs + bake + save `baked.jpg` · 🧑 · 2–3 h (the hardest Blender step, take your time)
+*Rewatch the course bake tutorial first.*
+1. Select all baked objects: `Room_*`, `Furniture_*`, `Hide_*` (**not** `Window_Glow`, **not** props).
+2. For **each** of them: Object Data tab (green triangle) → **UV Maps → +**, rename the new map `BakeUV` and **click it** (selected). ⚠️ Do **not** click the camera icon: the original map must stay the render map so the colors bake correctly.
+3. With all of them selected: **Tab** → **A** → **U → Smart UV Project** (Island Margin 0.02) → OK. Check in the **UV Editing** workspace that islands don't overlap. If they do: **UV → Pack Islands**.
+4. **Image Editor → New Image:** name `baked`, 2048 × 2048, uncheck Alpha.
+5. **For every material on every selected object** (Shading workspace): **Shift+A → Texture → Image Texture**, choose `baked`, **click the node so it's selected**, and do **not** connect it. ⚠️ Missing it on one material = error or wrong bake.
+6. Render tab: Samples ~256, Denoise on → **Bake** panel: Bake Type **Combined**, Output: Image Textures, Margin 16 px → **Bake**. Wait.
+7. Image Editor → **Image → Save As** → `public/textures/baked.jpg` in your project, JPG, Quality 90, **Save as Render** checked.
+8. Cleanup: for each baked object, in UV Maps **remove the original map** so only `BakeUV` remains.
+9. Save `blender/room.blend`.
+
+**Done when:** `baked.jpg` shows your room's surfaces with soft shadows, laid out as UV islands.
+
+### 2.7 Blender: export the GLB files · 🧑 · 30 min
+Each export: **File → Export → glTF 2.0** → Format **glTF Binary (.glb)** → Include: **Limit to Selected Objects** → Transform: +Y Up → Mesh: Apply Modifiers, UVs, Normals.
+1. `public/models/room.glb`: select all `Room_*`, `Furniture_*`, `Hide_*`, `Window_Glow`, `Spawn_Player`.
+2. `public/models/props.glb`: unhide the Props collection, select all `Prop_*`.
+3. `public/models/vacuum.glb`: in a separate Blender file, import the vacuum, scale to ~1 m, **Shift+A → Empty → Plain Axes** at the tip of the nozzle, rename `Nozzle`, select both → export.
+4. `public/models/ghost.glb`: just copy the downloaded file.
+
+**Done when:** 4 GLB files + `baked.jpg` are in `public/`, total under ~15 MB.
+**Commit:** `step 2.7: blender exports` (also commit `blender/room.blend`)
+
+### 2.8 Load the baked room in Three.js · 🤖 · 1 h
+*Lesson: blender-three-bake-final/js/script.js*
+1. `js/objects/room.js` → `createRoom()`: `GLTFLoader` for `models/room.glb`, `TextureLoader` for `textures/baked.jpg` (`flipY = false`, `SRGBColorSpace`).
+2. Traverse like the course: `Window_Glow` → glowing basic material; `Room_*`, `Furniture_*`, `Hide_*` → baked material (plain `MeshBasicMaterial` with the map for now); collect `Hide_*` objects and `Spawn_Player`.
+3. Remove the test floor from 1.2.
+
+**Done when:** your baked room appears in the browser exactly like in Blender (bright for now). Check it online.
+**Commit:** `step 2.8: load baked room`
+
+### 2.9 Flashlight: SpotLight + beam (S3) + baked-room lighting · 🤖 · 2–3 h
+1. `js/shaders/flashlight/fragment.wgsl` per AGENTS.md §6: replace the room's basic material with the flashlight node material (dark blue ambient + spotlight cone on the baked texture).
+2. `js/objects/flashlight.js`: a `SpotLight` (for props and the ghost), plus the beam cone mesh with `js/shaders/beam/fragment.wgsl` (S3). Child of the camera.
+3. Tune: the shader spot and the real SpotLight have the same angle, softness and color.
+
+**Done when:** the room is dark and moody, and the flashlight reveals it with a soft-edged spot. The beam is faintly visible in the air.
+**Commit:** `step 2.9: flashlight lighting and beam`
+
+### 2.10 First-person controls + vacuum in hand · 🤖 · 2 h
+1. Replace OrbitControls with `PointerLockControls`. Start position/rotation from `Spawn_Player`.
+2. WASD movement at 2.2 m/s, eye height 1.6 m, clamped inside the room (0.4 m from walls).
+3. A temporary "Click to start" overlay (pointer lock needs a click). Esc → pause overlay.
+4. Load `vacuum.glb` as a child of the camera (bottom-right of the view, like a first-person game). Read the `Nozzle` position. Move the suction cone there.
+5. LMB = suck (from 1.7), RMB = blow (prevent the context menu).
+
+**Done when:** you can walk through the dark room with a flashlight and a vacuum, and the cone comes out of the nozzle.
+**Commit:** `step 2.10: first-person controls and vacuum`
+
+---
+
+## Phase 3: Physics and dust
+
+### 3.1 Rapier world + static colliders · 🤖 · 1–2 h
+1. `npm install @dimforge/rapier3d-compat`.
+2. `js/physics.js`: `await RAPIER.init()`, world with gravity, fixed 60 Hz step.
+3. Cuboid colliders for floor, ceiling and walls (from `config.js`), and for each `Furniture_*` / `Hide_*` (from their bounding boxes).
+4. Debug mode (`?debug`): draw the collider boxes as wireframes.
+
+**Done when:** with `?debug` the collider boxes line up with the furniture.
+**Commit:** `step 3.1: rapier world and static colliders`
+
+### 3.2 Props as dynamic bodies · 🤖 · 1–2 h
+1. `js/objects/props.js`: load `props.glb`, create a dynamic body + cuboid collider for every `Prop_*`, keep mesh + body pairs.
+2. Sync mesh position/rotation from the body each frame.
+3. Test: in debug mode, a key drops all props from 1 m higher.
+
+**Done when:** props fall and settle realistically on furniture and floor.
+**Commit:** `step 3.2: dynamic props`
+
+### 3.3 Shared `suctionForce()` + self-check · 🤖 · 1 h
+*Lesson: webgpu/README.md → Compute shaders (pull + tangent swirl)*
+1. Implement `suctionForce()` in `physics.js` exactly per AGENTS.md §7.
+2. Add the `console.assert` self-check (runs in debug mode).
+3. Explain to the student how it relates to the course's compute particle swirl.
+
+**Done when:** the self-check passes and you understand the formula.
+**Commit:** `step 3.3: suction force`
+
+### 3.4 Sucking: spiral, capture, tank · 🤖 · 2–3 h
+1. Every physics step: apply the suction impulse to props in the cone (scaled by `power`).
+2. Capture small props near the nozzle: shrink tween (gsap) → remove body → push onto `tank` → "plop" placeholder (`console.log` for now).
+3. HUD: a simple tank bar.
+
+**Done when:** books and cups spiral toward the nozzle and disappear; heavy things only slide; the tank bar fills.
+**Commit:** `step 3.4: suck and capture props`
+
+### 3.5 Blowing + tank-full mechanic · 🤖 · 1–2 h
+1. RMB: blow force (push, no swirl) + re-spawn props from the tank at the nozzle with a forward impulse.
+2. Tank full (20): suction capped, jitter, HUD message *"Tank full! Blow it out (RMB)"*.
+
+**Done when:** you can fill the tank, get the warning, and shoot everything back into the room.
+**Commit:** `step 3.5: blow and tank full`
+
+### 3.6 Compute dust (S4) + fallback · 🤖 · 3–4 h (riskiest code step)
+*Lesson: webgpu/README.md → Compute shaders; Three.js example `webgpu_compute_particles`*
+1. Agent first studies the official example for v0.186 and explains the pattern.
+2. `js/objects/dust.js` + `js/shaders/dust/update.wgsl` per AGENTS.md §6 S4. Start with 5 000 particles, then raise to 30 000 if fps allows.
+3. Brightness depends on the flashlight beam.
+4. Fallback: if `!navigator.gpu` (or if this step stalls for more than a day), use 600 CPU `Points` with the same `suctionForce()`.
+
+**Done when:** dust glitters in the beam and spirals into the nozzle, at a smooth framerate, online.
+**Commit:** `step 3.6: compute dust particles`
+
+---
+
+## Phase 4: Ghosts and game loop
+
+### 4.1 Ghost model + animations · 🤖 · 1–2 h
+*Lesson: the Blender-animation extra mark*
+1. `js/objects/ghost.js` → `createGhost()`: load `ghost.glb`, log the clip names, `AnimationMixer`.
+2. Map the clips to states (emerged / tug / captured), crossfade 0.25 s on state change.
+3. Debug keys to switch states and see each animation.
+
+**Done when:** the ghost model plays a different animation per state.
+**Commit:** `step 4.1: ghost model and animations`
+
+### 4.2 Ether aura on the ghost + beam visibility · 🤖 · 1–2 h
+1. Attach the Ether billboard from 1.6 to the ghost.
+2. `visibility` from the flashlight cone + distance (AGENTS.md §6 S1), smoothed. Also fade the model's opacity with it.
+3. `stretch` toward the nozzle from `power`.
+
+**Done when:** the ghost is only visible in your beam and its smoke stretches toward the vacuum when you suck.
+**Commit:** `step 4.2: ether aura and visibility`
+
+### 4.3 Hiding spots: trembling + exposure + emerge · 🤖 · 2 h
+1. Active hiding spot trembles every few seconds and drops a burst of dust.
+2. `exposure` rises per AGENTS.md §4.3. At 1 → emerge (animation + aura fade-in).
+
+**Done when:** you can find the shaking vase, vacuum around it, and Dusty pops out.
+**Commit:** `step 4.3: hiding spots and emerge`
+
+### 4.4 Tug-of-war · 🤖🧑 · 3 h (most important feel)
+1. Tug starts when the ghost is in the cone and in the beam while sucking.
+2. Ghost pull direction every `dirInterval`, drifts that way. Player must move the mouse the opposite way (`movementX`).
+3. Meter fill/drain, HUD meter with direction arrow, screen shake, vacuum pitch (placeholder until 4.8).
+4. 🧑 Play it 10 times and tell the agent what feels wrong. Tune in `config.js` / `?debug` lil-gui.
+
+**Done when:** the tug feels like a fight: winnable, but you can lose.
+**Commit:** `step 4.4: tug-of-war`
+
+### 4.5 Escape + capture · 🤖 · 1–2 h
+1. Escape rules (meter back to 0, or out of the beam > 1 s) → flies to another hiding spot.
+2. Capture: spiral into the nozzle (gsap), stretch to max, capture animation, `ghostsCaught++`.
+
+**Done when:** both outcomes work and the next ghost becomes active after a capture.
+**Commit:** `step 4.5: escape and capture`
+
+### 4.6 Three ghost personalities · 🤖 · 1–2 h
+1. Dusty → Librarian → Granny Clock with the parameters from AGENTS.md §4.4.
+2. Librarian throws books during the tug. Granny Clock needs 2 rounds.
+
+**Done when:** you can play through all 3 and each feels different.
+**Commit:** `step 4.6: three ghosts`
+
+### 4.7 Screens: start, HUD, pause, invoice · 🤖 · 2–3 h
+1. Start screen with the 3 intro cards and controls (AGENTS.md §4.1, §4.6).
+2. Final HUD (ghosts 0/3, tank, tug meter).
+3. Invoice screen with real stats and the joke lines + "Play again".
+4. Unsupported-browser and touch-device notices.
+
+**Done when:** start → play 3 ghosts → invoice works end to end, online.
+**Commit:** `step 4.7: screens and hud`
+
+### 4.8 Audio · 🤖🧑 · 2 h
+1. 🤖 Web Audio motor, plop, sputter (AGENTS.md §4.7). Mute with M.
+2. 🧑 Find 2–3 CC0 ghost sounds (freesound.org, filter on CC0), put them in `public/sounds/`, add them to the credits.
+
+**Done when:** the vacuum sounds alive and ghosts giggle/moan.
+**Commit:** `step 4.8: audio`
+
+> 🎯 **Core complete.** At this point the project is fully submittable. Everything below makes it better.
+
+---
+
+## Phase 5: Polish and stretch
+
+### 5.1 Playtest with 3 people · 🧑 · 1 h
+Let 3 people play **without explaining anything**. Note where they get stuck, what they don't understand, what they laugh at. Give the notes to the agent.
+
+### 5.2 Tuning pass · 🤝 · 2 h
+Fix the playtest notes: text, timings, forces, visibility. All in `config.js`.
+
+### 5.3 Stretch goals (pick max 2, in this order) · 🤖
+1. **S7 atmosphere** (vignette, grain, RGB split near a ghost): cheap, big mood boost.
+2. **S5 twirl distortion** at the nozzle.
+3. **S6 tank** with mini ghosts.
+4. **Dirt mask** on the floor (render-target lesson).
+5. A cat (Quaternius) that flees: another Blender-animation showcase.
+
+Each stretch goal: own commit + deploy check. Stop if fps drops below ~50.
+
+### 5.4 Performance + browser pass · 🤖🧑 · 1–2 h
+1. Check the fps in debug mode; apply the AGENTS.md §12 budgets.
+2. 🧑 Test the live URL in Chrome, Edge, Safari 26 (if you have it), and Chrome with WebGPU unavailable (fallback mode should not crash).
+
+**Done when:** smooth in Chrome, no crashes elsewhere.
+
+---
+
+## Phase 6: Submission
+
+### 6.1 Final README + credits · 🤖🧑 · 30 min
+- Live URL, Shadertoy URL (**required**), how to play, what's inside, run locally, full credits (every model, sound, the shader + license), "inspired by Luigi's Mansion" line.
+
+### 6.2 Final deploy + incognito test · 🧑 · 15 min
+- Push, wait for green, open the live URL in incognito, play start → invoice, console clean.
+
+### 6.3 Source zip without node_modules · 🧑 · 5 min
+From the project folder:
+```bash
+git archive -o night-shift-source.zip HEAD
+```
+This only includes committed files, so there's no `node_modules` and no `dist`. Open the zip and check that `README.md` is at the root.
+
+### 6.4 Submit both assignments · 🧑 · 5 min
+- Assignment 1: the **live URL**.
+- Assignment 2: the **source zip** (or repo link if that's allowed).
+
+### 6.5 Prepare to explain your project · 🧑 · 1 h
+Be ready to show and explain:
+- How you ported Ether (GLSL → WGSL differences you hit, what `etherMap` and the loop do, what your extra uniforms do)
+- How `wgslFn` + `uniform()` connect JS to WGSL
+- The suction formula and its link to the course's compute particles
+- Your Blender process (room shell, naming, UVs, bake, export)
+- How the ghost animations are driven by game state
+- Why the room needed a custom flashlight shader (baked = unlit)
+
+---
+
+## Cut list (if you fall behind, drop in this order)
+
+1. Stretch goals (Phase 5.3)
+2. Audio files (keep the generated motor sound only)
+3. Librarian book-throwing and Granny's second round
+4. From 3 ghosts to 1 (Dusty only, then invoice)
+5. Compute dust → CPU fallback dust
+6. Baking → `RoomEnvironment` + plain lights (you lose the bake marks)
+
+**Never cut:** the Ether port (S1), the suction cone (S2), sucking props with physics, the online deploy, the README with the Shadertoy URL.
+
+---
+
+## Risk log
+
+| Risk | Early warning | What to do |
+|---|---|---|
+| Ether port won't compile | Still red errors after a full session | Pitfalls table in AGENTS.md §15, compare with the course's `cyberFuji/fragment.wgsl` |
+| Bake looks wrong | Black/stretched patches in `baked.jpg` | Missing Image Texture node in a material, overlapping UVs, or wrong active UV map (step 2.6) |
+| Compute dust stalls | > 1 day on 3.6 | Switch to the CPU fallback and move on |
+| Ghost has no usable animations | Clip list empty in 2.1 | Alternative model (AGENTS.md §9.5) |
+| Deploy breaks | Red Action or 404 | Paths with a leading `/`, file-name case, missing `package-lock.json` |
+| Tug feels bad | Playtesters lose interest | Spend the tuning time here; it's the heart of the game |
