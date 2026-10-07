@@ -410,6 +410,7 @@ Search terms for the rest: `bookshelf`, `grandfather clock`, `old chair`, `armch
 
 ### 9.5 Blender animation (extra marks)
 
+- **Verified clips in the downloaded `ghost.glb`:** `CharacterArmature|Death`, `|Fast_Flying`, `|Flying_Idle`, `|Headbutt`, `|HitReact`, `|No`, `|Punch`, `|Yes` (1 skinned mesh). `vacuum.glb` has no `Nozzle` empty yet (single node `group115819083`): add it in Blender.
 - Load `ghost.glb`, `console.log(gltf.animations.map(a => a.name))` and map clips to states (e.g. idle/fly → `EMERGED`, a hit/struggle clip → `TUG`, a death/disappear clip → `CAPTURED`). Use whatever clip names the file actually has.
 - `AnimationMixer` + `clipAction(...).fadeIn/crossFadeTo` (0.2–0.3 s) on state changes; `mixer.update(dt)` every frame.
 - If the model turns out to have no usable clips, tell the student immediately. Alternatives: "Ghost Character" by Polygonal Mind (https://poly.pizza/m/CKLHPoYhE9) or a Quaternius animal (cat) that flees.

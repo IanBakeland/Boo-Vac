@@ -56,7 +56,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 1.8 ✋ Go / no-go checkpoint
 
 **Phase 2: Room, Blender, flashlight**
-- [ ] 2.1 Download assets from Poly Pizza
+- [x] 2.1 Download assets from Poly Pizza
 - [ ] 2.2 Blender: model the room shell (own model)
 - [ ] 2.3 Blender: place and name the furniture
 - [ ] 2.4 Blender: place the props
