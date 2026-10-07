@@ -1,0 +1,28 @@
+*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body
+{
+    overflow: hidden;
+    background: #000;
+}
+
+.webgl
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+}
+
+/* HTML overlay for start screen, HUD, pause and invoice (filled in later steps) */
+#ui
+{
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+}
