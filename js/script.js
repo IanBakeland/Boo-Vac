@@ -1,8 +1,8 @@
 import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, ETHER, LAYOUT } from './config.js'
+import { CAMERA, MAX_DT, ETHER, LAYOUT, ROOM, PLAYER } from './config.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
 import { createFlashlight } from './objects/flashlight.js'
@@ -19,16 +19,13 @@ const size = {
 
 const camera = new THREE.PerspectiveCamera(CAMERA.fov, size.width / size.height, CAMERA.near, CAMERA.far)
 camera.position.fromArray(LAYOUT.spawn.position)
+camera.lookAt(...LAYOUT.spawn.lookAt)
 // the camera is in the scene because the vacuum and flashlight will be its children
 scene.add(camera)
 
-// temporary: look around with the mouse (replaced by first-person controls in 2.7)
-const controls = new OrbitControls(camera, canvas)
-controls.target.fromArray(LAYOUT.spawn.lookAt)
-controls.enableDamping = true
-controls.dampingFactor = 0.05
-// left mouse is for sucking, so orbit with the right mouse for now
-controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }
+// first person: the mouse turns the camera while the pointer is locked
+// https://threejs.org/docs/#examples/en/controls/PointerLockControls
+const controls = new PointerLockControls(camera, canvas)
 
 const renderer = new THREE.WebGPURenderer({
   canvas: canvas,
@@ -82,13 +79,65 @@ const flashlight = createFlashlight({ camera, iTime })
 scene.add(flashlight.ambientLight)
 flashlight.lightUp(room.mesh)
 
-// hold left mouse to suck
-canvas.addEventListener('mousedown', (e) => {
-  if (e.button === 0) vacuum.setSucking(true)
+// --- input ---
+// e.code is the physical key: WASD also works on AZERTY (there it's ZQSD)
+const keys = new Set()
+window.addEventListener('keydown', (e) => keys.add(e.code))
+window.addEventListener('keyup', (e) => keys.delete(e.code))
+
+// pointer lock needs a click: the start / pause overlays catch it
+const $start = document.querySelector('#start')
+const $pause = document.querySelector('#pause')
+const $resume = $pause.querySelector('.action')
+let unlockedAt = 0
+$start.addEventListener('click', () => controls.lock())
+$pause.addEventListener('click', () => {
+  if (performance.now() - unlockedAt > PLAYER.relockDelay) controls.lock()
 })
-window.addEventListener('mouseup', (e) => {
-  if (e.button === 0) vacuum.setSucking(false)
+controls.addEventListener('lock', () => {
+  $start.classList.add('hidden')
+  $pause.classList.add('hidden')
 })
+controls.addEventListener('unlock', () => {
+  // Esc: pause, stop the vacuum and forget held keys
+  unlockedAt = performance.now()
+  $pause.classList.remove('hidden')
+  $resume.classList.add('waiting')
+  setTimeout(() => $resume.classList.remove('waiting'), PLAYER.relockDelay)
+  vacuum.setMode(null)
+  keys.clear()
+})
+
+// left mouse = suck, right mouse = blow
+document.addEventListener('mousedown', (e) => {
+  if (!controls.isLocked) return
+  if (e.button === 0) vacuum.setMode('suck')
+  if (e.button === 2) vacuum.setMode('blow')
+})
+document.addEventListener('mouseup', (e) => {
+  if (!controls.isLocked) return
+  // e.buttons: which buttons are still held (1 = left, 2 = right)
+  if (e.buttons & 1) vacuum.setMode('suck')
+  else if (e.buttons & 2) vacuum.setMode('blow')
+  else vacuum.setMode(null)
+})
+// no right-click menu
+window.addEventListener('contextmenu', (e) => e.preventDefault())
+
+const movePlayer = (dt) => {
+  const forward = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0)
+  const right = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0)
+  // diagonal walking is not faster
+  const length = Math.hypot(forward, right) || 1
+  const step = PLAYER.walkSpeed * dt / length
+  controls.moveForward(forward * step)
+  controls.moveRight(right * step)
+  // stay inside the room
+  const maxX = ROOM.width / 2 - PLAYER.wallMargin
+  const maxZ = ROOM.depth / 2 - PLAYER.wallMargin
+  camera.position.x = THREE.MathUtils.clamp(camera.position.x, -maxX, maxX)
+  camera.position.z = THREE.MathUtils.clamp(camera.position.z, -maxZ, maxZ)
+}
 
 // THREE.Clock is deprecated since r183 (it logs a warning), Timer replaces it
 // https://threejs.org/docs/#api/en/core/Timer
@@ -105,7 +154,7 @@ const draw = (timestamp) => {
   // billboard: the plane always faces the camera
   etherPlane.quaternion.copy(camera.quaternion)
 
-  controls.update(dt)
+  if (controls.isLocked) movePlayer(dt)
   // the camera moved: update its matrices before reading the lamp position
   camera.updateMatrixWorld()
   flashlight.update()

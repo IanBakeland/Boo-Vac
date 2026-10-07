@@ -26,3 +26,43 @@ body
     inset: 0;
     pointer-events: none;
 }
+
+.overlay
+{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: rgba(5, 8, 20, 0.7);
+    color: #dfe6ff;
+    font-family: system-ui, sans-serif;
+    text-align: center;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.overlay h1
+{
+    font-size: 3rem;
+    letter-spacing: 0.05em;
+}
+
+.overlay .controls
+{
+    opacity: 0.7;
+    font-size: 0.9rem;
+}
+
+.hidden
+{
+    display: none;
+}
+
+/* "click to resume" stays hidden until the mouse can be locked again */
+.overlay .action.waiting
+{
+    visibility: hidden;
+}

@@ -1,15 +1,18 @@
 // Suction cone (own shader): swirling air streaks flowing into the nozzle
-fn suction(uv: vec2f, iTime: f32, power: f32) -> vec4f {
+// flowDir: 1 = suck (spiral in toward the nozzle), -1 = blow (straight out, no swirl)
+fn suction(uv: vec2f, iTime: f32, power: f32, flowDir: f32) -> vec4f {
   // CylinderGeometry: uv.y = 1 at the narrow end (nozzle), 0 at the wide end
   // along: 0 at the nozzle, 1 at the wide end
   let along = 1.0 - uv.y;
+  // swirl only while sucking (blowing pushes straight out)
+  let swirl = max(flowDir, 0.0);
   // twist grows near the nozzle (squared: stronger the closer), so the streaks spiral in
   // in turns: 0.25 = a quarter turn between the wide end and the nozzle
-  let twist = (1.0 - along) * (1.0 - along) * 0.25;
+  let twist = (1.0 - along) * (1.0 - along) * 0.25 * swirl;
   // uv.x goes around the cone: scrolling it with time = swirl
-  let around = uv.x + iTime * 0.35 + twist;
-  // scrolling "along" with time makes the pattern move toward the nozzle = inflow
-  let flow = along * 3.0 + iTime * 1.5;
+  let around = uv.x + iTime * 0.35 * swirl + twist;
+  // scrolling "along" with time moves the pattern toward the nozzle (suck) or away from it (blow)
+  let flow = along * 3.0 + iTime * 1.5 * flowDir;
   // two layers of noise: big soft shapes + finer detail
   // more cells around than along: long thin streaks in the flow direction
   let n = suctionNoise(vec2f(around * 12.0, flow * 0.5), 12.0) * 0.6

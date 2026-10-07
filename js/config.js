@@ -18,9 +18,19 @@ export const CAMERA = {
 // Biggest time step per frame, so a lag spike (or a background tab) doesn't make things jump
 export const MAX_DT = 0.05
 
+export const PLAYER = {
+  walkSpeed: 2.2,   // m/s
+  wallMargin: 0.4,  // keep this far from the walls
+  // Chrome refuses to re-lock the mouse within ~1 s after Esc, so wait before "click to resume"
+  relockDelay: 1100 // ms
+}
+
 export const VACUUM = {
-  // nozzle position relative to the camera (right, down, forward)
-  nozzleOffset: [0.25, -0.3, -0.5],
+  // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
+  nozzleOffset: [0.22, -0.38, -0.78],
+  // the upright vacuum in your right hand, held by the handle and tipped forward,
+  // diagonally from the bottom-right corner (rotation in degrees, XYZ order)
+  model: { position: [0.359, -0.382, -0.504], rotation: [163.3, 62.2, -112.1] },
   spinUp: { duration: 0.4, ease: 'power2.out' },
   spinDown: { duration: 0.3, ease: 'power2.out' }
 }
@@ -50,7 +60,7 @@ export const MODELS = {
     hide: ['mesh1574848784', 'mesh1574848784_1', 'mesh1574848784_2']
   },
   ghost: { file: 'models/ghost.glb', scale: 1.3 / 3.13 },   // 3.13 m tall in the file -> 1.3 m
-  vacuum: { file: 'models/vacuum.glb', scale: 1.0 / 2.33 }, // 2.33 m -> 1 m (tuned in 2.7)
+  vacuum: { file: 'models/vacuum.glb', scale: 0.75 / 2.33 }, // 2.33 m -> 0.75 m
   furniture: {
     bookcase: { file: 'models/furniture/bookcase.glb', scale: 2.0 / 3.37 },     // 2 m high
     clock: { file: 'models/furniture/clock.glb', scale: 2.0 / 1.36 },           // 2 m high
@@ -147,6 +157,9 @@ export const FLASHLIGHT = {
   // moonlight: the only light outside the beam
   ambientColor: 0x8fa8ff,
   ambientIntensity: 0.25,
+  // weak light spilling around your hands, so you can see the vacuum (reaches ~1 m)
+  spillIntensity: 0.6,
+  spillDistance: 1.2,
   // visible beam in the air: very faint, it must not wash out the room
   beamLength: 6,
   beamIntensity: 0.08

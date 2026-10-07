@@ -8,7 +8,17 @@
 </head>
 <body>
   <canvas class="webgl"></canvas>
-  <div id="ui"></div>
+  <div id="ui">
+    <div id="start" class="overlay">
+      <h1>Boo-Vac</h1>
+      <p class="action">Click to start</p>
+      <p class="controls">WASD walk · Mouse look · Left mouse suck · Right mouse blow · Esc pause</p>
+    </div>
+    <div id="pause" class="overlay hidden">
+      <h1>Paused</h1>
+      <p class="action">Click to resume</p>
+    </div>
+  </div>
   <script type="module" src="js/script.js"></script>
 </body>
 </html>

@@ -18,6 +18,8 @@ export const createFlashlight = ({ camera, iTime }) => {
   // the spotlight points at its target: put the target 1 m in front of the lamp
   light.target.position.set(0, 0, -1)
   mesh.add(light, light.target)
+  // a little light spilling around the lamp, so the vacuum in your other hand isn't pitch black
+  mesh.add(new THREE.PointLight(FLASHLIGHT.color, FLASHLIGHT.spillIntensity, FLASHLIGHT.spillDistance, FLASHLIGHT.decay))
 
   // dim moonlight so props outside the beam aren't pitch black (same value as the room shader's ambient)
   const ambientLight = new THREE.AmbientLight(FLASHLIGHT.ambientColor, FLASHLIGHT.ambientIntensity)

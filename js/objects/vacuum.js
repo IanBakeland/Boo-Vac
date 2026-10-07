@@ -1,14 +1,27 @@
 import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import gsap from 'gsap'
 
-import { VACUUM, SUCTION_CONE } from '../config.js'
+import { VACUUM, SUCTION_CONE, MODELS } from '../config.js'
 import suctionShader from '../shaders/suction/fragment.wgsl?raw'
 
 export const createVacuum = ({ camera, iTime }) => {
   // gsap animates object properties, so power lives in an object
-  const state = { power: 0 }
+  // mode: 'suck' or 'blow'
+  const state = { power: 0, mode: 'suck' }
   const power = uniform(0)
+  const flowDir = uniform(1)
+
+  // the vacuum model in your right hand (loads in the background)
+  const holder = new THREE.Group()
+  holder.position.fromArray(VACUUM.model.position)
+  holder.rotation.fromArray(VACUUM.model.rotation.map(THREE.MathUtils.degToRad))
+  camera.add(holder)
+  new GLTFLoader().load(MODELS.vacuum.file, (gltf) => {
+    gltf.scene.scale.setScalar(MODELS.vacuum.scale)
+    holder.add(gltf.scene)
+  })
 
   // open cone along the cylinder's y axis, narrow end on top
   const geometry = new THREE.CylinderGeometry(
@@ -26,21 +39,26 @@ export const createVacuum = ({ camera, iTime }) => {
     depthWrite: false,
     side: THREE.DoubleSide
   })
-  material.colorNode = colorSpaceToWorking(suction({ uv: uv(), iTime, power }), THREE.SRGBColorSpace)
+  material.colorNode = colorSpaceToWorking(suction({ uv: uv(), iTime, power, flowDir }), THREE.SRGBColorSpace)
 
   const mesh = new THREE.Mesh(geometry, material)
   // temporary nozzle spot (the vacuum model's Nozzle empty replaces this later)
   mesh.position.fromArray(VACUUM.nozzleOffset)
   camera.add(mesh)
 
-  const setSucking = (sucking) => {
-    const tween = sucking ? VACUUM.spinUp : VACUUM.spinDown
-    gsap.to(state, { power: sucking ? 1 : 0, duration: tween.duration, ease: tween.ease })
+  // mode 'suck' / 'blow' spins the motor up, null spins it down
+  const setMode = (mode) => {
+    if (mode) {
+      state.mode = mode
+      flowDir.value = mode === 'blow' ? -1 : 1
+    }
+    const tween = mode ? VACUUM.spinUp : VACUUM.spinDown
+    gsap.to(state, { power: mode ? 1 : 0, duration: tween.duration, ease: tween.ease })
   }
 
   const update = () => {
     power.value = state.power
   }
 
-  return { mesh, state, setSucking, update }
+  return { mesh, model: holder, state, setMode, update }
 }
