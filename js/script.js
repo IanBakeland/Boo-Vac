@@ -1,8 +1,8 @@
 import * as THREE from 'three/webgpu'
-import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
+import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, GHOST } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, GHOST } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -10,7 +10,6 @@ import { createFlashlight } from './objects/flashlight.js'
 import { createVacuum } from './objects/vacuum.js'
 import { createDust } from './objects/dust.js'
 import { createGhost } from './objects/ghost.js'
-import etherShader from './shaders/ether/fragment.wgsl?raw'
 
 const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
@@ -66,41 +65,13 @@ if (DEBUG) {
 }
 
 
-// uniforms are TSL nodes, we update their .value every frame
+// the Shadertoy shaders' clock (Ether ghost aura, suction cone, beam, dust), updated every frame
 const iTime = uniform(0)
-// square plane, so the shader works in a 1 x 1 space
-const iResolution = uniform(new THREE.Vector2(1, 1))
-// per-ghost color and how much the flashlight reveals it (0-1), set later
-const tint = uniform(new THREE.Color(1, 1, 1))
-const visibility = uniform(1)
-// screen-space direction x amount the smoke smears toward the nozzle
-const stretch = uniform(new THREE.Vector2(0, 0))
-
-const ether = wgslFn(etherShader)
-// additive: black adds nothing, so the black background of the shader is invisible
-const etherMaterial = new THREE.MeshBasicNodeMaterial({
-  transparent: true,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false
-})
-// the shadertoy shader outputs display-ready (sRGB) colors, tell three to treat them as such
-etherMaterial.colorNode = colorSpaceToWorking(ether({
-  fragCoord: uv().mul(iResolution),
-  iTime,
-  iResolution,
-  tint,
-  visibility,
-  stretch
-}), THREE.SRGBColorSpace)
-const etherPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), etherMaterial)
-// temporary spot for the test ghost (it moves onto the real ghost in 4.2)
-etherPlane.position.set(1.5, 1.3, -1.6)
-scene.add(etherPlane)
 
 const vacuum = createVacuum({ camera, iTime })
 
 // the ghost (model + Blender animations); for now it floats at a test spot
-const ghost = await createGhost()
+const ghost = await createGhost({ iTime })
 ghost.mesh.position.fromArray(GHOST.testPosition)
 scene.add(ghost.mesh)
 
@@ -274,13 +245,8 @@ const draw = (timestamp) => {
   const dt = Math.min(timer.getDelta(), MAX_DT)
 
   iTime.value = timer.getElapsed()
-  // test: smear the ghost down (toward the vacuum) while sucking
-  stretch.value.set(0, -vacuum.state.power * ETHER.maxStretch)
-  // billboard: the plane always faces the camera
-  etherPlane.quaternion.copy(camera.quaternion)
 
   if (controls.isLocked) movePlayer(dt)
-  ghost.update(dt)
   // the camera moved: update its matrices before reading the nozzle and lamp positions
   camera.updateMatrixWorld()
   vacuum.update()
@@ -288,6 +254,14 @@ const draw = (timestamp) => {
 
   updateMax(dt)
   const { power, mode, boost } = vacuum.state
+  // the ghost: animation, visibility in the beam, smoke stretched toward the nozzle while sucking
+  ghost.update(dt, {
+    camera,
+    lampPos: flashlight.uniforms.lampPos.value,
+    lampDir: flashlight.uniforms.lampDir.value,
+    nozzle: vacuum.nozzle,
+    power: mode === 'suck' ? power : 0
+  })
 
   // physics, with the suction force applied before every step
   physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, power, mode, stepDt, boost))

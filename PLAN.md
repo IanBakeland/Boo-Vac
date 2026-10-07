@@ -74,7 +74,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 
 **Phase 4: Ghosts and game loop**
 - [x] 4.1 Ghost model + animations (AnimationMixer)
-- [ ] 4.2 Ether aura on the ghost + beam visibility
+- [x] 4.2 Ether aura on the ghost + beam visibility
 - [ ] 4.3 Hiding spots: trembling + exposure + emerge
 - [ ] 4.4 Tug-of-war
 - [ ] 4.5 Escape + capture

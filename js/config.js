@@ -85,6 +85,10 @@ export const DUST = {
 
 export const GHOST = {
   crossFade: 0.25,          // s: blend between two animation clips
+  // visible only in the flashlight beam: same cone as the lamp (FLASHLIGHT.angle / penumbra)
+  visibleRange: [5, 7],     // m: fully visible closer than 5 m, invisible beyond 7 m
+  visibilitySmoothing: 6,   // per second: how fast it fades in/out (no hard popping)
+  tint: [0.8, 0.88, 1.0],   // Dusty: pale blue-grey (sRGB), per ghost later (4.6)
   testPosition: [2.6, 0.2, -1.4] // temporary spot until the hiding spots work (4.3)
 }
 
@@ -106,8 +110,11 @@ export const SUCTION_CONE = {
 }
 
 export const ETHER = {
+  size: 2.0,         // m: the aura billboard around the ghost
+  centerHeight: 0.7, // m above the ghost's root: middle of its body (where the aura sits)
+  forward: 0.4,      // m: the aura floats this much in front of the body (toward you), or the body hides it
   // how far the smoke smears toward the nozzle at full power
-  maxStretch: 0.35
+  maxStretch: 0.6
 }
 
 // Every model the game loads. scale = wanted real size / size in the downloaded file,

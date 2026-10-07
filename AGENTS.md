@@ -272,7 +272,7 @@ All shaders are WGSL files used through `wgslFn`, unless noted. Each spec lists 
   - `visibility` (0–1): computed in JS from the flashlight. `dot(cameraForward, normalize(ghostPos - cameraPos))` vs. the beam cone (`smoothstep(cos(25°), cos(15°), d)`), times a distance fade (0 beyond 7 m). Tweened with gsap for emerge/escape/capture.
   - `stretch` (vec2, screen-space direction × amount): shift the sampling point toward the nozzle proportionally to distance from center, so the smoke elongates toward the vacuum. Amount = `power * tugMeter`, max at capture.
 - **Mesh:** `PlaneGeometry(1.6, 1.6)` billboard (copy `camera.quaternion` every frame) on `MeshBasicNodeMaterial` with `transparent: true`, `blending: THREE.AdditiveBlending`, `depthWrite: false`. Black = invisible with additive blending, so no alpha math is needed. `colorNode = colorSpaceToWorking(ether({...}), THREE.SRGBColorSpace)`.
-- **Placement:** the aura is a child of the ghost model's root (behind/around the body).
+- **Placement:** the aura is a child of the ghost's root, 0.4 m in front of the body (toward the camera; the ghost always faces the player), otherwise the body hides the smoke. Code: `js/objects/ghost.js`.
 - **Done when:** the Ether smoke animates on a plane in the room, is invisible outside the beam, stretches toward the nozzle while sucking, and has its header comment with the URL.
 
 ### S2. Suction cone (own shader, core)
