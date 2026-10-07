@@ -68,7 +68,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 3.1 Rapier world + static colliders
 - [x] 3.2 Props as dynamic bodies
 - [x] 3.3 Shared `suctionForce()` + self-check
-- [ ] 3.4 Sucking: spiral, capture, tank
+- [x] 3.4 Sucking: spiral, capture, tank
 - [ ] 3.5 Blowing + tank-full mechanic
 - [ ] 3.6 Compute dust (S4) + fallback
 

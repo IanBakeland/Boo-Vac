@@ -1,8 +1,10 @@
 import * as THREE from 'three/webgpu'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import gsap from 'gsap'
 
-import { MODELS, LAYOUT } from '../config.js'
+import { MODELS, LAYOUT, TANK, PHYSICS } from '../config.js'
 import { placeModel } from './room.js'
+import { suctionForce, suctionStrength } from '../physics.js'
 
 const loader = new GLTFLoader()
 
@@ -31,21 +33,80 @@ export const createProps = async ({ physics }) => {
     mesh.add(prop)
 
     const size = new THREE.Box3().setFromObject(prop, true).getSize(new THREE.Vector3())
+    const halfExtents = size.clone().multiplyScalar(0.5)
+    const density = MODELS.props[item.model].density
     const body = physics.addProp({
       position: new THREE.Vector3().fromArray(item.position),
       rotationY: item.rotationY ?? 0,
-      halfExtents: size.multiplyScalar(0.5),
-      density: MODELS.props[item.model].density
+      halfExtents,
+      density
     })
-    props.push({ mesh: prop, body })
+    // small enough to fit in the vacuum?
+    const suckable = Math.max(size.x, size.y, size.z) < TANK.captureMaxSize
+    // body = null once the prop is in the tank
+    props.push({ mesh: prop, body, halfExtents, density, suckable })
   })
 
   // copy every body's position and rotation onto its model (after the physics step)
   const update = () => {
     props.forEach(({ mesh, body }) => {
+      if (!body) return
       mesh.position.copy(body.translation())
       mesh.quaternion.copy(body.rotation())
     })
+  }
+
+  // every physics step while the vacuum runs: push each prop with the shared suction force
+  const force = new THREE.Vector3()
+  const applySuction = (nozzle, power, mode, stepDt) => {
+    if (power <= 0) return
+    props.forEach(({ body }) => {
+      if (!body) return
+      const com = body.worldCom()
+      suctionForce(com, nozzle.position, nozzle.direction, power, mode, force)
+      // outside the cone: don't touch it (and don't wake it up)
+      if (force.lengthSq() < 1e-6) return
+      // the air flow carries the prop: inside the cone gravity is cancelled
+      // (fully at full strength), otherwise floor props would only slide under the nozzle
+      if (mode === 'suck') force.y -= PHYSICS.gravity * suctionStrength(com, nozzle.position, nozzle.direction, power)
+      // (the drag below runs after the impulse, in the same step)
+      // force = acceleration x mass, impulse = force x time
+      force.multiplyScalar(body.mass() * stepDt)
+      body.applyImpulse(force, true)
+      // drag (like the course's velocity *= 0.995): stronger where the suction is stronger,
+      // so props slow down near the nozzle instead of flying past it
+      const strength = suctionStrength(com, nozzle.position, nozzle.direction, power)
+      let k = Math.max(0, 1 - TANK.drag * strength * stepDt)
+      // speed limit, so props don't shoot around like bullets
+      const v = body.linvel()
+      const speed = Math.hypot(v.x, v.y, v.z) * k
+      if (speed > TANK.maxPropSpeed) k *= TANK.maxPropSpeed / speed
+      body.setLinvel({ x: v.x * k, y: v.y * k, z: v.z * k }, true)
+    })
+  }
+
+  // small props close to the nozzle disappear into the tank; returns how many were sucked in
+  const tank = []
+  const capture = (nozzle) => {
+    let count = 0
+    props.forEach((prop) => {
+      if (!prop.body || !prop.suckable || tank.length >= TANK.capacity) return
+      const com = prop.body.worldCom()
+      const dist = Math.hypot(com.x - nozzle.position.x, com.y - nozzle.position.y, com.z - nozzle.position.z)
+      if (dist > TANK.captureDistance) return
+      // no more physics for this prop: remove its body, shrink the model away
+      physics.world.removeRigidBody(prop.body)
+      prop.body = null
+      gsap.to(prop.mesh.scale, {
+        x: 0, y: 0, z: 0,
+        duration: TANK.shrinkDuration,
+        ease: 'power2.in',
+        onComplete: () => { prop.mesh.visible = false }
+      })
+      tank.push(prop)
+      count++
+    })
+    return count
   }
   update()
 
@@ -58,5 +119,5 @@ export const createProps = async ({ physics }) => {
     })
   }
 
-  return { mesh, props, update, drop }
+  return { mesh, props, tank, update, applySuction, capture, drop }
 }

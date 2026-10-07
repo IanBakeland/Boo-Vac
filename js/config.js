@@ -52,6 +52,16 @@ export const SUCTION = {
   blowStrength: 18   // m/s² away from the nozzle when blowing
 }
 
+export const TANK = {
+  capacity: 20,          // props
+  captureDistance: 0.5,  // m: a prop this close to the nozzle gets sucked in
+  captureMaxSize: 0.5,   // m: bigger props (plants, pillows) are pulled but never sucked in
+  captureMinPower: 0.5,  // the motor must be at least half spun up
+  shrinkDuration: 0.15,  // s: shrink animation when a prop disappears into the nozzle
+  maxPropSpeed: 8,       // m/s: speed limit for sucked props (like the course's per-particle limit)
+  drag: 4                // per second, at full suction: slows props near the nozzle so they don't overshoot
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],

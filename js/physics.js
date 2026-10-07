@@ -12,7 +12,8 @@ const cosInner = Math.cos(THREE.MathUtils.degToRad(SUCTION.innerAngle))
 const cosOuter = Math.cos(THREE.MathUtils.degToRad(SUCTION.outerAngle))
 const _dirOut = new THREE.Vector3()
 const _swirl = new THREE.Vector3()
-export const suctionForce = (point, nozzlePos, nozzleDir, power, mode, target = new THREE.Vector3()) => {
+// how strongly the vacuum reaches a point: 0 (not at all) to 1 (right in front of the nozzle, full power)
+export const suctionStrength = (point, nozzlePos, nozzleDir, power) => {
   // from the nozzle to the point
   _dirOut.subVectors(point, nozzlePos)
   const dist = _dirOut.length()
@@ -21,7 +22,12 @@ export const suctionForce = (point, nozzlePos, nozzleDir, power, mode, target = 
   const cone = THREE.MathUtils.smoothstep(_dirOut.dot(nozzleDir), cosOuter, cosInner)
   // strongest close to the nozzle, 0 at `range`
   const falloff = 1 - THREE.MathUtils.smoothstep(dist, 0, SUCTION.range)
-  const strength = cone * falloff * power
+  return cone * falloff * power
+}
+
+export const suctionForce = (point, nozzlePos, nozzleDir, power, mode, target = new THREE.Vector3()) => {
+  // also fills _dirOut (nozzle -> point, normalized)
+  const strength = suctionStrength(point, nozzlePos, nozzleDir, power)
   if (mode === 'blow') {
     // blowing: straight away from the nozzle, no swirl
     return target.copy(_dirOut).multiplyScalar(SUCTION.blowStrength * strength)
@@ -138,10 +144,12 @@ export const createPhysics = async () => {
 
   // fixed 60 Hz steps, so physics behaves the same at any framerate (max a few steps per frame)
   let accumulator = 0
-  const step = (dt) => {
+  // onStep(stepDt) runs before every physics step (to apply forces like the suction)
+  const step = (dt, onStep) => {
     accumulator += dt
     let steps = 0
     while (accumulator >= PHYSICS.fixedStep && steps < PHYSICS.maxSteps) {
+      onStep?.(PHYSICS.fixedStep)
       world.step()
       accumulator -= PHYSICS.fixedStep
       steps++

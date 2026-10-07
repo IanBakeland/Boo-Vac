@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS } from './config.js'
+import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS, TANK } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -118,6 +118,18 @@ window.addEventListener('keyup', (e) => keys.delete(e.code))
 const $start = document.querySelector('#start')
 const $pause = document.querySelector('#pause')
 const $resume = $pause.querySelector('.action')
+const $hud = document.querySelector('#hud')
+const $tankCount = $hud.querySelector('.tank-count')
+const $tankFill = $hud.querySelector('.tank-fill')
+$hud.querySelector('.tank-capacity').textContent = TANK.capacity
+// HUD: only touch the DOM when the value changed
+let shownTank = -1
+const updateHud = () => {
+  if (props.tank.length === shownTank) return
+  shownTank = props.tank.length
+  $tankCount.textContent = shownTank
+  $tankFill.style.width = `${shownTank / TANK.capacity * 100}%`
+}
 let unlockedAt = 0
 $start.addEventListener('click', () => controls.lock())
 $pause.addEventListener('click', () => {
@@ -126,6 +138,7 @@ $pause.addEventListener('click', () => {
 controls.addEventListener('lock', () => {
   $start.classList.add('hidden')
   $pause.classList.add('hidden')
+  $hud.classList.remove('hidden')
 })
 controls.addEventListener('unlock', () => {
   // Esc: pause, stop the vacuum and forget held keys
@@ -196,19 +209,28 @@ const draw = (timestamp) => {
   const dt = Math.min(timer.getDelta(), MAX_DT)
 
   iTime.value = timer.getElapsed()
-  vacuum.update()
   // test: smear the ghost down (toward the vacuum) while sucking
   stretch.value.set(0, -vacuum.state.power * ETHER.maxStretch)
   // billboard: the plane always faces the camera
   etherPlane.quaternion.copy(camera.quaternion)
 
   if (controls.isLocked) movePlayer(dt)
-  physics.step(dt)
+  // the camera moved: update its matrices before reading the nozzle and lamp positions
+  camera.updateMatrixWorld()
+  vacuum.update()
+  flashlight.update()
+
+  // physics, with the suction force applied before every step
+  const { power, mode } = vacuum.state
+  physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, power, mode, stepDt))
+  // sucking at (almost) full power: small props at the nozzle go into the tank
+  if (mode === 'suck' && power >= TANK.captureMinPower) {
+    // placeholder for the "plop" sound (step 4.8)
+    if (props.capture(vacuum.nozzle) > 0 && DEBUG) console.log('plop', props.tank.length)
+  }
   props.update()
   if (DEBUG) physics.updateDebugLines()
-  // the camera moved: update its matrices before reading the lamp position
-  camera.updateMatrixWorld()
-  flashlight.update()
+  updateHud()
   renderer.render(scene, camera)
 }
 

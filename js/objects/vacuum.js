@@ -56,9 +56,15 @@ export const createVacuum = ({ camera, iTime }) => {
     gsap.to(state, { power: mode ? 1 : 0, duration: tween.duration, ease: tween.ease })
   }
 
+  // nozzle in world space: where the suction comes from, and which way it points (where you look)
+  const nozzle = { position: new THREE.Vector3(), direction: new THREE.Vector3() }
+
+  // call after the camera moved (needs its world matrix)
   const update = () => {
     power.value = state.power
+    mesh.getWorldPosition(nozzle.position)
+    camera.getWorldDirection(nozzle.direction)
   }
 
-  return { mesh, model: holder, state, setMode, update }
+  return { mesh, model: holder, state, nozzle, setMode, update }
 }
