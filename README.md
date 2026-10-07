@@ -24,9 +24,9 @@ Best on desktop Chrome / Edge / Safari 26.
 *(Work in progress: this list is updated as each feature is finished.)*
 
 - Ported Shadertoy shader (WGSL via `wgslFn`): Ether → ghost aura, revealed by the flashlight, stretched by the vacuum
-- Own shaders: suction cone, flashlight beam, baked-room flashlight lighting, compute dust particles
+- Own shaders: suction cone, flashlight beam, room flashlight lighting, compute dust particles
 - Physics: Rapier (props sucked in a spiral, captured, blown out, thrown by a ghost)
-- Blender: room modelled and lighting baked by me (`blender/room.blend`), furniture from Poly Pizza
+- Room and furniture from Poly Pizza, laid out in code
 - Blender animation: ghost model clips driven per game state with `AnimationMixer`
 - Mechanic inspired by Luigi's Mansion. No Nintendo assets are used.
 

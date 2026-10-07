@@ -9,7 +9,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 
 - Every step has an ID (e.g. **2.5**). Work top to bottom. Don't skip ahead: later steps depend on earlier ones.
 - Owner of each step:
-  - 🧑 **You:** things only you can do (installing, accounts, Blender, playtesting, submitting)
+  - 🧑 **You:** things only you can do (installing, accounts, downloading, layout decisions, playtesting, submitting)
   - 🤖 **Agent:** your AI agent writes the code; you review and test
   - 🤝 **Together:** the agent guides and explains, you type or decide (mainly the shader port, so you can explain it to your teacher)
 - Each step ends with **Done when** (how you know it works) and a **Commit** message.
@@ -21,7 +21,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 | Situation | Prompt |
 |---|---|
 | Start of a session | `Read AGENTS.md and PLAN.md. Tell me which step is next according to the tracker, and what it involves.` |
-| Do a step | `Do step 2.7 from PLAN.md. Follow AGENTS.md and the course patterns. Explain what you changed and how I can test it.` |
+| Do a step | `Do step 2.4 from PLAN.md. Follow AGENTS.md and the course patterns. Explain what you changed and how I can test it.` |
 | Shader steps | `We're doing step 1.6c together. Explain the original GLSL line by line first, then let me translate it to WGSL, and correct me.` |
 | Something broke | `Step 3.4 broke: <paste console error>. Check the pitfalls table in AGENTS.md first.` |
 | Behind schedule | `We're behind. Look at the cut list in PLAN.md and tell me what to drop to finish the core.` |
@@ -32,7 +32,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 | Week | Phases |
 |---|---|
 | Week 1 | Phase 0 + Phase 1 (setup, deploy, **Ether port**, suction cone) |
-| Week 2 | Phase 2 (Blender room + bake, first-person, flashlight) |
+| Week 2 | Phase 2 (room + layout, first-person, flashlight) |
 | Week 3 | Phase 3 (physics, dust) + Phase 4 (ghosts, game loop) |
 | Week 4 | Phase 5 (polish, stretch) + Phase 6 (submit) |
 
@@ -55,17 +55,14 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 1.7 Suction cone shader (S2) + spin-up
 - [x] 1.8 ✋ Go / no-go checkpoint
 
-**Phase 2: Room, Blender, flashlight**
+**Phase 2: Room, layout, flashlight** *(no Blender: the room is downloaded, the layout lives in code)*
 - [x] 2.1 Download assets from Poly Pizza
-- [ ] 2.2 Blender: model the room shell (own model)
-- [ ] 2.3 Blender: place and name the furniture
-- [ ] 2.4 Blender: place the props
-- [ ] 2.5 Blender: lights for the bake
-- [ ] 2.6 Blender: UVs + bake + save `baked.jpg`
-- [ ] 2.7 Blender: export the GLB files
-- [ ] 2.8 Load the baked room in Three.js
-- [ ] 2.9 Flashlight: SpotLight + beam (S3) + baked-room lighting shader
-- [ ] 2.10 First-person controls + vacuum in hand
+- [ ] 2.2 Download an empty room
+- [ ] 2.3 Prepare the models (`public/models/`, scales, room size)
+- [ ] 2.4 Load the room + furniture (layout in code)
+- [ ] 2.5 Place the props (layout in code)
+- [ ] 2.6 Flashlight: SpotLight + beam (S3) + room lighting shader
+- [ ] 2.7 First-person controls + vacuum in hand
 
 **Phase 3: Physics and dust**
 - [ ] 3.1 Rapier world + static colliders
@@ -90,6 +87,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [ ] 5.2 Tuning pass
 - [ ] 5.3 Stretch goals (pick max 2)
 - [ ] 5.4 Performance + browser pass
+- [ ] 5.5 Optional: bake the room in Blender (only when everything works)
 
 **Phase 6: Submission**
 - [ ] 6.1 Final README + credits
@@ -106,7 +104,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 1. **Node.js LTS** from https://nodejs.org. Check in a terminal: `node -v` and `npm -v`.
 2. **Git**: on a Mac, `git --version` (installs the command-line tools if missing).
 3. **VS Code** (you have it from the course).
-4. **Blender** (latest stable) from https://www.blender.org.
+4. **Blender** (latest stable) from https://www.blender.org. *Only needed for the optional bake (5.5).*
 5. **Chrome**: the course says to use Chrome for WebGPU (best error messages).
 6. Your AI agent (Claude Code / Cursor / ...), opened in your project folder (created in 1.1).
 
@@ -147,7 +145,7 @@ Skim these again, because the project reuses them directly:
 *Lesson: Shadertoy shader in Three.js → Three.js boilerplate; bake project script.js*
 1. `index.html` with a fullscreen `<canvas class="webgl">` and an empty `<div id="ui">` overlay.
 2. `js/script.js`: `WebGPURenderer` (`antialias: true, alpha: false`), `PerspectiveCamera(70, aspect, 0.05, 50)`, scene, resize handler, `renderer.setAnimationLoop(draw)`, a `Clock`.
-3. Temporary test: a grey floor plane + `OrbitControls` so you can look around (removed in 2.10).
+3. Temporary test: a grey floor plane + `OrbitControls` so you can look around (floor removed in 2.4, controls replaced in 2.7).
 4. `js/config.js` with a first few constants.
 
 **Done when:** you see a floor plane, can orbit, and the console is clean.
@@ -211,9 +209,9 @@ Check online (not just locally):
 
 ---
 
-## Phase 2: Room, Blender, flashlight
+## Phase 2: Room, layout, flashlight
 
-> Blender tip: hover any button and press **F1** for help, or search any command with **F3**. Save often (**Ctrl/Cmd+S**). Save the file as `blender/room.blend` inside your project.
+> **Decision:** no Blender in the core build. The room is downloaded from Poly Pizza and the furniture/props are placed **in code** (`LAYOUT` in `config.js`). Baking is optional, at the very end (step 5.5).
 > Quick model check without Blender: drag a `.glb` onto https://gltf-viewer.donmccurdy.com/ to see its size and animation clips.
 
 ### 2.1 Download assets from Poly Pizza · 🧑 · 1 h
@@ -229,101 +227,56 @@ Check online (not just locally):
 
 **Done when:** all files are downloaded, the credits table is filled in, and you know the ghost's clip names.
 
-### 2.2 Blender: model the room shell (your own model) · 🧑 · 1–2 h
-1. New file → General. Delete the default cube and light (select → **X** → Delete).
-2. **Shift+A → Mesh → Cube.** Press **N**, in *Item → Dimensions* set X = 6, Y = 5, Z = 2.8. Location Z = 1.4 (floor at 0).
-3. **Ctrl+A → Scale** (apply scale).
-4. **Tab** (Edit Mode) → **A** (select all) → **Mesh → Normals → Flip** (walls now face inward).
-5. **Window:** switch to face select (**3**), click one wall face, press **I** (inset) and drag to make a window-sized face. With that inner face selected: **P → Selection** (separate it into its own object).
-6. **Tab** back to Object Mode. Rename (**F2**): the room → `Room_Shell`, the window face → `Window_Glow`.
-7. Give `Room_Shell` simple materials (Material tab → New → Base Color): you can assign a different material to the floor face (Edit Mode → select floor face → material slot → Assign).
-8. Optional: a door the same way (inset → separate → name `Room_Door`).
+### 2.2 Download an empty room · 🧑 · 30 min
+1. On Poly Pizza, search `empty room` / `room`. Pick one that is **empty** (or almost), **closed** (floor, 4 walls, ceiling; a window is a bonus), **low-poly**, and **CC0 or CC BY**.
+2. Download as **GLB** into `assets-raw/` and give the agent the link.
+3. 🤖 The agent adds it to the README credits.
 
-**Done when:** you have a closed room with a window, and you can look inside it (in the viewport, Material → Settings → Backface Culling on).
+**Done when:** the room is in `assets-raw/` and credited.
 
-### 2.3 Blender: place and name the furniture · 🧑 · 1–2 h
-1. **File → Import → glTF 2.0** for each furniture model.
-2. Poly Pizza imports often are a parent "empty" with mesh children. Select the mesh parts, **Ctrl+J** (join into one), **Alt+P → Clear and Keep Transformation**, delete the leftover empty.
-3. Scale to real sizes with **S** (check in the **N** panel): bookshelf ~2 m high, clock ~2 m, armchair ~0.9 m, table ~0.75 m. Put everything on the floor (bottom at Z = 0).
-4. **Ctrl+A → All Transforms** on each furniture object.
-5. Rename (**F2**) exactly:
-   - hiding spots: `Hide_Vase`, `Hide_Bookshelf`, `Hide_Clock`
-   - other static furniture: `Furniture_Table`, `Furniture_Armchair`, ...
-6. **Spawn point:** **Shift+A → Empty → Plain Axes**, place it where the player starts, rename `Spawn_Player`.
+### 2.3 Prepare the models · 🤖 · 30 min
+1. Copy the models the game uses into `public/models/` with short lowercase names: `room.glb`, `ghost.glb`, `vacuum.glb`, `furniture/<name>.glb`, `props/<name>.glb`. (The painting is an OBJ: load it with `OBJLoader` + `MTLLoader`, or skip it.)
+2. Measure each model (bounding box) and put a scale factor per model in `config.js`, so everything is real size: bookshelf ~2 m high, clock ~2 m, chair ~0.9 m, table ~0.75 m.
+3. Update `ROOM` in `config.js` to the downloaded room's real inside size (scale the room if it's far from ~6 × 5 × 2.8 m).
 
-**Done when:** a cosy cluttered room with correctly named objects. Leave walking space in the middle.
+**Done when:** every model is in `public/models/` with its scale in `config.js`, total under ~15 MB.
+**Commit:** `step 2.3: prepare models`
 
-### 2.4 Blender: place the props · 🧑 · 1 h
-1. Import the small props. Join parts / clear parent like in 2.3.
-2. For each prop: **Object → Set Origin → Origin to Geometry**, then **Ctrl+A → Rotation & Scale**. (The physics body is centered on the origin, so this matters.)
-3. Rename `Prop_Book_01`, `Prop_Book_02`, ..., `Prop_Cup_01`, `Prop_Pillow_01`, ... Put several books near the bookshelf (the Librarian throws them) and clutter near each hiding spot.
-4. Aim for 30–50 props.
-5. Put all props in their own collection (**M → New Collection → "Props"**) so you can hide or select them easily.
+### 2.4 Load the room + furniture (layout in code) · 🤝 · 1–2 h
+1. 🧑 Tell the agent roughly where things go, e.g. "bookshelf against the left wall, clock in the corner next to the window, vase on the table, walking space in the middle".
+2. 🤖 `LAYOUT` in `config.js`: per furniture piece a model, position, rotation and name. Hiding spots: `Hide_Vase`, `Hide_Bookshelf`, `Hide_Clock`. Other furniture: `Furniture_*`. Plus `spawn` (player start position + look direction).
+3. 🤖 `js/objects/room.js` → `createRoom()`: `GLTFLoader` for the room and each furniture piece, transforms from `LAYOUT`, set `object.name`, collect the `Hide_*` objects. Temporary lights (`AmbientLight` + `DirectionalLight`) so you can see everything until 2.6.
+4. 🤖 Remove the test floor from 1.2.
+5. 🧑 Orbit around and give feedback; repeat until the room feels right.
 
-**Done when:** all props are placed, centered and named `Prop_*`.
+**Done when:** the furnished room shows in the browser, online, and you like the layout.
+**Commit:** `step 2.4: room and furniture layout`
 
-### 2.5 Blender: lights for the bake · 🧑 · 30 min
-**Remember: bake BRIGHT, the darkness comes from the code later.**
-1. Hide the Props collection (eye icon): props are **not** baked.
-2. **Shift+A → Light → Area** in front of the window, pointing in, size ~2 m, power ~300–500 W, slightly blue.
-3. World tab → Color light grey, Strength ~0.5 (soft fill).
-4. Optional: a warm point light near the clock.
-5. Render tab → **Render Engine: Cycles** (Device: GPU if available).
-6. Render tab → **Color Management → View Transform: Standard**.
-7. Viewport: press **Z → Rendered** to preview. You want: evenly lit, soft shadows, not dark.
+### 2.5 Place the props (layout in code) · 🤝 · 1 h
+1. 🧑 Tell the agent where the clutter goes: books near the bookshelf (the Librarian throws them), clutter around each hiding spot.
+2. 🤖 `LAYOUT.props` in `config.js` (model, position, rotation), named `Prop_Book_01`, `Prop_Cup_01`, ... `js/objects/props.js` → `createProps()` loads each model once and places `clone()`s (static for now; physics comes in 3.2).
+3. Aim for 30–50 props.
 
-**Done when:** the rendered preview looks bright and soft.
+**Done when:** the room looks cluttered and lived-in.
+**Commit:** `step 2.5: props layout`
 
-### 2.6 Blender: UVs + bake + save `baked.jpg` · 🧑 · 2–3 h (the hardest Blender step, take your time)
-*Rewatch the course bake tutorial first.*
-1. Select all baked objects: `Room_*`, `Furniture_*`, `Hide_*` (**not** `Window_Glow`, **not** props).
-2. For **each** of them: Object Data tab (green triangle) → **UV Maps → +**, rename the new map `BakeUV` and **click it** (selected). ⚠️ Do **not** click the camera icon: the original map must stay the render map so the colors bake correctly.
-3. With all of them selected: **Tab** → **A** → **U → Smart UV Project** (Island Margin 0.02) → OK. Check in the **UV Editing** workspace that islands don't overlap. If they do: **UV → Pack Islands**.
-4. **Image Editor → New Image:** name `baked`, 2048 × 2048, uncheck Alpha.
-5. **For every material on every selected object** (Shading workspace): **Shift+A → Texture → Image Texture**, choose `baked`, **click the node so it's selected**, and do **not** connect it. ⚠️ Missing it on one material = error or wrong bake.
-6. Render tab: Samples ~256, Denoise on → **Bake** panel: Bake Type **Combined**, Output: Image Textures, Margin 16 px → **Bake**. Wait.
-7. Image Editor → **Image → Save As** → `public/textures/baked.jpg` in your project, JPG, Quality 90, **Save as Render** checked.
-8. Cleanup: for each baked object, in UV Maps **remove the original map** so only `BakeUV` remains.
-9. Save `blender/room.blend`.
-
-**Done when:** `baked.jpg` shows your room's surfaces with soft shadows, laid out as UV islands.
-
-### 2.7 Blender: export the GLB files · 🧑 · 30 min
-Each export: **File → Export → glTF 2.0** → Format **glTF Binary (.glb)** → Include: **Limit to Selected Objects** → Transform: +Y Up → Mesh: Apply Modifiers, UVs, Normals.
-1. `public/models/room.glb`: select all `Room_*`, `Furniture_*`, `Hide_*`, `Window_Glow`, `Spawn_Player`.
-2. `public/models/props.glb`: unhide the Props collection, select all `Prop_*`.
-3. `public/models/vacuum.glb`: in a separate Blender file, import the vacuum, scale to ~1 m, **Shift+A → Empty → Plain Axes** at the tip of the nozzle, rename `Nozzle`, select both → export.
-4. `public/models/ghost.glb`: just copy the downloaded file.
-
-**Done when:** 4 GLB files + `baked.jpg` are in `public/`, total under ~15 MB.
-**Commit:** `step 2.7: blender exports` (also commit `blender/room.blend`)
-
-### 2.8 Load the baked room in Three.js · 🤖 · 1 h
-*Lesson: blender-three-bake-final/js/script.js*
-1. `js/objects/room.js` → `createRoom()`: `GLTFLoader` for `models/room.glb`, `TextureLoader` for `textures/baked.jpg` (`flipY = false`, `SRGBColorSpace`).
-2. Traverse like the course: `Window_Glow` → glowing basic material; `Room_*`, `Furniture_*`, `Hide_*` → baked material (plain `MeshBasicMaterial` with the map for now); collect `Hide_*` objects and `Spawn_Player`.
-3. Remove the test floor from 1.2.
-
-**Done when:** your baked room appears in the browser exactly like in Blender (bright for now). Check it online.
-**Commit:** `step 2.8: load baked room`
-
-### 2.9 Flashlight: SpotLight + beam (S3) + baked-room lighting · 🤖 · 2–3 h
-1. `js/shaders/flashlight/fragment.wgsl` per AGENTS.md §6: replace the room's basic material with the flashlight node material (dark blue ambient + spotlight cone on the baked texture).
+### 2.6 Flashlight: SpotLight + beam (S3) + room lighting shader · 🤖 · 2–3 h
+1. `js/shaders/flashlight/fragment.wgsl` per AGENTS.md §6 (*Room flashlight lighting*): give the room, furniture and hiding spots the flashlight node material (dark blue ambient + spot cone on their own colors). Remove the temporary lights from 2.4.
 2. `js/objects/flashlight.js`: a `SpotLight` (for props and the ghost), plus the beam cone mesh with `js/shaders/beam/fragment.wgsl` (S3). Child of the camera.
 3. Tune: the shader spot and the real SpotLight have the same angle, softness and color.
 
 **Done when:** the room is dark and moody, and the flashlight reveals it with a soft-edged spot. The beam is faintly visible in the air.
-**Commit:** `step 2.9: flashlight lighting and beam`
+**Commit:** `step 2.6: flashlight lighting and beam`
 
-### 2.10 First-person controls + vacuum in hand · 🤖 · 2 h
-1. Replace OrbitControls with `PointerLockControls`. Start position/rotation from `Spawn_Player`.
+### 2.7 First-person controls + vacuum in hand · 🤖 · 2 h
+1. Replace OrbitControls with `PointerLockControls`. Start position/rotation from `LAYOUT.spawn`.
 2. WASD movement at 2.2 m/s, eye height 1.6 m, clamped inside the room (0.4 m from walls).
 3. A temporary "Click to start" overlay (pointer lock needs a click). Esc → pause overlay.
-4. Load `vacuum.glb` as a child of the camera (bottom-right of the view, like a first-person game). Read the `Nozzle` position. Move the suction cone there.
+4. Load `vacuum.glb` as a child of the camera (bottom-right of the view, like a first-person game). Tune `VACUUM.nozzleOffset` in `config.js` so the suction cone starts at the nozzle tip.
 5. LMB = suck (from 1.7), RMB = blow (prevent the context menu).
 
 **Done when:** you can walk through the dark room with a flashlight and a vacuum, and the cone comes out of the nozzle.
-**Commit:** `step 2.10: first-person controls and vacuum`
+**Commit:** `step 2.7: first-person controls and vacuum`
 
 ---
 
@@ -339,7 +292,7 @@ Each export: **File → Export → glTF 2.0** → Format **glTF Binary (.glb)** 
 **Commit:** `step 3.1: rapier world and static colliders`
 
 ### 3.2 Props as dynamic bodies · 🤖 · 1–2 h
-1. `js/objects/props.js`: load `props.glb`, create a dynamic body + cuboid collider for every `Prop_*`, keep mesh + body pairs.
+1. `js/objects/props.js`: for every `Prop_*` from 2.5, create a dynamic body + cuboid collider, keep mesh + body pairs.
 2. Sync mesh position/rotation from the body each frame.
 3. Test: in debug mode, a key drops all props from 1 m higher.
 
@@ -474,6 +427,42 @@ Each stretch goal: own commit + deploy check. Stop if fps drops below ~50.
 
 **Done when:** smooth in Chrome, no crashes elsewhere.
 
+### 5.5 Optional: bake the room in Blender · 🧑🤖 · 3–4 h
+**Only when everything else works and is online.** Earns the *"Blender + baking"* extra mark. Same workflow as the course's `blender-three-bake-final` project. If it goes wrong, just don't merge it: the game works without it.
+
+**A. Get the assembled room into Blender**
+1. 🤖 Debug key that exports the static room (room + furniture + hiding spots, **no** props/ghost/vacuum) with `GLTFExporter` as `room-assembled.glb` (the layout lives in code, so this is how Blender gets it). Object names are kept.
+2. 🧑 Blender: **File → New → General**, delete the cube and light (**X**), then **File → Import → glTF 2.0** → `room-assembled.glb`. Save as `blender/room.blend` in the project.
+
+**B. Lights for the bake (bake BRIGHT, the darkness comes from the code)**
+1. **Shift+A → Light → Area** in front of the window (or the middle of a wall), pointing in, size ~2 m, power ~300–500 W, slightly blue.
+2. World tab → Color light grey, Strength ~0.5 (soft fill).
+3. Optional: a warm point light near the clock.
+4. Render tab → **Render Engine: Cycles** (Device: GPU if available).
+5. Render tab → **Color Management → View Transform: Standard**.
+6. Viewport: press **Z → Rendered** to preview. You want: evenly lit, soft shadows, not dark.
+
+**C. UVs + bake + save `baked.jpg`** (the hardest part, take your time; rewatch the course bake tutorial first)
+1. Select all imported objects (room, `Furniture_*`, `Hide_*`).
+2. For **each** of them: Object Data tab (green triangle) → **UV Maps → +**, rename the new map `BakeUV` and **click it** (selected). ⚠️ Do **not** click the camera icon: the original map must stay the render map so the colors bake correctly.
+3. With all of them selected: **Tab** → **A** → **U → Smart UV Project** (Island Margin 0.02) → OK. Check in the **UV Editing** workspace that islands don't overlap. If they do: **UV → Pack Islands**.
+4. **Image Editor → New Image:** name `baked`, 2048 × 2048, uncheck Alpha.
+5. **For every material on every selected object** (Shading workspace): **Shift+A → Texture → Image Texture**, choose `baked`, **click the node so it's selected**, and do **not** connect it. ⚠️ Missing it on one material = error or wrong bake.
+6. Render tab: Samples ~256, Denoise on → **Bake** panel: Bake Type **Combined**, Output: Image Textures, Margin 16 px → **Bake**. Wait.
+7. Image Editor → **Image → Save As** → `public/textures/baked.jpg` in your project, JPG, Quality 90, **Save as Render** checked.
+8. Cleanup: for each baked object, in UV Maps **remove the original map** so only `BakeUV` remains.
+9. Save `blender/room.blend`.
+
+**Done when (C):** `baked.jpg` shows your room's surfaces with soft shadows, laid out as UV islands.
+
+**D. Back into the game**
+1. 🧑 Select all baked objects → **File → Export → glTF 2.0** → glTF Binary → **Limit to Selected Objects** → `public/models/room-baked.glb`.
+2. 🤖 `room.js` loads `room-baked.glb` instead of room + furniture, with `TextureLoader('textures/baked.jpg')`, `flipY = false`, `SRGBColorSpace`. The flashlight shader stays the same, its `albedo` just becomes `texture(bakedTexture)`.
+3. 🤖 README: add the Blender bake to *What's inside*. Commit `blender/room.blend` too.
+
+**Done when:** online, the flashlight reveals soft baked shadows and dark corners.
+**Commit:** `step 5.5: baked room`
+
 ---
 
 ## Phase 6: Submission
@@ -500,20 +489,19 @@ Be ready to show and explain:
 - How you ported Ether (GLSL → WGSL differences you hit, what `etherMap` and the loop do, what your extra uniforms do)
 - How `wgslFn` + `uniform()` connect JS to WGSL
 - The suction formula and its link to the course's compute particles
-- Your Blender process (room shell, naming, UVs, bake, export)
+- How the room is assembled in code (`LAYOUT` in `config.js`, names, hiding spots), and your bake process if you did 5.5
 - How the ghost animations are driven by game state
-- Why the room needed a custom flashlight shader (baked = unlit)
+- Why the room uses a custom flashlight shader (unlit basic material lit by our own spot math: full control over the dark mood)
 
 ---
 
 ## Cut list (if you fall behind, drop in this order)
 
-1. Stretch goals (Phase 5.3)
+1. Stretch goals (Phase 5.3) and the optional bake (5.5)
 2. Audio files (keep the generated motor sound only)
 3. Librarian book-throwing and Granny's second round
 4. From 3 ghosts to 1 (Dusty only, then invoice)
 5. Compute dust → CPU fallback dust
-6. Baking → `RoomEnvironment` + plain lights (you lose the bake marks)
 
 **Never cut:** the Ether port (S1), the suction cone (S2), sucking props with physics, the online deploy, the README with the Shadertoy URL.
 
@@ -524,7 +512,7 @@ Be ready to show and explain:
 | Risk | Early warning | What to do |
 |---|---|---|
 | Ether port won't compile | Still red errors after a full session | Pitfalls table in AGENTS.md §15, compare with the course's `cyberFuji/fragment.wgsl` |
-| Bake looks wrong | Black/stretched patches in `baked.jpg` | Missing Image Texture node in a material, overlapping UVs, or wrong active UV map (step 2.6) |
+| Bake looks wrong | Black/stretched patches in `baked.jpg` | Missing Image Texture node in a material, overlapping UVs, or wrong active UV map (step 5.5) |
 | Compute dust stalls | > 1 day on 3.6 | Switch to the CPU fallback and move on |
 | Ghost has no usable animations | Clip list empty in 2.1 | Alternative model (AGENTS.md §9.5) |
 | Deploy breaks | Red Action or 404 | Paths with a leading `/`, file-name case, missing `package-lock.json` |

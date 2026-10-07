@@ -38,16 +38,16 @@
 |---|---|---|
 | Interaction beyond looking around | Search, suck, blow, tug-of-war (mouse direction against the ghost), tank management | **Core** |
 | Physics | Rapier rigid bodies: props are sucked in a spiral, captured, blown out; the Librarian throws books | **Core** |
-| Multiple shaders | Ether ghost (port) + suction cone + flashlight beam + baked-room flashlight lighting + compute dust (+ post FX as stretch) | **Core** |
+| Multiple shaders | Ether ghost (port) + suction cone + flashlight beam + room flashlight lighting + compute dust (+ post FX as stretch) | **Core** |
 | Additional WebGPU libraries | **Not targeted.** Rapier is a physics (WASM) library and gsap is an animation library; neither is a WebGPU library. Do not claim this category in the README. | Not claimed |
-| Own Blender models + baking | Student models the room shell in Blender, arranges Poly Pizza furniture, bakes lighting to `baked.jpg` (same workflow as the course's baking project) | **Core** |
+| Own Blender models + baking | **Student's decision: no Blender in the core.** The room is downloaded (Poly Pizza) and furniture/props are placed in code. Baking is an **optional last step** (PLAN 5.5) once everything works. Do **not** claim this category in the README unless 5.5 is done. | Optional (end) |
 | Controlling Blender animations | Quaternius "Ghost" model (CC0, tagged *Animated* on Poly Pizza), its clips driven by an `AnimationMixer` per game state | **Core** (check the clips exist) |
 
 ---
 
 ## 2. People and context
 
-- The student is a DEVINE student. They are comfortable with JavaScript and have followed the course below. They have **little to no Blender experience**: for Blender tasks, give click-by-click instructions (menu paths, shortcuts). You cannot do Blender work yourself.
+- The student is a DEVINE student. They are comfortable with JavaScript and have followed the course below. They have **little to no Blender experience**: for Blender tasks, give click-by-click instructions (menu paths, shortcuts). You cannot do Blender work yourself. **The student chose to avoid Blender:** never make a core step depend on it (Blender only appears in the optional bake, PLAN 5.5).
 - The course material is on the student's machine at:
   `/Users/ian/Downloads/creative-development-f26-main/`
   - `threejs/README.md`: Three.js chapter (Aviator, **Shadertoy shader in Three.js**, **Three.js + Blender + Shader**)
@@ -73,10 +73,10 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 | Resize | Same resize handler as the bake project, pixel ratio capped with `Math.min(window.devicePixelRatio, 2)` | blender-three-bake-final/js/script.js |
 | **Custom shaders** | Write **WGSL in `.wgsl` files**, import with `?raw`, wrap with `wgslFn(...)`, plug into a node material's `colorNode` (usually `MeshBasicNodeMaterial`). Parameters are matched **by name**. The **main function must be first** in the file, helpers below. | threejs/README.md, *Shadertoy shader in Three.js* |
 | Shadertoy inputs | `uniform()` nodes; update `.value` every frame. Rebuild `fragCoord` as `uv().mul(iResolution)`. | same |
-| Shader colors in a lit/baked scene | Wrap shader output in `colorSpaceToWorking(..., THREE.SRGBColorSpace)`. Do **not** switch the whole renderer to linear output (the room uses a baked sRGB texture). | threejs/README.md, *Three.js + Blender + Shader* |
+| Shader colors in a lit/baked scene | Wrap shader output in `colorSpaceToWorking(..., THREE.SRGBColorSpace)`. Do **not** switch the whole renderer to linear output (the room's colors and textures are sRGB). | threejs/README.md, *Three.js + Blender + Shader* |
 | Shader into a texture | `THREE.RenderTarget` + orthographic camera + 2×2 plane, `renderer.setRenderTarget(rt)` / `null` | *Buffer A* section |
 | Texture + sampler in WGSL | Pass the same TSL `texture()` node for both the `texture_2d<f32>` and `sampler` parameters | *Sampling the texture in the shader* |
-| Baked room | `TextureLoader().load('textures/baked.jpg')`, `flipY = false`, `colorSpace = THREE.SRGBColorSpace`, traverse the glTF and assign materials **by object name** | blender-three-bake-final |
+| Baked room (optional, PLAN 5.5) | `TextureLoader().load('textures/baked.jpg')`, `flipY = false`, `colorSpace = THREE.SRGBColorSpace`, traverse the glTF and assign materials **by object name** | blender-three-bake-final |
 | Code structure | One file per object in `js/objects/`, each exporting `createX()` that returns `{ mesh, update, ... }`; `init()` + `draw()` in `js/script.js` | Aviator |
 | Animating values | **gsap** `gsap.to(obj, { duration, ease, prop })` to tween uniforms and properties (suction spin-up, fades) | webgpu/README.md, *Animated effect* |
 | Soft edges / masks | `smoothstep`, `step`, `mix` masks instead of `if` chains | webgpu/README.md, *Warp effect* |
@@ -190,9 +190,9 @@ index.html                  canvas + HTML overlay (start, HUD, pause, invoice)
 css/style.css
 vite.config.js              base: './'
 js/script.js                init(), draw(), game state machine, input
-js/config.js                every tunable number (sections 4–7)
-js/objects/room.js          loads room.glb + baked.jpg, flashlight material, colliders info, hiding spots
-js/objects/props.js         loads props.glb, creates dynamic bodies
+js/config.js                every tunable number (sections 4–7) + LAYOUT (room, furniture, props, spawn)
+js/objects/room.js          loads room + furniture GLBs at LAYOUT positions, names them, flashlight material, hiding spots
+js/objects/props.js         loads prop GLBs at LAYOUT positions, creates dynamic bodies
 js/objects/vacuum.js        viewmodel attached to camera, nozzle, suction cone (S2), power tween, tank
 js/objects/flashlight.js    SpotLight + visible beam (S3)
 js/objects/ghost.js         ghost model + AnimationMixer + Ether aura (S1) + ghost state
@@ -203,16 +203,16 @@ js/postfx.js                (stretch) RenderPipeline + post shader (S5/S7)
 js/shaders/ether/fragment.wgsl       S1 (Shadertoy port)
 js/shaders/suction/fragment.wgsl     S2
 js/shaders/beam/fragment.wgsl        S3
-js/shaders/flashlight/fragment.wgsl  baked room lighting
+js/shaders/flashlight/fragment.wgsl  room flashlight lighting
 js/shaders/dust/update.wgsl          S4 math (called from a TSL compute Fn)
 js/shaders/post/fragment.wgsl        S5 + S7 (stretch)
-public/models/room.glb      static, baked (student's own Blender work)
-public/models/props.glb     dynamic props
-public/models/vacuum.glb    with an Empty named "Nozzle"
+public/models/room.glb      downloaded empty room (Poly Pizza)
+public/models/furniture/    bookshelf, clock, vase, table, ... (Poly Pizza)
+public/models/props/        book, cup, pillow, ... (Poly Pizza)
+public/models/vacuum.glb    nozzle = VACUUM.nozzleOffset in config.js
 public/models/ghost.glb     Quaternius Ghost (animated)
-public/textures/baked.jpg
 public/sounds/*.mp3
-blender/room.blend          source file (commit it: proof of own Blender work)
+(optional, PLAN 5.5) public/models/room-baked.glb, public/textures/baked.jpg, blender/room.blend
 README.md                   submission README (section 10)
 AGENTS.md  PLAN.md
 .github/workflows/deploy.yml
@@ -276,7 +276,7 @@ All shaders are WGSL files used through `wgslFn`, unless noted. Each spec lists 
 ### S2. Suction cone (own shader, core)
 
 - **What:** visible swirling air in front of the nozzle.
-- **Mesh:** `CylinderGeometry(radiusTop 0.05, radiusBottom 0.9, height 2.5, 32, 1, openEnded true)`, rotated so the narrow end sits at the nozzle and it opens along the camera's forward (−Z) direction. Child of the camera, positioned at the `Nozzle` empty's position. Additive, `transparent`, `depthWrite: false`, `side: DoubleSide`.
+- **Mesh:** `CylinderGeometry(radiusTop 0.05, radiusBottom 0.9, height 2.5, 32, 1, openEnded true)`, rotated so the narrow end sits at the nozzle and it opens along the camera's forward (−Z) direction. Child of the camera, positioned at the nozzle (`VACUUM.nozzleOffset` in `config.js`, tuned to the vacuum model's tip). Additive, `transparent`, `depthWrite: false`, `side: DoubleSide`.
 - **Inputs:** `uv`, `iTime`, `power`.
 - **Technique:** procedural value noise (a small `hash` + `noise` helper in WGSL). Scroll `uv.x` with time (swirl), scroll `uv.y` toward the narrow end (inflow), add twist that grows near the nozzle (`uv.x += (1.0 - uv.y) * twist`). Fade with `smoothstep` at the wide end and both seams. Multiply everything by `power`, so at 0 it is fully invisible.
 - **Done when:** holding LMB makes a soft spiral appear and spin up; releasing fades it out.
@@ -287,7 +287,7 @@ All shaders are WGSL files used through `wgslFn`, unless noted. Each spec lists 
 - **Mesh:** open cone (like S2, longer: height 6, radiusBottom 1.8), child of the flashlight. Additive, `depthWrite: false`.
 - **Inputs:** `uv`, `iTime`, `intensity`.
 - **Technique:** bright near the lamp (`1 - uv.y` falloff), soft edges via `smoothstep` across `uv.x` seam distance, slow noise for "dusty air". Very low overall opacity (≈0.05–0.12): it must not wash out the scene.
-- **Real light:** a `THREE.SpotLight` on the same transform lights props and the ghost model (lights lesson). Angle ~25°, penumbra 0.4, decay 2, distance 10. Shadows **off** (performance; the room is baked).
+- **Real light:** a `THREE.SpotLight` on the same transform lights props and the ghost model (lights lesson). Angle ~25°, penumbra 0.4, decay 2, distance 10. Shadows **off** (performance).
 
 ### S4. Dust particles (compute, core with fallback)
 
@@ -301,14 +301,15 @@ All shaders are WGSL files used through `wgslFn`, unless noted. Each spec lists 
 - **Fallback (no WebGPU, or if compute does not work in time):** 600 `THREE.Points` updated on the CPU with the same `suctionForce()` from `physics.js`.
 - **Done when:** dust visibly drifts, glitters in the beam, and spirals into the nozzle when sucking, at 60 fps on a mid-range laptop.
 
-### Baked-room flashlight lighting (own shader, core)
+### Room flashlight lighting (own shader, core)
 
-- **File:** `js/shaders/flashlight/fragment.wgsl`, `fn flashlight(baked: vec4f, worldPos: vec3f, lampPos: vec3f, lampDir: vec3f, cosOuter: f32, cosInner: f32, ambient: vec3f, lampColor: vec3f, range: f32) -> vec4f`.
-- **Why:** the course bakes with `MeshBasicMaterial` (unlit), which a `SpotLight` cannot light. So we light the baked texture ourselves: `result = baked * (ambient + lampColor * cone * distanceFalloff)`, where `cone = smoothstep(cosOuter, cosInner, dot(normalize(worldPos - lampPos), lampDir))`.
-- **Material:** `MeshBasicNodeMaterial`, `colorNode = flashlight({ baked: texture(bakedTexture), worldPos: positionWorld, ... })`. Assign it to every `Room_*`, `Furniture_*` and `Hide_*` mesh while traversing the glTF (the course traversal pattern).
-- **Match the SpotLight:** use the same angle, penumbra and color as the real `SpotLight` from S3, so props (standard materials) and the baked room look consistent.
-- **Ambient:** dark moonlight blue, around `vec3(0.05, 0.07, 0.12)`. `Window_Glow` gets a separate emissive basic material.
-- **Done when:** the room is dark blue, and the flashlight reveals the baked detail (soft shadows, AO) with a soft-edged spot.
+- **File:** `js/shaders/flashlight/fragment.wgsl`, `fn flashlight(albedo: vec4f, worldPos: vec3f, normal: vec3f, lampPos: vec3f, lampDir: vec3f, cosOuter: f32, cosInner: f32, ambient: vec3f, lampColor: vec3f, range: f32) -> vec4f`.
+- **Why:** the room and furniture use an unlit `MeshBasicNodeMaterial` lit by our own spot math, so we fully control the dark mood (and it's an extra own shader). `result = albedo * (ambient + lampColor * cone * facing * distanceFalloff)`, where `cone = smoothstep(cosOuter, cosInner, dot(normalize(worldPos - lampPos), lampDir))` and `facing = max(dot(normal, normalize(lampPos - worldPos)), 0.0)` (so walls and furniture edges stay readable without a bake).
+- **Material:** for every mesh of the room, `Furniture_*` and `Hide_*`: read the original material's `color` and `map` as `albedo` (`texture(map).mul(color)`, or just the color), then `colorNode = flashlight({ albedo, worldPos: positionWorld, normal: normalWorld, ... })`.
+- **Optional bake (PLAN 5.5):** `albedo` becomes `texture(bakedTexture)`; the shader stays the same.
+- **Match the SpotLight:** use the same angle, penumbra and color as the real `SpotLight` from S3, so props (standard materials) and the room look consistent.
+- **Ambient:** dark moonlight blue, around `vec3(0.05, 0.07, 0.12)`. If the room has a window, it can get a separate emissive basic material.
+- **Done when:** the room is dark blue, and the flashlight reveals its colors with a soft-edged spot.
 
 ### S5 + S7. Post FX (stretch)
 
@@ -366,7 +367,7 @@ Start values (tune with lil-gui in debug mode): `range 3.0`, `cosInner cos(15°)
 
 ---
 
-## 9. Assets and Blender pipeline
+## 9. Assets (and the optional Blender bake)
 
 ### 9.1 Poly Pizza assets (verified pages; download **GLB**)
 
@@ -380,37 +381,35 @@ Search terms for the rest: `bookshelf`, `grandfather clock`, `old chair`, `armch
 
 ### 9.2 Naming conventions (code depends on these exact prefixes)
 
-| Name | File | Meaning |
-|---|---|---|
-| `Room_*` | room.glb | Walls, floor, ceiling, window frame, door: **modelled by the student** (own model). Baked. |
-| `Furniture_*` | room.glb | Static furniture. Baked. Gets a fixed cuboid collider. |
-| `Hide_Vase`, `Hide_Bookshelf`, `Hide_Clock` | room.glb | Hiding spots. Baked, static, trembles in code, collider. |
-| `Window_Glow` | room.glb | Plane in the window, emissive in code, not baked. |
-| `Spawn_Player` | room.glb | Empty: player start position and orientation. |
-| `Prop_*` (e.g. `Prop_Book_01`) | props.glb | Dynamic, suckable props. **Not baked**, keep their materials. |
-| `Nozzle` | vacuum.glb | Empty at the nozzle tip. **Position only.** The suction direction is always the camera's forward vector (you aim with the camera), which avoids Blender↔glTF axis confusion. |
+Names are set **in code** from `LAYOUT` in `config.js` (no Blender).
 
-### 9.3 Bake rules (same workflow as the course's baking project)
+| Name | Meaning |
+|---|---|
+| room | The downloaded room GLB (walls, floor, ceiling). Gets the flashlight material. |
+| `Furniture_*` | Static furniture. Flashlight material. Gets a fixed cuboid collider. |
+| `Hide_Vase`, `Hide_Bookshelf`, `Hide_Clock` | Hiding spots. Static, trembles in code, collider. |
+| `Prop_*` (e.g. `Prop_Book_01`) | Dynamic, suckable props. Keep their own materials (lit by the real `SpotLight`). |
+| `LAYOUT.spawn` | Player start position and look direction. |
+| `VACUUM.nozzleOffset` | Nozzle tip relative to the camera. **Position only.** The suction direction is always the camera's forward vector (you aim with the camera). |
 
-- Only `Room_*`, `Furniture_*`, `Hide_*` are baked, into **one** shared texture `baked.jpg` (2048×2048, JPG quality ~90).
+### 9.3 Bake rules (optional, PLAN 5.5 only; same workflow as the course's baking project)
+
+- Only the room, `Furniture_*` and `Hide_*` are baked (exported from the game with `GLTFExporter`, then imported in Blender), into **one** shared texture `baked.jpg` (2048×2048, JPG quality ~90).
 - **Bake bright, darken in code.** Light the scene evenly (soft area light at the window + some world light), bake **Combined** in Cycles (samples ~256, denoise on). The night darkness comes from the flashlight shader's `ambient`. A dark bake would stay muddy when lit.
 - **Color management:** set View Transform to **Standard** before baking/saving, so the JPG matches three's sRGB pipeline.
 - **Multiple materials pitfall:** every material on every baked object needs an **Image Texture node pointing to the bake image, selected (active)**, otherwise Blender errors or bakes into the wrong image.
 - **UVs:** create a new UV map `BakeUV`, select all baked objects, Edit Mode, **Smart UV Project** (island margin ~0.02) so they share one non-overlapping layout. After baking, make `BakeUV` the **only** UV map (delete the others) so three's default `uv` uses it.
 - Code side: `bakedTexture.flipY = false`, `bakedTexture.colorSpace = THREE.SRGBColorSpace`.
 
-### 9.4 Export rules
+### 9.4 Asset rules
 
-- File → Export → glTF 2.0, format **glb**, "Selected Objects" only, "Apply Modifiers" on, +Y up (default).
-- `room.glb`: all `Room_*`, `Furniture_*`, `Hide_*`, `Window_Glow`, `Spawn_Player`.
-- `props.glb`: all `Prop_*` (placed at their start positions in the room, same coordinates).
-- `vacuum.glb`: vacuum + `Nozzle` empty, scaled to real size (~1 m), origin at the grip.
-- `ghost.glb`: the Quaternius file as-is (only rescale if needed; keep its animations).
+- Models in `public/models/` with short lowercase file names (case-sensitive online). One scale factor per model in `config.js`.
+- `ghost.glb`: the Quaternius file as-is (keep its animations).
 - Keep the total asset size **under ~15 MB**.
 
 ### 9.5 Blender animation (extra marks)
 
-- **Verified clips in the downloaded `ghost.glb`:** `CharacterArmature|Death`, `|Fast_Flying`, `|Flying_Idle`, `|Headbutt`, `|HitReact`, `|No`, `|Punch`, `|Yes` (1 skinned mesh). `vacuum.glb` has no `Nozzle` empty yet (single node `group115819083`): add it in Blender.
+- **Verified clips in the downloaded `ghost.glb`:** `CharacterArmature|Death`, `|Fast_Flying`, `|Flying_Idle`, `|Headbutt`, `|HitReact`, `|No`, `|Punch`, `|Yes` (1 skinned mesh). `vacuum.glb` has no `Nozzle` empty (single node `group115819083`): use `VACUUM.nozzleOffset` in `config.js` instead.
 - Load `ghost.glb`, `console.log(gltf.animations.map(a => a.name))` and map clips to states (e.g. idle/fly → `EMERGED`, a hit/struggle clip → `TUG`, a death/disappear clip → `CAPTURED`). Use whatever clip names the file actually has.
 - `AnimationMixer` + `clipAction(...).fadeIn/crossFadeTo` (0.2–0.3 s) on state changes; `mixer.update(dt)` every frame.
 - If the model turns out to have no usable clips, tell the student immediately. Alternatives: "Ghost Character" by Polygonal Mind (https://poly.pizza/m/CKLHPoYhE9) or a Quaternius animal (cat) that flees.
@@ -434,9 +433,9 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 
 ## What's inside
 - Ported Shadertoy shader (WGSL via `wgslFn`): Ether → ghost aura, revealed by the flashlight, stretched by the vacuum
-- Own shaders: suction cone, flashlight beam, baked-room flashlight lighting, compute dust particles (+ post FX if present)
+- Own shaders: suction cone, flashlight beam, room flashlight lighting, compute dust particles (+ post FX if present)
 - Physics: Rapier (props sucked in a spiral, captured, blown out, thrown by a ghost)
-- Blender: room modelled and lighting baked by me (`blender/room.blend`), furniture from Poly Pizza
+- Room and furniture from Poly Pizza, laid out in code (+ Blender bake, only if PLAN 5.5 is done)
 - Blender animation: ghost model clips driven per game state with `AnimationMixer`
 - Mechanic inspired by Luigi's Mansion. No Nintendo assets are used.
 
@@ -467,7 +466,7 @@ npm run dev
 ## 12. Performance and compatibility budget
 
 - Target 60 fps on a mid-range laptop (integrated GPU) at `pixelRatio ≤ 2`.
-- No real-time shadows (`renderer.shadowMap.enabled = false`). The room is baked.
+- No real-time shadows (`renderer.shadowMap.enabled = false`).
 - Ether billboard ≤ ~1.6 m. It is a 6-step raymarch per pixel, cheap at that size.
 - Dust ≤ 30 000 (WebGPU). Fallback 600 on the CPU.
 - ≤ 60 dynamic Rapier bodies.
@@ -487,7 +486,7 @@ npm run dev
 
 1. **One step at a time** from `PLAN.md`. Before coding, restate the step's goal in 1–2 sentences. After coding, list what changed, how to test it, and tick the box in `PLAN.md`.
 2. **Run it.** After each step: `npm run dev` and check the browser console has 0 errors. For build-affecting changes, run `npm run build && npm run preview` too.
-3. **Commit + push** after each finished step with a clear message (`step 2.7: load baked room`). Then check the deploy.
+3. **Commit + push** after each finished step with a clear message (`step 2.4: room and furniture layout`). Then check the deploy.
 4. **Never** commit `node_modules`, `dist`, `.env`, or `*.blend1`.
 5. **Ask before adding any dependency.** Allowed by default: `three`, `vite`, `@dimforge/rapier3d-compat`, `gsap`. `lil-gui` (dev) and `@types/three` (dev) on request.
 6. **Course first** (section 3). If you deviate, say why in one sentence.
@@ -524,9 +523,9 @@ npm run dev
 
 - All boxes in section 1.1 ticked.
 - Core loop works for all 3 ghosts, start screen → invoice.
-- Shaders S1, S2, S3, S4 (or its fallback) and the baked-room flashlight are in and visibly react to interaction.
+- Shaders S1, S2, S3, S4 (or its fallback) and the room flashlight lighting are in and visibly react to interaction.
 - Rapier props: sucked, captured, tank fills, blown out. The Librarian throws books.
-- Room modelled + baked by the student; ghost animation clips driven by state.
+- Room + furniture laid out in code; ghost animation clips driven by state. (Bake only if optional PLAN 5.5 is done.)
 - README complete with Shadertoy URL, live URL, credits.
 - Live URL tested in incognito Chrome; 60 fps-ish; no console errors.
 - Source zip without `node_modules` / `dist` (see `PLAN.md` step 6.3).

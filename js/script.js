@@ -19,7 +19,7 @@ camera.position.set(0, CAMERA.eyeHeight, ROOM.depth / 2)
 // the camera is in the scene because the vacuum and flashlight will be its children
 scene.add(camera)
 
-// temporary: look around with the mouse (replaced by first-person controls in 2.10)
+// temporary: look around with the mouse (replaced by first-person controls in 2.7)
 const controls = new OrbitControls(camera, canvas)
 controls.target.set(0, 0, 0)
 controls.enableDamping = true
@@ -35,7 +35,7 @@ const renderer = new THREE.WebGPURenderer({
 renderer.setSize(size.width, size.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-// temporary test floor, same size as the room (removed in 2.10)
+// temporary test floor, same size as the room (removed in 2.4)
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(ROOM.width, ROOM.depth),
   new THREE.MeshBasicMaterial({ color: 0x808080 })
