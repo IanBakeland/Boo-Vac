@@ -95,3 +95,70 @@ body
     background: #9be35b;
     transition: width 0.2s;
 }
+
+.tank-full
+{
+    margin-top: 6px;
+    color: #ffb84d;
+    font-weight: 600;
+}
+
+/* MAX button: bottom-right, fills up while recharging, glows while active */
+#max
+{
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    width: 90px;
+    padding: 8px;
+    border: 2px solid rgba(223, 230, 255, 0.6);
+    border-radius: 10px;
+    color: #dfe6ff;
+    font-family: system-ui, sans-serif;
+    text-align: center;
+    background: rgba(5, 8, 20, 0.5);
+}
+
+#max .max-key
+{
+    display: inline-block;
+    padding: 0 6px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+#max .max-label
+{
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+
+#max .max-bar
+{
+    height: 6px;
+    margin-top: 4px;
+    border-radius: 3px;
+    background: rgba(223, 230, 255, 0.2);
+    overflow: hidden;
+}
+
+#max .max-fill
+{
+    width: 100%;
+    height: 100%;
+    background: #ff5e9c;
+}
+
+#max.ready
+{
+    border-color: #ff5e9c;
+}
+
+#max.active
+{
+    border-color: #ff5e9c;
+    box-shadow: 0 0 18px #ff5e9c;
+    color: #ff5e9c;
+}

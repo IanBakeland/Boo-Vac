@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS, TANK } from './config.js'
+import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS, TANK, MAX } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -42,11 +42,13 @@ scene.add(room.mesh)
 const physics = await createPhysics()
 physics.addTrimesh(room.shell)
 physics.addTrimesh(room.ceiling)
-room.furniture.forEach((piece) => physics.addBox(piece))
+// static furniture gets a fixed box; dynamic furniture (table, chair, vase) is added with the props
+room.furniture.forEach((piece) => { if (!piece.userData.layout.dynamic) physics.addBox(piece) })
 
 // props: every one gets a dynamic physics body
 const props = await createProps({ physics })
 scene.add(props.mesh)
+room.furniture.forEach((piece) => { if (piece.userData.layout.dynamic) props.addMovable(piece) })
 // one physics step now: Rapier only registers new colliders for collision checks during a step,
 // so without it the player would have no collision in the very first frame
 physics.step(PHYSICS.fixedStep)
@@ -109,6 +111,8 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault()
     if (!e.repeat) jumpRequested = true
   }
+  // MAX: only with a full charge
+  if (e.code === MAX.key && controls.isLocked && !maxActive && maxCharge >= 1) maxActive = true
   // debug: P drops all props from 1 m higher
   if (DEBUG && e.code === 'KeyP') props.drop()
 })
@@ -121,14 +125,44 @@ const $resume = $pause.querySelector('.action')
 const $hud = document.querySelector('#hud')
 const $tankCount = $hud.querySelector('.tank-count')
 const $tankFill = $hud.querySelector('.tank-fill')
+const $tankFull = $hud.querySelector('.tank-full')
+const $max = document.querySelector('#max')
+const $maxFill = $max.querySelector('.max-fill')
 $hud.querySelector('.tank-capacity').textContent = TANK.capacity
 // HUD: only touch the DOM when the value changed
 let shownTank = -1
+let shownMax = ''
 const updateHud = () => {
-  if (props.tank.length === shownTank) return
-  shownTank = props.tank.length
-  $tankCount.textContent = shownTank
-  $tankFill.style.width = `${shownTank / TANK.capacity * 100}%`
+  if (props.tank.length !== shownTank) {
+    shownTank = props.tank.length
+    $tankCount.textContent = shownTank
+    $tankFill.style.width = `${shownTank / TANK.capacity * 100}%`
+    $tankFull.classList.toggle('hidden', shownTank < TANK.capacity)
+  }
+  // MAX button: charge bar in 5% steps, so the DOM only changes ~20 times per charge
+  const maxState = `${maxActive}-${Math.round(maxCharge * 20)}`
+  if (maxState !== shownMax) {
+    shownMax = maxState
+    $maxFill.style.width = `${maxCharge * 100}%`
+    $max.classList.toggle('active', maxActive)
+    $max.classList.toggle('ready', !maxActive && maxCharge >= 1)
+  }
+}
+
+// MAX mode: press F when charged -> 3 s of x2.5 force, then recharge
+let maxCharge = 1
+let maxActive = false
+const updateMax = (dt) => {
+  if (maxActive) {
+    maxCharge -= dt / MAX.duration
+    if (maxCharge <= 0) {
+      maxCharge = 0
+      maxActive = false
+    }
+  } else {
+    maxCharge = Math.min(1, maxCharge + dt / MAX.recharge)
+  }
+  vacuum.state.boost = maxActive ? MAX.multiplier : 1
 }
 let unlockedAt = 0
 $start.addEventListener('click', () => controls.lock())
@@ -139,6 +173,7 @@ controls.addEventListener('lock', () => {
   $start.classList.add('hidden')
   $pause.classList.add('hidden')
   $hud.classList.remove('hidden')
+  $max.classList.remove('hidden')
 })
 controls.addEventListener('unlock', () => {
   // Esc: pause, stop the vacuum and forget held keys
@@ -204,6 +239,7 @@ const movePlayer = (dt) => {
 // https://threejs.org/docs/#api/en/core/Timer
 const timer = new THREE.Timer()
 
+let blowTimer = 0
 const draw = (timestamp) => {
   timer.update(timestamp)
   const dt = Math.min(timer.getDelta(), MAX_DT)
@@ -220,13 +256,23 @@ const draw = (timestamp) => {
   vacuum.update()
   flashlight.update()
 
+  // tank full: the suction is choked until you blow props out
+  updateMax(dt)
+  vacuum.state.cap = props.tank.length >= TANK.capacity ? TANK.fullPowerCap : 1
+  const power = vacuum.effectivePower()
+  const { mode, boost } = vacuum.state
+
   // physics, with the suction force applied before every step
-  const { power, mode } = vacuum.state
-  physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, power, mode, stepDt))
+  physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, power, mode, stepDt, boost))
   // sucking at (almost) full power: small props at the nozzle go into the tank
   if (mode === 'suck' && power >= TANK.captureMinPower) {
     // placeholder for the "plop" sound (step 4.8)
     if (props.capture(vacuum.nozzle) > 0 && DEBUG) console.log('plop', props.tank.length)
+  }
+  // blowing at (almost) full power: shoot the tank empty, one prop every blowInterval
+  blowTimer -= dt
+  if (mode === 'blow' && power >= TANK.captureMinPower && blowTimer <= 0) {
+    if (props.blowOut(vacuum.nozzle)) blowTimer = TANK.blowInterval
   }
   props.update()
   if (DEBUG) physics.updateDebugLines()

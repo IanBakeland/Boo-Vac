@@ -126,6 +126,7 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 | Space | Jump |
 | Left mouse (hold) | **Suck** |
 | Right mouse (hold) | **Blow** (pushes props away, shoots sucked props back out of the tank) |
+| F | **MAX** (student's idea): 3 s of ×4 force that also pulls the heavy dynamic furniture (table, chair, vase), then 8 s recharge. HUD button bottom-right. |
 | Esc | Pause (pointer lock released → pause overlay → click to resume) |
 | M | Mute |
 

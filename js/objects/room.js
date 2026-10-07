@@ -69,9 +69,11 @@ export const createRoom = async () => {
     const piece = placeModel(gltfs[i].scene, {
       scale: MODELS.furniture[item.model].scale,
       position: item.position,
-      rotationY: item.rotationY
+      // dynamic furniture gets its rotation from its physics body
+      rotationY: item.dynamic ? 0 : item.rotationY
     })
     piece.name = item.name
+    piece.userData.layout = item
     mesh.add(piece)
     furniture.push(piece)
     if (item.name.startsWith('Hide_')) hidingSpots.push(piece)

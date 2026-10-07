@@ -44,7 +44,7 @@ export const createProps = async ({ physics }) => {
     // small enough to fit in the vacuum?
     const suckable = Math.max(size.x, size.y, size.z) < TANK.captureMaxSize
     // body = null once the prop is in the tank
-    props.push({ mesh: prop, body, halfExtents, density, suckable })
+    props.push({ mesh: prop, body, halfExtents, density, suckable, heavy: false })
   })
 
   // copy every body's position and rotation onto its model (after the physics step)
@@ -58,25 +58,29 @@ export const createProps = async ({ physics }) => {
 
   // every physics step while the vacuum runs: push each prop with the shared suction force
   const force = new THREE.Vector3()
-  const applySuction = (nozzle, power, mode, stepDt) => {
+  // boost > 1 = MAX mode: stronger, and heavy furniture is pulled too
+  const applySuction = (nozzle, power, mode, stepDt, boost = 1) => {
     if (power <= 0) return
-    props.forEach(({ body }) => {
+    props.forEach(({ body, heavy }) => {
       if (!body) return
+      // heavy furniture only reacts to MAX
+      if (heavy && boost <= 1) return
       const com = body.worldCom()
       suctionForce(com, nozzle.position, nozzle.direction, power, mode, force)
       // outside the cone: don't touch it (and don't wake it up)
       if (force.lengthSq() < 1e-6) return
       // the air flow carries the prop: inside the cone gravity is cancelled
       // (fully at full strength), otherwise floor props would only slide under the nozzle
-      if (mode === 'suck') force.y -= PHYSICS.gravity * suctionStrength(com, nozzle.position, nozzle.direction, power)
+      // (heavy furniture is not lifted: it slides and tips over)
+      if (mode === 'suck' && !heavy) force.y -= PHYSICS.gravity * suctionStrength(com, nozzle.position, nozzle.direction, power)
       // (the drag below runs after the impulse, in the same step)
       // force = acceleration x mass, impulse = force x time
-      force.multiplyScalar(body.mass() * stepDt)
+      force.multiplyScalar(body.mass() * stepDt * boost)
       body.applyImpulse(force, true)
       // drag (like the course's velocity *= 0.995): stronger where the suction is stronger,
       // so props slow down near the nozzle instead of flying past it
       const strength = suctionStrength(com, nozzle.position, nozzle.direction, power)
-      let k = Math.max(0, 1 - TANK.drag * strength * stepDt)
+      let k = heavy ? 1 : Math.max(0, 1 - TANK.drag * strength * stepDt)
       // speed limit, so props don't shoot around like bullets
       const v = body.linvel()
       const speed = Math.hypot(v.x, v.y, v.z) * k
@@ -119,5 +123,35 @@ export const createProps = async ({ physics }) => {
     })
   }
 
-  return { mesh, props, tank, update, applySuction, capture, drop }
+  // blowing: the last prop that went in comes out first, shot out of the nozzle
+  const blowOut = (nozzle) => {
+    const prop = tank.pop()
+    if (!prop) return false
+    prop.body = physics.addProp({
+      // body origin = bottom-center, so start half its height below the nozzle
+      position: new THREE.Vector3(nozzle.position.x, nozzle.position.y - prop.halfExtents.y, nozzle.position.z),
+      rotationY: Math.random() * 360,
+      halfExtents: prop.halfExtents,
+      density: prop.density,
+      velocity: nozzle.direction.clone().multiplyScalar(TANK.blowSpeed)
+    })
+    prop.mesh.visible = true
+    gsap.to(prop.mesh.scale, { x: 1, y: 1, z: 1, duration: TANK.regrowDuration, ease: 'power2.out' })
+    return true
+  }
+
+  // furniture that moves: physics body, not suckable, only pulled by MAX
+  const addMovable = (piece) => {
+    const item = piece.userData.layout
+    const size = new THREE.Box3().setFromObject(piece, true).getSize(new THREE.Vector3())
+    const body = physics.addProp({
+      position: new THREE.Vector3().fromArray(item.position),
+      rotationY: item.rotationY ?? 0,
+      halfExtents: size.multiplyScalar(0.5),
+      mass: item.mass
+    })
+    props.push({ mesh: piece, body, suckable: false, heavy: true })
+  }
+
+  return { mesh, props, tank, update, applySuction, capture, blowOut, addMovable, drop }
 }

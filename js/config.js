@@ -59,7 +59,22 @@ export const TANK = {
   captureMinPower: 0.5,  // the motor must be at least half spun up
   shrinkDuration: 0.15,  // s: shrink animation when a prop disappears into the nozzle
   maxPropSpeed: 8,       // m/s: speed limit for sucked props (like the course's per-particle limit)
-  drag: 4                // per second, at full suction: slows props near the nozzle so they don't overshoot
+  drag: 4,               // per second, at full suction: slows props near the nozzle so they don't overshoot
+  // tank full: the motor chokes
+  fullPowerCap: 0.3,     // max suction power while the tank is full
+  fullJitter: 0.006,     // m: the vacuum shakes in your hand
+  // blowing props back out of the tank (right mouse)
+  blowInterval: 0.12,    // s between two props
+  blowSpeed: 6,          // m/s: how fast they shoot out of the nozzle
+  regrowDuration: 0.15   // s: grow animation when a prop comes back out
+}
+
+// MAX mode (F): a short, very strong burst that also moves heavy furniture
+export const MAX = {
+  key: 'KeyF',
+  multiplier: 4,   // suction / blow force x4
+  duration: 3,     // s of MAX per full charge
+  recharge: 8      // s to recharge from empty to full
 }
 
 export const VACUUM = {
@@ -131,9 +146,10 @@ export const LAYOUT = {
   spawn: { position: [-0.6, CAMERA.eyeHeight, 0.9], lookAt: [TABLE[0], 1.0, TABLE[2]] },
   furniture: [
     { name: 'Furniture_Rug', model: 'rug', position: TABLE, rotationY: 90 },
-    { name: 'Furniture_Table', model: 'table', position: near(TABLE, 0, 0.02, 0), rotationY: 90 },
-    { name: 'Hide_Vase', model: 'vase', position: near(TABLE, 0.45, 0.77, 0) },
-    { name: 'Furniture_Chair', model: 'chair', position: near(TABLE, 0, 0.02, 0.95), rotationY: 180 },
+    // dynamic: real physics bodies, heavy (mass in kg): only MAX mode can pull them (or you push them)
+    { name: 'Furniture_Table', model: 'table', position: near(TABLE, 0, 0.02, 0), rotationY: 90, dynamic: true, mass: 30 },
+    { name: 'Hide_Vase', model: 'vase', position: near(TABLE, 0.45, 0.77, 0), dynamic: true, mass: 3 },
+    { name: 'Furniture_Chair', model: 'chair', position: near(TABLE, 0, 0.02, 0.95), rotationY: 180, dynamic: true, mass: 8 },
     { name: 'Furniture_Chandelier', model: 'chandelier', position: near(TABLE, 0, ROOM.height - 0.62, 0) },
     { name: 'Hide_Bookshelf', model: 'bookcase', position: BLUE_ROOM, rotationY: 90 },
     { name: 'Hide_Clock', model: 'clock', position: HALLWAY, rotationY: 0 }
@@ -149,10 +165,10 @@ export const LAYOUT = {
     { model: 'bottle', position: near(TABLE, -0.1, 0.77, -0.1) },
     { model: 'book', position: near(TABLE, -0.45, 0.77, 0.2), rotationY: 30 },
     { model: 'book', position: near(TABLE, 0.65, 0.77, 0.25), rotationY: -15 },
-    // around the table, on the rug
-    { model: 'pillow', position: near(TABLE, -0.8, 0.03, 0.65), rotationY: 20 },
-    { model: 'book', position: near(TABLE, 0.9, 0.03, -0.6), rotationY: 25 },
-    { model: 'cup', position: near(TABLE, -0.9, 0.03, -0.65), rotationY: 90 },
+    // around the table, on the rug (not under it: the table's collider is one solid box down to the floor)
+    { model: 'pillow', position: near(TABLE, -1.45, 0.03, 0.45), rotationY: 20 },
+    { model: 'book', position: near(TABLE, 1.15, 0.03, -0.75), rotationY: 25 },
+    { model: 'cup', position: near(TABLE, -1.1, 0.03, -0.7), rotationY: 90 },
     // books everywhere around the bookcase (the Librarian throws these)
     { model: 'book', position: near(BLUE_ROOM, 0.5, 0, 0.6), rotationY: 10 },
     { model: 'book', position: near(BLUE_ROOM, 0.7, 0, 0.3), rotationY: 70 },
