@@ -1,11 +1,11 @@
 // Every tunable number lives here (AGENTS.md §14.8)
 
 // Room size in meters (1 unit = 1 m), floor at y = 0
-// (inside size of the downloaded room after scaling, see MODELS.room)
+// Size of the apartment after scaling (see MODELS.room): the player stays inside this box
 export const ROOM = {
-  width: 6,   // x
-  depth: 6,   // z
-  height: 2.8 // y
+  width: 11.7, // x
+  depth: 11.8, // z
+  height: 2.66 // y (floor to ceiling)
 }
 
 export const CAMERA = {
@@ -50,14 +50,13 @@ export const ETHER = {
 // Every model the game loads. scale = wanted real size / size in the downloaded file,
 // so 1 unit = 1 meter everywhere (sizes measured from the GLB files in step 2.3).
 export const MODELS = {
-  // the file is a 5 x 5 m box with 1.56 m high walls (inside):
-  // stretch it to 6 x 6 x 2.8 m and move its floor to y = 0, centered on the origin
+  // "Apartment 2": a 1.7 x 1.7 miniature in the file. Doors are 0.3 high -> x7 makes them 2.1 m.
+  // Then move its floor (y = -0.117 in the file) to y = 0 and its center to the origin.
   room: {
-    file: 'models/room.glb',
-    scale: [6 / 5, 2.8 / 1.56, 6 / 5],
-    position: [-1.54 * 6 / 5, 0.64 * 2.8 / 1.56, -0.42 * 6 / 5],
-    // built-in office benches: they would look stretched, our own furniture replaces them
-    hide: ['mesh1574848784', 'mesh1574848784_1', 'mesh1574848784_2']
+    file: 'models/apartment.glb',
+    scale: [7, 7, 7],
+    position: [0.12 * 7, 0.117 * 7, -0.203 * 7],
+    hide: []
   },
   ghost: { file: 'models/ghost.glb', scale: 1.3 / 3.13 },   // 3.13 m tall in the file -> 1.3 m
   vacuum: { file: 'models/vacuum.glb', scale: 0.75 / 2.33 }, // 2.33 m -> 0.75 m
@@ -81,68 +80,75 @@ export const MODELS = {
   }
 }
 
-// Where everything stands in the room (meters, origin = middle of the floor).
-// x: left (-3) to right (+3), z: back wall (-3) to front wall (+3), y: up.
+// Where everything stands in the apartment (meters, origin = middle of the apartment, floor y = 0).
+// x: kitchen (-) to window wall (+), z: hallway (-) to blue room (+), y: up.
 // position = where the bottom-center of the model goes; rotationY in degrees.
+// Three areas, one per ghost: our table in the living room, the empty blue room, the hallway.
+const TABLE = [1.6, 0, -0.3]      // Dusty's vase stands on this table
+const BLUE_ROOM = [-5.4, 0, 3.6]  // the Librarian's bookcase, against the left wall
+const HALLWAY = [-1.5, 0, -5.3]   // Granny Clock, at the end of the hallway
+// position next to an area: dx/dz meters away from it, at height y
+const near = (area, dx, y, dz) => [area[0] + dx, y, area[2] + dz]
+
 export const LAYOUT = {
-  spawn: { position: [0, CAMERA.eyeHeight, 2.3], lookAt: [0, 1.2, -3] },
+  spawn: { position: [-0.6, CAMERA.eyeHeight, 0.9], lookAt: [TABLE[0], 1.0, TABLE[2]] },
   furniture: [
-    { name: 'Hide_Bookshelf', model: 'bookcase', position: [-2.78, 0, -1.2], rotationY: 90 },
-    { name: 'Hide_Clock', model: 'clock', position: [2.55, 0, -2.8], rotationY: 0 },
-    { name: 'Furniture_Rug', model: 'rug', position: [0, 0, -0.6], rotationY: 90 },
-    { name: 'Furniture_Table', model: 'table', position: [0, 0.02, -0.6], rotationY: 90 },
-    { name: 'Hide_Vase', model: 'vase', position: [0.45, 0.77, -0.6], rotationY: 0 },
-    { name: 'Furniture_Chair', model: 'chair', position: [0, 0.02, 0.35], rotationY: 180 },
-    { name: 'Furniture_Chandelier', model: 'chandelier', position: [0, 2.18, -0.6], rotationY: 0 }
+    { name: 'Furniture_Rug', model: 'rug', position: TABLE, rotationY: 90 },
+    { name: 'Furniture_Table', model: 'table', position: near(TABLE, 0, 0.02, 0), rotationY: 90 },
+    { name: 'Hide_Vase', model: 'vase', position: near(TABLE, 0.45, 0.77, 0) },
+    { name: 'Furniture_Chair', model: 'chair', position: near(TABLE, 0, 0.02, 0.95), rotationY: 180 },
+    { name: 'Furniture_Chandelier', model: 'chandelier', position: near(TABLE, 0, ROOM.height - 0.62, 0) },
+    { name: 'Hide_Bookshelf', model: 'bookcase', position: BLUE_ROOM, rotationY: 90 },
+    { name: 'Hide_Clock', model: 'clock', position: HALLWAY, rotationY: 0 }
   ],
   // suckable clutter (names Prop_Book_01, ... are made in props.js)
   // y = 0.77: on the table top, y = 0.03: on the rug, y = 0: on the floor
   props: [
     // on the table, around the vase (Dusty's hiding spot)
-    { model: 'cup', position: [-0.3, 0.77, -0.45], rotationY: 20 },
-    { model: 'cup', position: [0.1, 0.77, -0.85], rotationY: 130 },
-    { model: 'candle', position: [-0.5, 0.77, -0.75] },
-    { model: 'candle', position: [0.2, 0.77, -0.4] },
-    { model: 'bottle', position: [-0.1, 0.77, -0.7] },
-    { model: 'book', position: [-0.45, 0.77, -0.4], rotationY: 30 },
-    { model: 'book', position: [0.65, 0.77, -0.35], rotationY: -15 },
+    { model: 'cup', position: near(TABLE, -0.3, 0.77, 0.15), rotationY: 20 },
+    { model: 'cup', position: near(TABLE, 0.1, 0.77, -0.25), rotationY: 130 },
+    { model: 'candle', position: near(TABLE, -0.5, 0.77, -0.15) },
+    { model: 'candle', position: near(TABLE, 0.2, 0.77, 0.2) },
+    { model: 'bottle', position: near(TABLE, -0.1, 0.77, -0.1) },
+    { model: 'book', position: near(TABLE, -0.45, 0.77, 0.2), rotationY: 30 },
+    { model: 'book', position: near(TABLE, 0.65, 0.77, 0.25), rotationY: -15 },
+    // around the table, on the rug
+    { model: 'pillow', position: near(TABLE, -0.8, 0.03, 0.65), rotationY: 20 },
+    { model: 'book', position: near(TABLE, 0.9, 0.03, -0.6), rotationY: 25 },
+    { model: 'cup', position: near(TABLE, -0.9, 0.03, -0.65), rotationY: 90 },
     // books everywhere around the bookcase (the Librarian throws these)
-    { model: 'book', position: [-2.3, 0, -0.6], rotationY: 10 },
-    { model: 'book', position: [-2.1, 0, -0.9], rotationY: 70 },
-    { model: 'book', position: [-2.4, 0, -1.5], rotationY: -20 },
-    { model: 'book', position: [-1.9, 0, -1.3], rotationY: 45 },
-    { model: 'book', position: [-2.2, 0, -1.9], rotationY: 100 },
-    { model: 'book', position: [-1.75, 0, -0.75], rotationY: -60 },
-    { model: 'book', position: [-1.55, 0.03, -1.05], rotationY: 15 },
-    { model: 'book', position: [-2.5, 0, -2.3], rotationY: 80 },
-    { model: 'bookStack', position: [-2.35, 0, -0.2] },
-    { model: 'bookStack', position: [-2.0, 0, -2.15], rotationY: 30 },
-    // the clock's corner (Granny Clock's hiding spot)
-    { model: 'bottle', position: [2.1, 0, -2.6] },
-    { model: 'bottle', position: [2.3, 0, -2.2] },
-    { model: 'cup', position: [1.9, 0, -2.4], rotationY: 60 },
-    { model: 'cup', position: [1.7, 0, -2.75], rotationY: -30 },
-    { model: 'candle', position: [2.7, 0, -2.2] },
-    { model: 'book', position: [2.0, 0, -2.0], rotationY: 40 },
-    { model: 'book', position: [2.5, 0, -1.85], rotationY: -30 },
-    { model: 'plant', position: [2.65, 0, -1.5] },
-    // around the chair and on the rug
-    { model: 'pillow', position: [-0.8, 0.03, 0.05], rotationY: 20 },
-    { model: 'pillow', position: [0.9, 0, 0.5], rotationY: -40 },
-    { model: 'book', position: [0.9, 0.03, -1.2], rotationY: 25 },
-    { model: 'cup', position: [-0.9, 0.03, -1.25], rotationY: 90 },
-    // front of the room and under the window
-    { model: 'pillow', position: [-1.5, 0, 1.5], rotationY: 60 },
-    { model: 'plant', position: [-2.6, 0, 2.6] },
-    { model: 'plant', position: [2.6, 0, 2.6] },
-    { model: 'cup', position: [0.6, 0, 1.3], rotationY: 200 },
-    { model: 'bottle', position: [-1.0, 0, 1.0] },
-    { model: 'candle', position: [2.6, 0, 0.3] },
-    { model: 'candle', position: [2.65, 0, -0.1] }
+    { model: 'book', position: near(BLUE_ROOM, 0.5, 0, 0.6), rotationY: 10 },
+    { model: 'book', position: near(BLUE_ROOM, 0.7, 0, 0.3), rotationY: 70 },
+    { model: 'book', position: near(BLUE_ROOM, 0.4, 0, -0.3), rotationY: -20 },
+    { model: 'book', position: near(BLUE_ROOM, 0.9, 0, -0.1), rotationY: 45 },
+    { model: 'book', position: near(BLUE_ROOM, 0.6, 0, -0.7), rotationY: 100 },
+    { model: 'book', position: near(BLUE_ROOM, 1.05, 0, 0.45), rotationY: -60 },
+    { model: 'book', position: near(BLUE_ROOM, 1.25, 0, 0.15), rotationY: 15 },
+    { model: 'book', position: near(BLUE_ROOM, 0.3, 0, -1.1), rotationY: 80 },
+    { model: 'bookStack', position: near(BLUE_ROOM, 0.45, 0, 1.0) },
+    { model: 'bookStack', position: near(BLUE_ROOM, 0.8, 0, -0.95), rotationY: 30 },
+    { model: 'pillow', position: near(BLUE_ROOM, 1.8, 0, 0.8), rotationY: 60 },
+    { model: 'plant', position: near(BLUE_ROOM, 0.3, 0, 1.6) },
+    // the clock's spot at the end of the hallway (Granny Clock's hiding spot)
+    { model: 'bottle', position: near(HALLWAY, -0.45, 0, 0.3) },
+    { model: 'bottle', position: near(HALLWAY, -0.25, 0, 0.7) },
+    { model: 'cup', position: near(HALLWAY, 0.4, 0, 0.4), rotationY: 60 },
+    { model: 'cup', position: near(HALLWAY, 0.55, 0, 0.05), rotationY: -30 },
+    { model: 'candle', position: near(HALLWAY, -0.5, 0, 0.9) },
+    { model: 'book', position: near(HALLWAY, 0.3, 0, 0.9), rotationY: 40 },
+    { model: 'book', position: near(HALLWAY, -0.1, 0, 1.2), rotationY: -30 },
+    { model: 'candle', position: near(HALLWAY, 0.5, 0, 1.4) },
+    // scattered through the living room
+    { model: 'pillow', position: [-0.2, 0, -1.4], rotationY: 60 },
+    { model: 'cup', position: [0.4, 0, 1.1], rotationY: 200 },
+    { model: 'bottle', position: [-1.0, 0, -0.6] },
+    { model: 'plant', position: [4.6, 0, -0.8] },
+    { model: 'candle', position: [3.4, 0, 0.3] },
+    { model: 'candle', position: [3.6, 0, -0.1] }
   ],
-  // fake window on the right wall (the room has none): a glowing plane for moonlight
-  window: { position: [2.99, 1.5, -0.6], width: 1.2, height: 1.0, color: 0x50648f },
-  ceilingColor: 0xd0dadd
+  // no fake window needed: the apartment has a real window wall
+  window: null,
+  ceilingColor: 0xf2f2f2
 }
 
 export const FLASHLIGHT = {

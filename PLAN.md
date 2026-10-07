@@ -285,10 +285,11 @@ Check online (not just locally):
 ### 3.1 Rapier world + static colliders · 🤖 · 1–2 h
 1. `npm install @dimforge/rapier3d-compat`.
 2. `js/physics.js`: `await RAPIER.init()`, world with gravity, fixed 60 Hz step.
-3. Cuboid colliders for floor, ceiling and walls (from `config.js`), and for each `Furniture_*` / `Hide_*` (from their bounding boxes).
-4. Debug mode (`?debug`): draw the collider boxes as wireframes.
+3. A trimesh collider for the apartment (walls, floors, its own furniture), and cuboid colliders for each `Furniture_*` / `Hide_*` (from their bounding boxes).
+4. **Player collision:** a Rapier `KinematicCharacterController` (capsule) so you can't walk through the apartment's walls anymore (replaces the box clamp from 2.7).
+5. Debug mode (`?debug`): draw the collider boxes as wireframes.
 
-**Done when:** with `?debug` the collider boxes line up with the furniture.
+**Done when:** with `?debug` the collider boxes line up with the furniture, and you can't walk through walls.
 **Commit:** `step 3.1: rapier world and static colliders`
 
 ### 3.2 Props as dynamic bodies · 🤖 · 1–2 h

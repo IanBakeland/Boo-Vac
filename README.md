@@ -44,7 +44,7 @@ npm run dev
 | Ether (shader) | nimitz | CC BY-NC-SA 3.0 | https://www.shadertoy.com/view/MsjSW3 |
 | Ghost (animated) | Quaternius | CC0 | https://poly.pizza/m/Iip30bDHmu |
 | Vacuum Cleaner | Zoe XR | CC BY | https://poly.pizza/m/1_kdZRnuCo8 |
-| High Fidelity Room v0.1 (room) | Aaron Clifford | CC BY | https://poly.pizza/m/fNm04k7iESn |
+| Apartment 2 (the level) | Gabriele Romagnoli | CC BY 3.0 | https://poly.pizza/m/dtgO5dwwtkk |
 | Bookcase with Books | Quaternius | CC0 | https://poly.pizza/m/tACDGJ4CGW |
 | Grandfathers Clock | CreativeTrio | CC0 | https://poly.pizza/m/09YKIkFZnA |
 | Chair | Quaternius | CC0 | https://poly.pizza/m/zMmKNm8w4a |

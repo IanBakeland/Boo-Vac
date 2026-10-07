@@ -206,7 +206,7 @@ js/shaders/beam/fragment.wgsl        S3
 js/shaders/flashlight/fragment.wgsl  room flashlight lighting
 js/shaders/dust/update.wgsl          S4 math (called from a TSL compute Fn)
 js/shaders/post/fragment.wgsl        S5 + S7 (stretch)
-public/models/room.glb      downloaded empty room (Poly Pizza)
+public/models/apartment.glb downloaded apartment (Poly Pizza), the level
 public/models/furniture/    bookshelf, clock, vase, table, ... (Poly Pizza)
 public/models/props/        book, cup, pillow, ... (Poly Pizza)
 public/models/vacuum.glb    nozzle = VACUUM.nozzleOffset in config.js
@@ -241,7 +241,7 @@ Asset paths in code are **relative without a leading slash** (`'models/room.glb'
 
 ### 5.4 Coordinates and scale
 
-- 1 unit = 1 meter. Room **6 m × 6 m × 2.8 m** inside (x × z × y), centered on the origin, floor at y = 0 (the downloaded room, scaled via `MODELS.room` in `config.js`; it has no ceiling, add one in code).
+- 1 unit = 1 meter. The level is the downloaded **apartment** ("Apartment 2", Poly Pizza, CC BY 3.0), scaled ×7 to about **11.7 m × 11.8 m × 2.66 m** (x × z × y), centered on the origin, floor at y = 0 (`MODELS.room` in `config.js`). It has a living room, kitchen, hallway and an empty blue room, and no ceiling (one plane is added in code). Its own furniture stays.
 - Player eye height 1.6 m, walk speed 2.2 m/s, keep 0.4 m away from walls.
 - Camera: `PerspectiveCamera(70, aspect, 0.05, 50)`. Add the camera to the scene (`scene.add(camera)`) because the vacuum and flashlight are children of the camera (scene-graph lesson).
 
@@ -362,7 +362,7 @@ Start values (tune with lil-gui in debug mode): `range 3.0`, `cosInner cos(15°)
 - **Blow-out spawn:** recreate the body at the nozzle with an impulse along `nozzleDir`.
 - **Librarian throw:** pick the nearest `Prop_Book*` within 2.5 m of the ghost and apply an impulse toward the player (+ small upward component).
 - **Trembling hiding spots:** visual only (small random offset/rotation on the mesh, no physics).
-- **Player:** no physics body. Clamp the camera inside the room.
+- **Player:** the apartment has interior walls, so a box clamp is not enough: give the player a Rapier `KinematicCharacterController` with a capsule collider and collide it with the apartment (trimesh collider from the apartment meshes). Done in PLAN step 3.1.
 - Max ~60 dynamic props. Rapier API names change between versions: check the installed version's docs.
 
 ---
@@ -385,7 +385,7 @@ Names are set **in code** from `LAYOUT` in `config.js` (no Blender).
 
 | Name | Meaning |
 |---|---|
-| room | The downloaded room GLB (walls, floor, ceiling). Gets the flashlight material. |
+| room | The downloaded apartment GLB (walls, floors, its own furniture). Gets the flashlight material. |
 | `Furniture_*` | Static furniture. Flashlight material. Gets a fixed cuboid collider. |
 | `Hide_Vase`, `Hide_Bookshelf`, `Hide_Clock` | Hiding spots. Static, trembles in code, collider. |
 | `Prop_*` (e.g. `Prop_Book_01`) | Dynamic, suckable props. Keep their own materials (lit by the real `SpotLight`). |

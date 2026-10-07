@@ -24,7 +24,7 @@ export const placeModel = (model, { scale, position, rotationY = 0 }) => {
 export const createRoom = async () => {
   const mesh = new THREE.Group()
 
-  // the downloaded room: stretched to ROOM size, floor at y = 0 (numbers in MODELS.room)
+  // the downloaded apartment: scaled to real size, floor at y = 0 (numbers in MODELS.room)
   const roomGltf = await loader.loadAsync(MODELS.room.file)
   const shell = roomGltf.scene
   shell.scale.fromArray(MODELS.room.scale)
@@ -35,7 +35,7 @@ export const createRoom = async () => {
   shell.name = 'Room_Shell'
   mesh.add(shell)
 
-  // the room has no ceiling: a plane facing down
+  // the apartment has no ceiling: one big plane facing down over all of it
   const ceiling = new THREE.Mesh(
     new THREE.PlaneGeometry(ROOM.width, ROOM.depth),
     new THREE.MeshStandardMaterial({ color: LAYOUT.ceilingColor })
@@ -45,17 +45,19 @@ export const createRoom = async () => {
   ceiling.name = 'Room_Ceiling'
   mesh.add(ceiling)
 
-  // fake window: unlit, so it glows in the dark
+  // optional fake window: unlit, so it glows in the dark
   const win = LAYOUT.window
-  const windowGlow = new THREE.Mesh(
-    new THREE.PlaneGeometry(win.width, win.height),
-    new THREE.MeshBasicMaterial({ color: win.color })
-  )
-  // face into the room (-x)
-  windowGlow.rotation.y = -Math.PI / 2
-  windowGlow.position.fromArray(win.position)
-  windowGlow.name = 'Window_Glow'
-  mesh.add(windowGlow)
+  if (win) {
+    const windowGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(win.width, win.height),
+      new THREE.MeshBasicMaterial({ color: win.color })
+    )
+    // face into the room (-x)
+    windowGlow.rotation.y = -Math.PI / 2
+    windowGlow.position.fromArray(win.position)
+    windowGlow.name = 'Window_Glow'
+    mesh.add(windowGlow)
+  }
 
   // furniture: load all files at the same time, then place each one
   const gltfs = await Promise.all(
