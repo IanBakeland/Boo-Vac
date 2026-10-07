@@ -48,8 +48,8 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 **Phase 1: Foundation, deploy, first shaders**
 - [x] 1.1 Create the Vite project
 - [x] 1.2 Three.js boilerplate (WebGPU)
-- [ ] 1.3 Git + first push
-- [ ] 1.4 GitHub Pages deploy
+- [x] 1.3 Git + first push
+- [x] 1.4 GitHub Pages deploy
 - [ ] 1.5 Submission README skeleton
 - [ ] 1.6 Port Ether (S1), 5 sub-steps
 - [ ] 1.7 Suction cone shader (S2) + spin-up
