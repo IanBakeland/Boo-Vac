@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 import { CAMERA, MAX_DT, ETHER, LAYOUT } from './config.js'
 import { createRoom } from './objects/room.js'
+import { createProps } from './objects/props.js'
 import { createVacuum } from './objects/vacuum.js'
 import etherShader from './shaders/ether/fragment.wgsl?raw'
 
@@ -38,6 +39,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 const room = await createRoom()
 scene.add(room.mesh)
+const props = await createProps()
+scene.add(props.mesh)
 
 // temporary lights so we can see the room (replaced by the flashlight in 2.6)
 scene.add(new THREE.AmbientLight(0xffffff, 1.2))

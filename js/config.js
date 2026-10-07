@@ -85,6 +85,51 @@ export const LAYOUT = {
     { name: 'Furniture_Chair', model: 'chair', position: [0, 0.02, 0.35], rotationY: 180 },
     { name: 'Furniture_Chandelier', model: 'chandelier', position: [0, 2.18, -0.6], rotationY: 0 }
   ],
+  // suckable clutter (names Prop_Book_01, ... are made in props.js)
+  // y = 0.77: on the table top, y = 0.03: on the rug, y = 0: on the floor
+  props: [
+    // on the table, around the vase (Dusty's hiding spot)
+    { model: 'cup', position: [-0.3, 0.77, -0.45], rotationY: 20 },
+    { model: 'cup', position: [0.1, 0.77, -0.85], rotationY: 130 },
+    { model: 'candle', position: [-0.5, 0.77, -0.75] },
+    { model: 'candle', position: [0.2, 0.77, -0.4] },
+    { model: 'bottle', position: [-0.1, 0.77, -0.7] },
+    { model: 'book', position: [-0.45, 0.77, -0.4], rotationY: 30 },
+    { model: 'book', position: [0.65, 0.77, -0.35], rotationY: -15 },
+    // books everywhere around the bookcase (the Librarian throws these)
+    { model: 'book', position: [-2.3, 0, -0.6], rotationY: 10 },
+    { model: 'book', position: [-2.1, 0, -0.9], rotationY: 70 },
+    { model: 'book', position: [-2.4, 0, -1.5], rotationY: -20 },
+    { model: 'book', position: [-1.9, 0, -1.3], rotationY: 45 },
+    { model: 'book', position: [-2.2, 0, -1.9], rotationY: 100 },
+    { model: 'book', position: [-1.75, 0, -0.75], rotationY: -60 },
+    { model: 'book', position: [-1.55, 0.03, -1.05], rotationY: 15 },
+    { model: 'book', position: [-2.5, 0, -2.3], rotationY: 80 },
+    { model: 'bookStack', position: [-2.35, 0, -0.2] },
+    { model: 'bookStack', position: [-2.0, 0, -2.15], rotationY: 30 },
+    // the clock's corner (Granny Clock's hiding spot)
+    { model: 'bottle', position: [2.1, 0, -2.6] },
+    { model: 'bottle', position: [2.3, 0, -2.2] },
+    { model: 'cup', position: [1.9, 0, -2.4], rotationY: 60 },
+    { model: 'cup', position: [1.7, 0, -2.75], rotationY: -30 },
+    { model: 'candle', position: [2.7, 0, -2.2] },
+    { model: 'book', position: [2.0, 0, -2.0], rotationY: 40 },
+    { model: 'book', position: [2.5, 0, -1.85], rotationY: -30 },
+    { model: 'plant', position: [2.65, 0, -1.5] },
+    // around the chair and on the rug
+    { model: 'pillow', position: [-0.8, 0.03, 0.05], rotationY: 20 },
+    { model: 'pillow', position: [0.9, 0, 0.5], rotationY: -40 },
+    { model: 'book', position: [0.9, 0.03, -1.2], rotationY: 25 },
+    { model: 'cup', position: [-0.9, 0.03, -1.25], rotationY: 90 },
+    // front of the room and under the window
+    { model: 'pillow', position: [-1.5, 0, 1.5], rotationY: 60 },
+    { model: 'plant', position: [-2.6, 0, 2.6] },
+    { model: 'plant', position: [2.6, 0, 2.6] },
+    { model: 'cup', position: [0.6, 0, 1.3], rotationY: 200 },
+    { model: 'bottle', position: [-1.0, 0, 1.0] },
+    { model: 'candle', position: [2.6, 0, 0.3] },
+    { model: 'candle', position: [2.65, 0, -0.1] }
+  ],
   // fake window on the right wall (the room has none): a glowing plane for moonlight
   window: { position: [2.99, 1.5, -0.6], width: 1.2, height: 1.0, color: 0x8fa8d8 },
   ceilingColor: 0xd0dadd

@@ -60,7 +60,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 2.2 Download an empty room
 - [x] 2.3 Prepare the models (`public/models/`, scales, room size)
 - [x] 2.4 Load the room + furniture (layout in code)
-- [ ] 2.5 Place the props (layout in code)
+- [x] 2.5 Place the props (layout in code)
 - [ ] 2.6 Flashlight: SpotLight + beam (S3) + room lighting shader
 - [ ] 2.7 First-person controls + vacuum in hand
 
