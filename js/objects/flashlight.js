@@ -81,5 +81,5 @@ export const createFlashlight = ({ camera, iTime }) => {
     camera.getWorldDirection(uniforms.lampDir.value)
   }
 
-  return { mesh, ambientLight, lightUp, update }
+  return { mesh, ambientLight, uniforms, lightUp, update }
 }

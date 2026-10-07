@@ -69,6 +69,20 @@ export const MAX = {
   recharge: 8      // s to recharge from empty to full
 }
 
+// Dust specks (compute shader on the GPU, WebGPU only)
+export const DUST = {
+  count: 10000,        // specks (raise if the FPS allows, see ?debug)
+  size: 0.015,         // m (bigger than real dust, or you would not see it)
+  minY: 0.05,          // m: lowest spawn height
+  respawnDistance: 0.25, // m: a speck this close to the nozzle is "sucked in" and respawns elsewhere
+  drag: 1.5,           // per second (air resistance)
+  drift: 0.03,         // m/s²: slow floating when the vacuum is off
+  color: 0xfff1d6,     // same warm white as the flashlight
+  baseGlow: 0.015,     // faint glow outside the beam
+  beamGlow: 1.5,       // brightness inside the beam
+  beamRange: 7         // m: specks further from the lamp don't glitter
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],

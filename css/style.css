@@ -137,3 +137,13 @@ body
     box-shadow: 0 0 18px #ff5e9c;
     color: #ff5e9c;
 }
+
+/* ?debug: FPS readout in the top-left corner */
+#fps
+{
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    color: #9be35b;
+    font: 12px monospace;
+}

@@ -2,12 +2,13 @@ import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS, TANK, MAX } from './config.js'
+import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
 import { createFlashlight } from './objects/flashlight.js'
 import { createVacuum } from './objects/vacuum.js'
+import { createDust } from './objects/dust.js'
 import etherShader from './shaders/ether/fragment.wgsl?raw'
 
 const canvas = document.querySelector('canvas.webgl')
@@ -35,6 +36,8 @@ const renderer = new THREE.WebGPURenderer({
 })
 renderer.setSize(size.width, size.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+// wait for the GPU: compute shaders (dust) need an initialized renderer
+await renderer.init()
 
 const room = await createRoom()
 scene.add(room.mesh)
@@ -100,6 +103,15 @@ const flashlight = createFlashlight({ camera, iTime })
 scene.add(flashlight.ambientLight)
 flashlight.lightUp(room.mesh)
 
+// dust specks: compute shader, only with real WebGPU (the WebGL fallback has no compute dust)
+const dust = renderer.backend.isWebGPUBackend
+  ? createDust({ iTime, nozzle: vacuum.nozzle, lamp: flashlight.uniforms })
+  : null
+if (dust) {
+  scene.add(dust.mesh)
+  renderer.compute(dust.init)
+}
+
 // --- input ---
 // e.code is the physical key: WASD also works on AZERTY (there it's ZQSD)
 const keys = new Set()
@@ -142,6 +154,20 @@ const updateHud = () => {
     $max.classList.toggle('active', maxActive)
     $max.classList.toggle('ready', !maxActive && maxCharge >= 1)
   }
+}
+
+// ?debug: frames per second, updated twice a second
+const $fps = document.querySelector('#fps')
+if (DEBUG) $fps.classList.remove('hidden')
+let fpsFrames = 0
+let fpsTime = 0
+const updateFps = (dt) => {
+  fpsFrames++
+  fpsTime += dt
+  if (fpsTime < 0.5) return
+  $fps.textContent = `${Math.round(fpsFrames / fpsTime)} fps · ${dust ? DUST.count + ' dust' : 'no dust'}`
+  fpsFrames = 0
+  fpsTime = 0
 }
 
 // MAX mode: press F when charged -> 3 s of x2.5 force, then recharge
@@ -262,7 +288,10 @@ const draw = (timestamp) => {
   }
   props.update()
   if (DEBUG) physics.updateDebugLines()
+  // dust: same suction as the props (MAX makes it stronger too)
+  dust?.update(renderer, dt, power * boost, mode)
   updateHud()
+  if (DEBUG) updateFps(dt)
   renderer.render(scene, camera)
 }
 
