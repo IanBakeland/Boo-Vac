@@ -42,7 +42,8 @@ export const createProps = async ({ physics }) => {
     // small enough to fit in the vacuum?
     const suckable = Math.max(size.x, size.y, size.z) < TANK.captureMaxSize
     // body = null once the prop is in the tank
-    props.push({ mesh: prop, body, suckable, heavy: false })
+    // home: where it stood at the start (the ghost checks if it was near its hiding spot)
+    props.push({ mesh: prop, body, suckable, heavy: false, home: new THREE.Vector3().fromArray(item.position) })
   })
 
   // copy every body's position and rotation onto its model (after the physics step)
@@ -87,10 +88,10 @@ export const createProps = async ({ physics }) => {
     })
   }
 
-  // small props close to the nozzle disappear into the tank; returns how many were sucked in
+  // small props close to the nozzle disappear into the tank; returns the props sucked in this frame
   const tank = []
   const capture = (nozzle) => {
-    let count = 0
+    const caught = []
     props.forEach((prop) => {
       if (!prop.body || !prop.suckable) return
       const com = prop.body.worldCom()
@@ -106,9 +107,9 @@ export const createProps = async ({ physics }) => {
         onComplete: () => { prop.mesh.visible = false }
       })
       tank.push(prop)
-      count++
+      caught.push(prop)
     })
-    return count
+    return caught
   }
   update()
 

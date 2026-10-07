@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import gsap from 'gsap'
 
 import { MODELS, GHOST, ETHER, FLASHLIGHT } from '../config.js'
 import { suctionStrength } from '../physics.js'
@@ -17,7 +18,8 @@ const CLIPS = {
 // these play once and then hold their last pose
 const PLAY_ONCE = ['captured', 'giggle']
 
-export const createGhost = async ({ iTime }) => {
+// hidingSpots: the Hide_* furniture, dust: for the puffs (null without WebGPU)
+export const createGhost = async ({ iTime, hidingSpots, dust }) => {
   const gltf = await new GLTFLoader().loadAsync(MODELS.ghost.file)
 
   // root: position + rotation of the ghost; the model inside is scaled to real size
@@ -92,6 +94,65 @@ export const createGhost = async ({ iTime }) => {
   }
   setState('emerged')
 
+  // --- hiding: the ghost is invisible inside its spot until exposure reaches 1 ---
+  // phase: 'hidden' (in the spot, trembling) or 'emerged' (out, visible in the beam)
+  let phase = 'hidden'
+  let exposure = 0
+  // presence: 0 while hidden, fades to 1 when emerging (multiplies the beam visibility)
+  const fade = { presence: 0 }
+  const spot = hidingSpots.find((s) => s.name === GHOST.hideSpot)
+  // the spot's model inside its group: we shake that one, so the physics body stays untouched
+  const spotModel = spot.children[0]
+  const spotModelHome = spotModel.position.clone()
+  const spotCenter = new THREE.Vector3()
+  const spotBox = new THREE.Box3()
+  const randomBetween = ([min, max]) => min + Math.random() * (max - min)
+  let trembleTimer = randomBetween(GHOST.trembleInterval)
+  let trembleLeft = 0
+
+  // fly out of the spot toward the player
+  const playerPosition = new THREE.Vector3()
+  const emerge = () => {
+    if (phase !== 'hidden') return
+    phase = 'emerged'
+    exposure = 1
+    spotModel.position.copy(spotModelHome)
+    const target = new THREE.Vector3().subVectors(playerPosition, spotCenter).setY(0).normalize()
+      .multiplyScalar(GHOST.emergeDistance).add(spotCenter)
+    // root height: the ghost's middle at the spot's middle, but never below the floor
+    target.y = Math.max(spotCenter.y - ETHER.centerHeight, 0.1)
+    mesh.position.copy(spotCenter).setY(target.y)
+    mesh.scale.setScalar(0.2)
+    gsap.to(mesh.position, { x: target.x, y: target.y, z: target.z, duration: GHOST.emergeDuration, ease: 'power2.out' })
+    gsap.to(mesh.scale, { x: 1, y: 1, z: 1, duration: GHOST.emergeDuration, ease: 'back.out' })
+    gsap.to(fade, { presence: 1, duration: GHOST.emergeDuration })
+    setState('emerged')
+  }
+
+  // a prop got sucked up: if it stood near the spot, the ghost is more exposed
+  const onPropCaptured = (prop) => {
+    if (phase === 'hidden' && prop.home.distanceTo(spotCenter) < GHOST.propRadius) exposure += GHOST.exposurePerProp
+  }
+
+  const updateHidden = (dt, { nozzle, power }) => {
+    // trembling every few seconds, with a puff of dust
+    trembleTimer -= dt
+    if (trembleTimer <= 0) {
+      trembleTimer = randomBetween(GHOST.trembleInterval)
+      trembleLeft = GHOST.trembleDuration
+      dust?.burst(spotCenter, GHOST.burstAmount, GHOST.burstRadius)
+    }
+    spotModel.position.copy(spotModelHome)
+    if (trembleLeft > 0) {
+      trembleLeft -= dt
+      spotModel.position.x += (Math.random() - 0.5) * 2 * GHOST.trembleAmount
+      spotModel.position.z += (Math.random() - 0.5) * 2 * GHOST.trembleAmount
+    }
+    // exposure: rises while the suction cone reaches the spot
+    if (suctionStrength(spotCenter, nozzle.position, nozzle.direction, power) > 0.05) exposure += GHOST.exposureRate * dt
+    if (exposure >= 1) emerge()
+  }
+
   const center = new THREE.Vector3()
   const toGhost = new THREE.Vector3()
   const toNozzle = new THREE.Vector3()
@@ -100,8 +161,21 @@ export const createGhost = async ({ iTime }) => {
   let shown = 0
 
   // camera, lamp (position + direction), nozzle and the vacuum power drive the aura
+  let time = 0
   const update = (dt, { camera, lampPos, lampDir, nozzle, power }) => {
+    time += dt
+    playerPosition.copy(camera.position)
+    // the spot can move (the vase has physics): measure it every frame
+    spotBox.setFromObject(spot).getCenter(spotCenter)
+    if (phase === 'hidden') {
+      mesh.visible = false
+      updateHidden(dt, { nozzle, power })
+      return
+    }
+
     mixer.update(dt)
+    // gentle floating up and down (on the model, so it doesn't fight the emerge tween on the root)
+    model.position.y = Math.sin(time * GHOST.hoverSpeed) * GHOST.hoverAmount
     center.copy(mesh.position)
     center.y += ETHER.centerHeight
 
@@ -112,10 +186,10 @@ export const createGhost = async ({ iTime }) => {
     const near = 1 - THREE.MathUtils.smoothstep(dist, GHOST.visibleRange[0], GHOST.visibleRange[1])
     // ease toward the target, so it fades instead of popping
     shown += (inBeam * near - shown) * Math.min(1, dt * GHOST.visibilitySmoothing)
-    visibility.value = shown
-    modelMaterials.forEach((material) => { material.opacity = shown })
+    visibility.value = shown * fade.presence
+    modelMaterials.forEach((material) => { material.opacity = visibility.value })
     // completely hidden: don't draw it at all
-    mesh.visible = shown > 0.01
+    mesh.visible = visibility.value > 0.01
 
     // the ghost turns to face you (only around the vertical axis)
     mesh.rotation.y = Math.atan2(camera.position.x - mesh.position.x, camera.position.z - mesh.position.z)
@@ -134,5 +208,5 @@ export const createGhost = async ({ iTime }) => {
     stretch.value.multiplyScalar(pull * ETHER.maxStretch)
   }
 
-  return { mesh, model, setState, getState: () => state, update }
+  return { mesh, model, setState, getState: () => state, getExposure: () => Math.min(exposure, 1), emerge, onPropCaptured, update }
 }

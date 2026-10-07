@@ -89,7 +89,22 @@ export const GHOST = {
   visibleRange: [5, 7],     // m: fully visible closer than 5 m, invisible beyond 7 m
   visibilitySmoothing: 6,   // per second: how fast it fades in/out (no hard popping)
   tint: [0.8, 0.88, 1.0],   // Dusty: pale blue-grey (sRGB), per ghost later (4.6)
-  testPosition: [2.6, 0.2, -1.4] // temporary spot until the hiding spots work (4.3)
+  hideSpot: 'Hide_Vase',    // where the (first) ghost hides
+  // hiding: the spot trembles every few seconds and drops a puff of dust
+  trembleInterval: [3, 5],  // s: random time between two trembles
+  trembleDuration: 0.6,     // s
+  trembleAmount: 0.015,     // m: how far the spot shakes
+  burstAmount: 0.03,        // part of all dust specks that puffs out of the spot (0.03 = 3%)
+  burstRadius: 0.25,        // m
+  // exposure (0 -> 1): the ghost pops out at 1
+  exposureRate: 0.25,       // per second while the spot is in your suction cone
+  exposurePerProp: 0.2,     // per prop you suck up that stood near the spot
+  propRadius: 1.5,          // m: "near the spot"
+  // emerging: flies out of the spot toward you
+  emergeDistance: 0.8,      // m toward the player
+  emergeDuration: 0.8,      // s
+  hoverAmount: 0.05,        // m: gentle up and down floating
+  hoverSpeed: 1.5           // per second
 }
 
 export const VACUUM = {
@@ -110,9 +125,9 @@ export const SUCTION_CONE = {
 }
 
 export const ETHER = {
-  size: 2.0,         // m: the aura billboard around the ghost
-  centerHeight: 0.7, // m above the ghost's root: middle of its body (where the aura sits)
-  forward: 0.4,      // m: the aura floats this much in front of the body (toward you), or the body hides it
+  size: 1.3,         // m: the aura billboard around the ghost
+  centerHeight: 0.45,// m above the ghost's root: middle of its body (where the aura sits)
+  forward: 0.25,     // m: the aura floats this much in front of the body (toward you), or the body hides it
   // how far the smoke smears toward the nozzle at full power
   maxStretch: 0.6
 }
@@ -128,7 +143,7 @@ export const MODELS = {
     position: [0.12 * 7, 0.117 * 7, -0.203 * 7],
     hide: []
   },
-  ghost: { file: 'models/ghost.glb', scale: 1.3 / 3.13 },   // 3.13 m tall in the file -> 1.3 m
+  ghost: { file: 'models/ghost.glb', scale: 0.8 / 3.13 },   // 3.13 m tall in the file -> 0.8 m
   vacuum: { file: 'models/vacuum.glb', scale: 0.75 / 2.33 }, // 2.33 m -> 0.75 m
   furniture: {
     bookcase: { file: 'models/furniture/bookcase.glb', scale: 2.0 / 3.37 },     // 2 m high

@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, GHOST } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -70,11 +70,6 @@ const iTime = uniform(0)
 
 const vacuum = createVacuum({ camera, iTime })
 
-// the ghost (model + Blender animations); for now it floats at a test spot
-const ghost = await createGhost({ iTime })
-ghost.mesh.position.fromArray(GHOST.testPosition)
-scene.add(ghost.mesh)
-
 // the flashlight is the only real light: the room gets the flashlight shader, props get the SpotLight
 const flashlight = createFlashlight({ camera, iTime })
 scene.add(flashlight.ambientLight)
@@ -88,6 +83,10 @@ if (dust) {
   scene.add(dust.mesh)
   renderer.compute(dust.init)
 }
+
+// the ghost (model + Blender animations + Ether aura): hides in its spot until exposed
+const ghost = await createGhost({ iTime, hidingSpots: room.hidingSpots, dust })
+scene.add(ghost.mesh)
 
 // --- input ---
 // e.code is the physical key: WASD also works on AZERTY (there it's ZQSD)
@@ -105,6 +104,8 @@ window.addEventListener('keydown', (e) => {
   // debug: 1-5 switch the ghost's animation state
   const debugStates = { Digit1: 'emerged', Digit2: 'tug', Digit3: 'escape', Digit4: 'giggle', Digit5: 'captured' }
   if (DEBUG && debugStates[e.code]) ghost.setState(debugStates[e.code])
+  // debug: G makes the ghost come out right away
+  if (DEBUG && e.code === 'KeyG') ghost.emerge()
   // debug: P drops all props from 1 m higher
   if (DEBUG && e.code === 'KeyP') props.drop()
 })
@@ -145,7 +146,7 @@ const updateFps = (dt) => {
   fpsFrames++
   fpsTime += dt
   if (fpsTime < 0.5) return
-  $fps.textContent = `${Math.round(fpsFrames / fpsTime)} fps · ${dust ? DUST.count + ' dust' : 'no dust'}`
+  $fps.textContent = `${Math.round(fpsFrames / fpsTime)} fps · ${dust ? DUST.count + ' dust' : 'no dust'} · exposure ${ghost.getExposure().toFixed(2)}`
   fpsFrames = 0
   fpsTime = 0
 }
@@ -267,8 +268,11 @@ const draw = (timestamp) => {
   physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, power, mode, stepDt, boost))
   // sucking at (almost) full power: small props at the nozzle go into the tank
   if (mode === 'suck' && power >= TANK.captureMinPower) {
+    const caught = props.capture(vacuum.nozzle)
+    // clutter near the hiding spot exposes the ghost
+    caught.forEach((prop) => ghost.onPropCaptured(prop))
     // placeholder for the "plop" sound (step 4.8)
-    if (props.capture(vacuum.nozzle) > 0 && DEBUG) console.log('plop', props.tank.length)
+    if (caught.length > 0 && DEBUG) console.log('plop', props.tank.length)
   }
   props.update()
   if (DEBUG) physics.updateDebugLines()
