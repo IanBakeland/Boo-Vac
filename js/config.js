@@ -70,3 +70,22 @@ export const MODELS = {
     plant: { file: 'models/props/plant.glb', scale: 0.8 / 5.93 }              // 80 cm high
   }
 }
+
+// Where everything stands in the room (meters, origin = middle of the floor).
+// x: left (-3) to right (+3), z: back wall (-3) to front wall (+3), y: up.
+// position = where the bottom-center of the model goes; rotationY in degrees.
+export const LAYOUT = {
+  spawn: { position: [0, CAMERA.eyeHeight, 2.3], lookAt: [0, 1.2, -3] },
+  furniture: [
+    { name: 'Hide_Bookshelf', model: 'bookcase', position: [-2.78, 0, -1.2], rotationY: 90 },
+    { name: 'Hide_Clock', model: 'clock', position: [2.55, 0, -2.8], rotationY: 0 },
+    { name: 'Furniture_Rug', model: 'rug', position: [0, 0, -0.6], rotationY: 90 },
+    { name: 'Furniture_Table', model: 'table', position: [0, 0.02, -0.6], rotationY: 90 },
+    { name: 'Hide_Vase', model: 'vase', position: [0.45, 0.77, -0.6], rotationY: 0 },
+    { name: 'Furniture_Chair', model: 'chair', position: [0, 0.02, 0.35], rotationY: 180 },
+    { name: 'Furniture_Chandelier', model: 'chandelier', position: [0, 2.18, -0.6], rotationY: 0 }
+  ],
+  // fake window on the right wall (the room has none): a glowing plane for moonlight
+  window: { position: [2.99, 1.5, -0.6], width: 1.2, height: 1.0, color: 0x8fa8d8 },
+  ceilingColor: 0xd0dadd
+}
