@@ -83,6 +83,11 @@ export const DUST = {
   beamRange: 7         // m: specks further from the lamp don't glitter
 }
 
+export const GHOST = {
+  crossFade: 0.25,          // s: blend between two animation clips
+  testPosition: [2.6, 0.2, -1.4] // temporary spot until the hiding spots work (4.3)
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],

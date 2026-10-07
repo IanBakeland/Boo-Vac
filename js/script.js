@@ -2,13 +2,14 @@ import * as THREE from 'three/webgpu'
 import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST } from './config.js'
+import { CAMERA, MAX_DT, ETHER, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, GHOST } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
 import { createFlashlight } from './objects/flashlight.js'
 import { createVacuum } from './objects/vacuum.js'
 import { createDust } from './objects/dust.js'
+import { createGhost } from './objects/ghost.js'
 import etherShader from './shaders/ether/fragment.wgsl?raw'
 
 const canvas = document.querySelector('canvas.webgl')
@@ -98,6 +99,11 @@ scene.add(etherPlane)
 
 const vacuum = createVacuum({ camera, iTime })
 
+// the ghost (model + Blender animations); for now it floats at a test spot
+const ghost = await createGhost()
+ghost.mesh.position.fromArray(GHOST.testPosition)
+scene.add(ghost.mesh)
+
 // the flashlight is the only real light: the room gets the flashlight shader, props get the SpotLight
 const flashlight = createFlashlight({ camera, iTime })
 scene.add(flashlight.ambientLight)
@@ -125,6 +131,9 @@ window.addEventListener('keydown', (e) => {
   }
   // MAX: only with a full charge
   if (e.code === MAX.key && controls.isLocked && !maxActive && maxCharge >= 1) maxActive = true
+  // debug: 1-5 switch the ghost's animation state
+  const debugStates = { Digit1: 'emerged', Digit2: 'tug', Digit3: 'escape', Digit4: 'giggle', Digit5: 'captured' }
+  if (DEBUG && debugStates[e.code]) ghost.setState(debugStates[e.code])
   // debug: P drops all props from 1 m higher
   if (DEBUG && e.code === 'KeyP') props.drop()
 })
@@ -271,6 +280,7 @@ const draw = (timestamp) => {
   etherPlane.quaternion.copy(camera.quaternion)
 
   if (controls.isLocked) movePlayer(dt)
+  ghost.update(dt)
   // the camera moved: update its matrices before reading the nozzle and lamp positions
   camera.updateMatrixWorld()
   vacuum.update()

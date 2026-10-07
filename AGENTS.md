@@ -412,6 +412,7 @@ Names are set **in code** from `LAYOUT` in `config.js` (no Blender).
 ### 9.5 Blender animation (extra marks)
 
 - **Verified clips in the downloaded `ghost.glb`:** `CharacterArmature|Death`, `|Fast_Flying`, `|Flying_Idle`, `|Headbutt`, `|HitReact`, `|No`, `|Punch`, `|Yes` (1 skinned mesh). `vacuum.glb` has no `Nozzle` empty (single node `group115819083`): use `VACUUM.nozzleOffset` in `config.js` instead.
+- **Mapping used (step 4.1, `js/objects/ghost.js`):** emerged → `Flying_Idle`, tug → `HitReact`, escape → `Fast_Flying`, giggle → `Yes` (once), captured → `Death` (once). Debug keys 1–5 switch states.
 - Load `ghost.glb`, `console.log(gltf.animations.map(a => a.name))` and map clips to states (e.g. idle/fly → `EMERGED`, a hit/struggle clip → `TUG`, a death/disappear clip → `CAPTURED`). Use whatever clip names the file actually has.
 - `AnimationMixer` + `clipAction(...).fadeIn/crossFadeTo` (0.2–0.3 s) on state changes; `mixer.update(dt)` every frame.
 - If the model turns out to have no usable clips, tell the student immediately. Alternatives: "Ghost Character" by Polygonal Mind (https://poly.pizza/m/CKLHPoYhE9) or a Quaternius animal (cat) that flees.
