@@ -152,7 +152,7 @@ There is **no stun/flash mechanic** (removed on purpose). The flashlight is alwa
 | **The Librarian** | `Hide_Bookshelf` | green | Every ~2 s throws a nearby `Prop_Book*` at the player (Rapier impulse) | `dirInterval 1.0–1.8 s`, `fillRate 0.35`, `drainRate 0.25` |
 | **Granny Clock** (boss) | `Hide_Clock` | purple | Fast direction changes, strong; meter must be filled **twice** (2 rounds) | `dirInterval 0.6–1.2 s`, `fillRate 0.3`, `drainRate 0.3` |
 
-Order: Dusty → Librarian → Granny Clock. Only one ghost is "active" (trembling/out) at a time.
+**Student's decision (after playtesting):** no fixed order. All three ghosts hide at the same time in their own spot; catch them in any order. Only one tug-of-war at a time; an escaping ghost picks a free spot. Every tug starts with a 1.5 s grace period and gives 0.35 s reaction time after each direction change (no draining then).
 
 ### 4.5 Vacuum mechanics
 

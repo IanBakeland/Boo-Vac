@@ -81,5 +81,6 @@ export const createVacuum = ({ camera, iTime }) => {
     mesh.quaternion.setFromUnitVectors(coneForward, localAim)
   }
 
-  return { mesh, model: holder, state, nozzle, setMode, update }
+  // aimPoint: what's under the crosshair (the ghosts use it: aiming at a hiding spot counts)
+  return { mesh, model: holder, state, nozzle, aimPoint, setMode, update }
 }

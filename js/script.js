@@ -107,17 +107,24 @@ const throwBook = (from) => {
 // game stats (for the HUD now, and the invoice at the end)
 const stats = { caught: 0, escapes: 0 }
 
-// the ghost (model + Blender animations + Ether aura): hides in its spot until exposed,
-// a small Ether wisp shows where it is. After a capture the next ghost takes over.
-const ghost = await createGhost({
+// the three ghosts (model + Blender animations + Ether aura), all hiding at the same time:
+// catch them in any order. A small Ether wisp shows where each one hides.
+const ghosts = await Promise.all(GHOSTS.map((config) => createGhost({
   iTime,
+  config,
   hidingSpots: room.hidingSpots,
   castAim: physics.castAim,
+  // spots taken by the other ghosts (an escaping ghost picks a free one)
+  takenSpots: () => ghosts.map((g) => g.getSpot()).filter((spot) => spot !== null),
+  // only one tug-of-war at a time
+  canStartTug: () => !ghosts.some((g) => g.isTugging()),
   onCapture: () => { stats.caught++ },
   onEscape: () => { stats.escapes++ },
   onThrow: (from) => throwBook(from)
-})
-scene.add(ghost.mesh)
+})))
+ghosts.forEach((g) => scene.add(g.mesh))
+// the ghost you're fighting right now (or null)
+const tuggingGhost = () => ghosts.find((g) => g.isTugging()) ?? null
 
 // --- input ---
 // e.code is the physical key: WASD also works on AZERTY (there it's ZQSD)
@@ -132,12 +139,12 @@ window.addEventListener('keydown', (e) => {
   }
   // MAX: only with a full charge
   if (e.code === MAX.key && controls.isLocked && !maxActive && maxCharge >= 1) maxActive = true
-  // debug: 1-5 switch the ghost's animation state
-  const debugStates = { Digit1: 'emerged', Digit2: 'tug', Digit3: 'escape', Digit4: 'giggle', Digit5: 'captured' }
-  if (DEBUG && debugStates[e.code]) ghost.setState(debugStates[e.code])
-  // debug: G makes the ghost come out right away, N skips to the next ghost
-  if (DEBUG && e.code === 'KeyG') ghost.emerge()
-  if (DEBUG && e.code === 'KeyN') ghost.skip()
+  // debug: G makes the nearest hidden ghost come out right away
+  if (DEBUG && e.code === 'KeyG') {
+    const hidden = ghosts.filter((g) => g.isHidden())
+    hidden.sort((a, b) => a.center.distanceTo(camera.position) - b.center.distanceTo(camera.position))
+    hidden[0]?.emerge()
+  }
   // debug: P drops all props from 1 m higher
   if (DEBUG && e.code === 'KeyP') props.drop()
 })
@@ -175,16 +182,17 @@ const updateHud = () => {
     $tankCount.textContent = shownTank
   }
   // tug meter: the arrow shows which way YOU must move the mouse (against the ghost)
-  const tugging = ghost.isTugging()
-  const { meter, pullDir, correct, round, rounds } = ghost.tug
+  const fighting = tuggingGhost()
+  const tugging = fighting !== null
+  const { meter, pullDir, correct, round, rounds } = fighting?.tug ?? {}
   const tugState = tugging ? `${pullDir}-${correct}-${Math.round(meter * 50)}-${round}` : 'off'
   if (tugState !== shownTug) {
     shownTug = tugState
     $tug.classList.toggle('hidden', !tugging)
     $tug.classList.toggle('correct', correct)
     $tugArrow.textContent = pullDir > 0 ? '◀ PULL' : 'PULL ▶'
-    $tugFill.style.width = `${meter * 100}%`
-    $tugName.textContent = rounds > 1 ? `${ghost.getName()} · round ${round}/${rounds}` : ghost.getName()
+    $tugFill.style.width = `${(meter ?? 0) * 100}%`
+    if (tugging) $tugName.textContent = rounds > 1 ? `${fighting.name} · round ${round}/${rounds}` : fighting.name
   }
   // MAX button: charge bar in 5% steps, so the DOM only changes ~20 times per charge
   const maxState = `${maxActive}-${Math.round(maxCharge * 20)}`
@@ -205,7 +213,8 @@ const updateFps = (dt) => {
   fpsFrames++
   fpsTime += dt
   if (fpsTime < 0.5) return
-  $fps.textContent = `${Math.round(fpsFrames / fpsTime)} fps · ${dust ? DUST.count + ' dust' : 'no dust'} · exposure ${ghost.getExposure().toFixed(2)}`
+  const exposures = ghosts.map((g) => `${g.name.split(' ').pop()} ${g.getExposure().toFixed(2)}`).join(', ')
+  $fps.textContent = `${Math.round(fpsFrames / fpsTime)} fps · ${dust ? DUST.count + ' dust' : 'no dust'} · exposure ${exposures}`
   fpsFrames = 0
   fpsTime = 0
 }
@@ -261,7 +270,7 @@ const recentMouseDX = () => {
 // during the tug the camera follows the ghost (the mouse is busy pulling)
 const aimMatrix = new THREE.Matrix4()
 const aimQuaternion = new THREE.Quaternion()
-const followGhost = (dt) => {
+const followGhost = (dt, ghost) => {
   aimMatrix.lookAt(camera.position, ghost.center, camera.up)
   aimQuaternion.setFromRotationMatrix(aimMatrix)
   camera.quaternion.slerp(aimQuaternion, Math.min(1, dt * TUG.aimSpeed))
@@ -334,9 +343,9 @@ const draw = (timestamp) => {
 
   if (controls.isLocked) movePlayer(dt)
   // tug-of-war: the mouse pulls instead of turning the camera, the camera follows the ghost
-  const tugging = ghost.isTugging()
-  controls.enabled = !tugging
-  if (tugging) followGhost(dt)
+  const fighting = tuggingGhost()
+  controls.enabled = fighting === null
+  if (fighting) followGhost(dt, fighting)
   // the camera moved: update its matrices before reading the nozzle and lamp positions
   camera.updateMatrixWorld()
   // what's in the middle of the screen? the suction aims there
@@ -346,15 +355,17 @@ const draw = (timestamp) => {
 
   updateMax(dt)
   const { power, mode, boost } = vacuum.state
-  // the ghost: animation, visibility in the beam, smoke stretched toward the nozzle while sucking
-  ghost.update(dt, {
+  // the ghosts: animation, visibility in the beam, smoke stretched toward the nozzle while sucking
+  const mouseDX = recentMouseDX()
+  ghosts.forEach((ghost) => ghost.update(dt, {
     camera,
     lampPos: flashlight.uniforms.lampPos.value,
     lampDir: flashlight.uniforms.lampDir.value,
     nozzle: vacuum.nozzle,
+    aimPoint: vacuum.aimPoint,
     power: mode === 'suck' ? power : 0,
-    mouseDX: recentMouseDX()
-  })
+    mouseDX
+  }))
 
   // physics, with the suction force applied before every step
   physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, power, mode, stepDt, boost))
@@ -362,7 +373,7 @@ const draw = (timestamp) => {
   if (mode === 'suck' && power >= TANK.captureMinPower) {
     const caught = props.capture(vacuum.nozzle)
     // clutter near the hiding spot exposes the ghost
-    caught.forEach((prop) => ghost.onPropCaptured(prop))
+    caught.forEach((prop) => ghosts.forEach((ghost) => ghost.onPropCaptured(prop)))
     // placeholder for the "plop" sound (step 4.8)
     if (caught.length > 0 && DEBUG) console.log('plop', props.tank.length)
   }

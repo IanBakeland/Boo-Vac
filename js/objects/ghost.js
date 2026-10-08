@@ -3,7 +3,7 @@ import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import gsap from 'gsap'
 
-import { MODELS, GHOST, GHOSTS, ETHER, FLASHLIGHT, TUG, THROW } from '../config.js'
+import { MODELS, GHOST, ETHER, FLASHLIGHT, TUG, THROW } from '../config.js'
 import { suctionStrength } from '../physics.js'
 import etherShader from '../shaders/ether/fragment.wgsl?raw'
 
@@ -18,11 +18,15 @@ const CLIPS = {
 // these play once and then hold their last pose
 const PLAY_ONCE = ['captured', 'giggle']
 
+// One ghost (one entry of GHOSTS in config.js). All ghosts hide at the same time.
 // hidingSpots: the Hide_* furniture, castAim: physics ray (how far until something is in the way)
-// onCapture / onEscape: called when a ghost is sucked up / gets away
+// takenSpots(): spot names other ghosts are in, canStartTug(): false while another ghost is in a tug
+// onCapture / onEscape: called when this ghost is sucked up / gets away
 // onThrow(center): the Librarian throws a book from near `center`
-export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEscape, onThrow }) => {
+export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSpots, canStartTug, onCapture, onEscape, onThrow }) => {
   const gltf = await new GLTFLoader().loadAsync(MODELS.ghost.file)
+  // its tug-of-war numbers: TUG + its own personality overrides
+  const tugConfig = { ...TUG, ...config.tug }
 
   // root: position + rotation of the ghost; the model inside is scaled to real size
   const mesh = new THREE.Group()
@@ -41,8 +45,8 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
   // uniforms are TSL nodes, we update their .value every frame
   // square plane, so the shader works in a 1 x 1 space
   const iResolution = uniform(new THREE.Vector2(1, 1))
-  // per-ghost color (sRGB, like the shader's own colors), set in hideIn()
-  const tint = uniform(new THREE.Color())
+  // this ghost's color (sRGB, like the shader's own colors)
+  const tint = uniform(new THREE.Color().setRGB(...config.tint, THREE.SRGBColorSpace))
   // how much the flashlight reveals the ghost (0-1)
   const visibility = uniform(0)
   // screen-space direction x amount the smoke smears toward the nozzle
@@ -93,39 +97,45 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     if (state) actions[state].crossFadeTo(action, GHOST.crossFade, false)
     state = next
   }
+
   // --- hiding: the ghost is invisible inside its spot until exposure reaches 1 ---
   // phase: 'hidden' (in the spot, trembling, only a small Ether wisp), 'emerged' (out, visible in the beam)
   // 'tug' (tug-of-war with the player), 'escaping' (flying to another spot), 'captured' (spiralling
-  // into the nozzle) or 'done' (all ghosts caught)
+  // into the nozzle) or 'done' (caught)
   let phase = 'hidden'
   let exposure = 0
-  // which ghost of GHOSTS is active, and its tug-of-war numbers (TUG + its own overrides)
-  let current = 0
-  let tugConfig = TUG
   // presence: 0 while hidden, fades to 1 when emerging (the model's opacity follows it)
   const fade = { presence: 0 }
   // the spot's model inside its group: we shake that one, so the physics body stays untouched
   let spot = null
   let spotModel = null
+  // while escaping: the spot it flies to (so other ghosts don't pick it too)
+  let targetSpot = null
   const spotModelHome = new THREE.Vector3()
   const spotModelRotation = new THREE.Euler()
   const spotCenter = new THREE.Vector3()
   const spotBox = new THREE.Box3()
+  // the spot plus a margin: aiming anywhere at it counts
+  const aimBox = new THREE.Box3()
   const randomBetween = ([min, max]) => min + Math.random() * (max - min)
   let trembleTimer = 0
   let trembleLeft = 0
 
+  // put the spot's model back where it belongs (it may have been shaking)
+  const restoreSpot = () => {
+    if (!spotModel) return
+    spotModel.position.copy(spotModelHome)
+    spotModel.rotation.copy(spotModelRotation)
+  }
+
   // hide (again) in a spot: invisible, exposure back to 0
   const hideIn = (spotName) => {
-    // put the previous spot's model back where it belongs (it may have been shaking)
-    if (spotModel) {
-      spotModel.position.copy(spotModelHome)
-      spotModel.rotation.copy(spotModelRotation)
-    }
+    restoreSpot()
     spot = hidingSpots.find((s) => s.name === spotName)
     spotModel = spot.children[0]
     spotModelHome.copy(spotModel.position)
     spotModelRotation.copy(spotModel.rotation)
+    targetSpot = null
     phase = 'hidden'
     exposure = 0
     fade.presence = 0
@@ -134,29 +144,23 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     setState('emerged')
   }
 
-  // start ghost number `index` of GHOSTS (its color and its first hiding spot)
-  const startGhost = (index) => {
-    current = index
-    const config = GHOSTS[index]
-    tugConfig = { ...TUG, ...config.tug }
-    tint.value.setRGB(...config.tint, THREE.SRGBColorSpace)
-    hideIn(config.hideSpot)
-  }
-
-  // the tug is lost: fly to a random other hiding spot and hide there (Dusty giggles first)
+  // the tug is lost: fly to a free other hiding spot and hide there (Dusty giggles first)
   let giggleCall = null
   const escape = () => {
     phase = 'escaping'
-    if (GHOSTS[current].giggle) {
+    // pick the spot now, so no other ghost takes it while this one is on its way
+    const taken = takenSpots()
+    const free = hidingSpots.filter((s) => s !== spot && !taken.includes(s.name))
+    targetSpot = free.length ? free[Math.floor(Math.random() * free.length)].name : spot.name
+    if (config.giggle) {
       setState('giggle')
       giggleCall = gsap.delayedCall(THROW.giggleTime, flyAway)
     } else flyAway()
-    onEscape?.(GHOSTS[current])
+    onEscape?.(config)
   }
   const flyAway = () => {
     setState('escape')
-    const others = hidingSpots.filter((s) => s !== spot)
-    const next = others[Math.floor(Math.random() * others.length)]
+    const next = hidingSpots.find((s) => s.name === targetSpot)
     const box = new THREE.Box3().setFromObject(next)
     const target = box.getCenter(new THREE.Vector3())
     target.y = box.max.y - ETHER.centerHeight
@@ -165,7 +169,7 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     gsap.to(fade, { presence: 0, duration: GHOST.escapeDuration, ease: 'power2.in', onComplete: () => hideIn(next.name) })
   }
 
-  // the tug is won: spiral into the nozzle, then the next ghost
+  // the tug is won: spiral into the nozzle, then it's gone for good
   const captureState = { t: 0 }
   const captureStart = new THREE.Vector3()
   const captureSpin = new THREE.Vector3()
@@ -179,21 +183,12 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
       duration: GHOST.captureDuration,
       ease: 'power2.in',
       onComplete: () => {
-        onCapture?.(GHOSTS[current])
-        nextGhost()
+        phase = 'done'
+        mesh.visible = false
+        restoreSpot()
+        onCapture?.(config)
       }
     })
-  }
-
-  // next ghost, or done after the last one
-  const nextGhost = () => {
-    gsap.killTweensOf([mesh.position, mesh.scale, fade, captureState])
-    giggleCall?.kill()
-    if (current + 1 < GHOSTS.length) startGhost(current + 1)
-    else {
-      phase = 'done'
-      mesh.visible = false
-    }
   }
 
   // rise out of the spot (a little toward the player, but never too close to them)
@@ -204,8 +199,7 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     exposure = 1
     // measure the spot now (emerge can be called before the first update, e.g. debug key G)
     spotBox.setFromObject(spot).getCenter(spotCenter)
-    spotModel.position.copy(spotModelHome)
-    spotModel.rotation.copy(spotModelRotation)
+    restoreSpot()
     const toPlayer = new THREE.Vector3().subVectors(playerPosition, spotCenter).setY(0)
     const step = Math.min(GHOST.emergeDistance, Math.max(0, toPlayer.length() - GHOST.minPlayerDistance))
     const target = toPlayer.normalize().multiplyScalar(step).add(spotCenter)
@@ -226,24 +220,29 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
   }
 
   const shake = (amount) => (Math.random() - 0.5) * 2 * amount
-  const updateHidden = (dt, { nozzle, power }) => {
-    // trembling every few seconds: the spot shakes and wobbles
+  // aimPoint: what's under the crosshair (from the vacuum)
+  const updateHidden = (dt, { nozzle, power, aimPoint }) => {
+    // exposure rises while you suck at the spot: the crosshair anywhere on it, or the suction reaching its middle
+    aimBox.copy(spotBox).expandByScalar(GHOST.aimMargin)
+    const sucking = power >= TUG.minPower
+    const exposing = sucking && (aimBox.containsPoint(aimPoint) ||
+      suctionStrength(spotCenter, nozzle.position, nozzle.direction, power) > 0.05)
+    if (exposing) exposure += GHOST.exposureRate * dt
+
+    // trembling: every few seconds, and the whole time while you're exposing it (so you see it registers)
     trembleTimer -= dt
     if (trembleTimer <= 0) {
       trembleTimer = randomBetween(GHOST.trembleInterval)
       trembleLeft = GHOST.trembleDuration
     }
-    spotModel.position.copy(spotModelHome)
-    spotModel.rotation.copy(spotModelRotation)
-    if (trembleLeft > 0) {
+    restoreSpot()
+    if (trembleLeft > 0 || exposing) {
       trembleLeft -= dt
       spotModel.position.x += shake(GHOST.trembleAmount)
       spotModel.position.z += shake(GHOST.trembleAmount)
       spotModel.rotation.x += shake(GHOST.trembleAngle)
       spotModel.rotation.z += shake(GHOST.trembleAngle)
     }
-    // exposure: rises while the suction cone reaches the spot
-    if (suctionStrength(spotCenter, nozzle.position, nozzle.direction, power) > 0.05) exposure += GHOST.exposureRate * dt
     if (exposure >= 1) emerge()
   }
 
@@ -254,13 +253,15 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
   const camUp = new THREE.Vector3()
   let shown = 0
 
-  // camera, lamp (position + direction), nozzle and the vacuum power drive the aura
   // --- tug-of-war ---
   // round / rounds: Granny Clock must be beaten twice
   const tug = { meter: 0, pullDir: 1, correct: false, round: 1, rounds: 1 }
   let throwTimer = 0
   let dirTimer = 0
   let lostTimer = 0
+  // no draining at the start of a round (time to read the arrow), and right after a direction change
+  let graceLeft = 0
+  let reactLeft = 0
   let sideOffset = 0
   // how far the ghost may drift to the right (+) and left (-) before it would hit something
   const driftLimit = { left: 0, right: 0 }
@@ -274,9 +275,11 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     tug.meter = TUG.startMeter
     tug.pullDir = Math.random() < 0.5 ? -1 : 1
     tug.round = 1
-    tug.rounds = GHOSTS[current].rounds ?? 1
-    throwTimer = GHOSTS[current].throwInterval ?? 0
+    tug.rounds = config.rounds ?? 1
+    throwTimer = config.throwInterval ?? 0
     dirTimer = randomBetween(tugConfig.dirInterval)
+    graceLeft = TUG.grace
+    reactLeft = 0
     lostTimer = 0
     sideOffset = 0
     anchor.copy(mesh.position)
@@ -290,23 +293,30 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     setState('tug')
   }
 
-
   // mouseDX: horizontal mouse movement over the last TUG.inputWindow seconds (px)
   const updateTug = (dt, { camera, power, pull, mouseDX }) => {
     const sucking = power >= TUG.minPower
     if (phase === 'emerged') {
-      if (!fade.emerging && sucking && pull > TUG.startStrength && shown > TUG.startVisibility) startTug(camera)
+      if (!fade.emerging && sucking && pull > TUG.startStrength && shown > TUG.startVisibility && canStartTug()) startTug(camera)
       return
     }
     // every few seconds the ghost picks a (new) direction to pull
     dirTimer -= dt
     if (dirTimer <= 0) {
       dirTimer = randomBetween(tugConfig.dirInterval)
-      tug.pullDir = Math.random() < 0.5 ? -1 : 1
+      const next = Math.random() < 0.5 ? -1 : 1
+      // a real change: give the player a moment to react
+      if (next !== tug.pullDir) reactLeft = TUG.reactTime
+      tug.pullDir = next
     }
+    graceLeft -= dt
+    reactLeft -= dt
     // correct: sucking, and the mouse moved far enough the other way
     tug.correct = sucking && Math.sign(mouseDX) === -tug.pullDir && Math.abs(mouseDX) >= TUG.inputThreshold
-    tug.meter = THREE.MathUtils.clamp(tug.meter + (tug.correct ? tugConfig.fillRate : -tugConfig.drainRate) * dt, 0, 1)
+    // fills while correct; drains otherwise, but not during the grace / reaction time
+    const canDrain = graceLeft <= 0 && reactLeft <= 0
+    const change = tug.correct ? tugConfig.fillRate : (canDrain ? -tugConfig.drainRate : 0)
+    tug.meter = THREE.MathUtils.clamp(tug.meter + change * dt, 0, 1)
 
     // the ghost drifts sideways (slower while you resist) and gets pulled in as the meter fills
     sideOffset += tug.pullDir * tugConfig.driftSpeed * (tug.correct ? TUG.driftResist : 1) * dt
@@ -315,27 +325,29 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
       .addScaledVector(tugRight, sideOffset)
       .addScaledVector(tugToPlayer, tug.meter * TUG.pullIn)
 
-    // won: full meter. Lost: the meter ran empty, or the ghost was out of the beam for too long
-    lostTimer = shown < TUG.lostVisibility ? lostTimer + dt : 0
     // the Librarian throws a book every throwInterval seconds
-    if (GHOSTS[current].throwInterval) {
+    if (config.throwInterval) {
       throwTimer -= dt
       if (throwTimer <= 0) {
-        throwTimer = GHOSTS[current].throwInterval
+        throwTimer = config.throwInterval
         onThrow?.(center)
       }
     }
+    // won: full meter. Lost: the meter ran empty, or the ghost was out of the beam for too long
+    lostTimer = shown < TUG.lostVisibility ? lostTimer + dt : 0
     if (tug.meter >= 1) {
-      // Granny Clock: one more round, the meter starts over
+      // Granny Clock: one more round, the meter starts over (a bit higher, with grace time again)
       if (tug.round < tug.rounds) {
         tug.round++
-        tug.meter = TUG.startMeter
+        tug.meter = TUG.roundMeter
+        graceLeft = TUG.grace
       } else capture()
     } else if (lostTimer > TUG.lostTime || tug.meter <= 0) escape()
   }
 
   let time = 0
-  const update = (dt, { camera, lampPos, lampDir, nozzle, power, mouseDX = 0 }) => {
+  // camera, lamp (position + direction), nozzle, aimPoint and the vacuum power drive the ghost
+  const update = (dt, { camera, lampPos, lampDir, nozzle, aimPoint, power, mouseDX = 0 }) => {
     time += dt
     if (phase === 'done') return
     playerPosition.copy(camera.position)
@@ -344,7 +356,7 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     // hint: how much of the Ether shows (only a small wisp while hidden, growing with the exposure)
     let hint = 1
     if (phase === 'hidden') {
-      updateHidden(dt, { nozzle, power })
+      updateHidden(dt, { nozzle, power, aimPoint })
       // the ghost sits inside its spot: the wisp rises from the top of the spot
       mesh.position.copy(spotCenter)
       mesh.position.y = spotBox.max.y - ETHER.centerHeight
@@ -412,7 +424,24 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     if (phase === 'emerged' || phase === 'tug') updateTug(dt, { camera, power, pull, mouseDX })
   }
 
-  startGhost(0)
+  hideIn(config.hideSpot)
 
-  return { mesh, model, center, tug, isTugging: () => phase === 'tug', getName: () => GHOSTS[current].name, skip: nextGhost, setState, getState: () => state, getExposure: () => Math.min(exposure, 1), emerge, onPropCaptured, update }
+  return {
+    mesh,
+    model,
+    center,
+    tug,
+    name: config.name,
+    isTugging: () => phase === 'tug',
+    isHidden: () => phase === 'hidden',
+    isDone: () => phase === 'done',
+    // the spot this ghost occupies (or is flying to); null once caught
+    getSpot: () => (phase === 'done' || phase === 'captured' ? null : targetSpot ?? spot.name),
+    getState: () => state,
+    setState,
+    getExposure: () => Math.min(exposure, 1),
+    emerge,
+    onPropCaptured,
+    update
+  }
 }

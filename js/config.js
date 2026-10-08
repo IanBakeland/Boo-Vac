@@ -99,7 +99,8 @@ export const GHOST = {
   hintStrength: [0.9, 1.5], // brightness at exposure 0 and at exposure 1
   hintSize: [0.6, 1.0],     // aura scale at exposure 0 and at exposure 1
   // exposure (0 -> 1): the ghost pops out at 1
-  exposureRate: 0.25,       // per second while the spot is in your suction cone
+  exposureRate: 0.5,        // per second while you suck at the spot (2 s)
+  aimMargin: 0.3,           // m around the spot: the crosshair there counts as "at the spot"
   exposurePerProp: 0.2,     // per prop you suck up that stood near the spot
   propRadius: 1.5,          // m: "near the spot"
   // emerging: rises out of the spot (and a bit toward you, but never too close)
@@ -117,8 +118,8 @@ export const GHOST = {
   captureTurns: 2           // turns around the nozzle on the way in
 }
 
-// The three ghosts, in order. tint: Ether color (sRGB), hideSpot: where it hides first,
-// tug: overrides for TUG (its personality in the tug-of-war)
+// The three ghosts. They all hide at the same time; catch them in any order.
+// tint: Ether color (sRGB), hideSpot: where it hides first, tug: overrides for TUG (its personality)
 export const GHOSTS = [
   {
     name: 'Dusty', // the tutorial: slow and weak, giggles when it gets away
@@ -132,14 +133,14 @@ export const GHOSTS = [
     hideSpot: 'Hide_Bookshelf',
     tint: [0.55, 1.0, 0.6],
     throwInterval: 2,
-    tug: { dirInterval: [1.0, 1.8], fillRate: 0.35, drainRate: 0.25 }
+    tug: { dirInterval: [1.0, 1.8], fillRate: 0.35, drainRate: 0.22 }
   },
   {
     name: 'Granny Clock', // the boss: fast, strong, and you have to win twice
     hideSpot: 'Hide_Clock',
     tint: [0.85, 0.6, 1.0],
     rounds: 2,
-    tug: { dirInterval: [0.6, 1.2], fillRate: 0.3, drainRate: 0.3, driftSpeed: 0.9 }
+    tug: { dirInterval: [0.9, 1.5], fillRate: 0.35, drainRate: 0.2, driftSpeed: 0.9 }
   }
 ]
 
@@ -156,7 +157,10 @@ export const TUG = {
   minPower: 0.5,         // you must be sucking (motor at least half spun up)
   startStrength: 0.05,   // the suction must reach the ghost at least this much...
   startVisibility: 0.5,  // ...and it must be (half) visible in your beam
-  startMeter: 0.25,      // the meter starts here (0 = it escapes, 1 = captured)
+  startMeter: 0.4,       // the meter starts here (0 = it escapes, 1 = captured)
+  roundMeter: 0.5,       // ...and here in the next round (Granny Clock)
+  grace: 1.5,            // s at the start of a round without draining (time to read the arrow)
+  reactTime: 0.35,       // s without draining after the ghost changes direction
   dirInterval: [1.5, 2.5], // s: the ghost picks a new pull direction this often
   fillRate: 0.45,        // per second while you pull the right way and suck
   drainRate: 0.2,        // per second otherwise
