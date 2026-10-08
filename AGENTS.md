@@ -105,7 +105,7 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 
 **The twist:** ghosts live in dust and clutter. Cleaning and ghost hunting are the same thing.
 
-**Intro (student's request): a phone call.** A phone (HTML/CSS) vibrates at 23:58: "THE BOSS" calling. Decline → he calls again (now with a ringtone). Accept → his voice via the Web Speech API (`speechSynthesis`) with subtitles, a sound wave and a call timer; Skip possible; then "Call ended" + Start shift. Code: `js/intro.js`, text in `INTRO.lines`. Original card texts:
+**Intro (student's request): a voicemail, not a call.** Your phone's lock screen (HTML/CSS) at 23:58 on Friday 13 October shows "1 new voicemail · The Boss". Tap it → a voicemail app (play button, progress bar, sound wave, transcript). Play → a robot voice "You have one new message", a beep, the boss (Web Speech API `speechSynthesis`, with transcript), "End of message", a beep. Skip possible. Then Start shift. `intro.stop()` silences everything when the shift starts. Code: `js/intro.js`, text in `INTRO.lines`. Original card texts:
 1. "Welcome to the crew! Small thing: old houses have *dust ghosts*. The more dust, the more ghosts."
 2. "Find stuff that shakes, vacuum the clutter around it, and the ghost pops out. Then just... pull. Don't let go, or it hides again."
 3. "Oh, and anything you suck up is the client's property. We'll bill you. Good luck!"

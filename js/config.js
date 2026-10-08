@@ -228,19 +228,22 @@ export const MUSIC = {
   heartVolume: 0.5
 }
 
-// The intro: the boss calls (Web Speech API voice + subtitles)
+// The intro: a voicemail from the boss on your phone (Web Speech API voice + transcript)
 export const INTRO = {
   clock: '23:58',
-  ringEvery: 3,          // s between two rings
-  callBackDelay: 1.5,    // s: declined? the boss calls again after this
-  // voice: a bit lower and faster, like a hurried boss (1 = normal)
+  date: 'Friday 13 October',
+  // voice of the boss: a bit lower and faster, like a hurried boss (1 = normal)
   pitch: 0.8,
   rate: 1.05,
   // the first voice found (by name) is used; otherwise any English voice
   preferredVoices: ['Google UK English Male', 'Daniel', 'Alex', 'Microsoft Guy', 'Microsoft David', 'Google US English'],
+  // the voicemail's own robot voice ("You have one new message")
+  systemVoices: ['Samantha', 'Google US English', 'Microsoft Zira', 'Karen'],
+  systemIntro: 'You have one new message.',
+  systemOutro: 'End of message.',
   linePause: 0.35,       // s between two lines
-  readTime: 0.35,        // s per word when the browser has no speech (subtitles only)
-  musicDuck: 0.3,        // music volume during the call (x normal)
+  readTime: 0.35,        // s per word: for the progress bar, and when the browser has no speech
+  musicDuck: 0.3,        // music volume while the message plays (x normal)
   lines: [
     'Hey, new guy! Welcome to the crew at Dust and Ghost Cleaning. Listen, one small thing nobody told you.',
     'Old houses have dust ghosts. The more dust, the more ghosts.',

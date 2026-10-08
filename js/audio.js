@@ -295,30 +295,12 @@ export const createAudio = () => {
     },
     // the Librarian throws a book
     whoosh: () => burst({ duration: 0.35, frequency: 400, sweepTo: 2000, volume: 0.3 }),
-    // --- the phone in the intro ---
-    // one ring: the classic double ring (two tones together: 400 + 450 Hz, "ring-ring")
-    ring: () => {
-      if (!context) return
-      const now = context.currentTime
-      ;[0, 0.6].forEach((offset) => {
-        const gain = context.createGain()
-        gain.gain.setValueAtTime(0, now + offset)
-        gain.gain.linearRampToValueAtTime(0.12, now + offset + 0.02)
-        gain.gain.setValueAtTime(0.12, now + offset + 0.4)
-        gain.gain.linearRampToValueAtTime(0, now + offset + 0.42)
-        gain.connect(master)
-        ;[400, 450].forEach((frequency) => {
-          const osc = context.createOscillator()
-          osc.frequency.value = frequency
-          osc.connect(gain)
-          osc.start(now + offset)
-          osc.stop(now + offset + 0.45)
-        })
-      })
-    },
-    // picking up / hanging up: a short dry click
+    // --- the phone in the intro (voicemail) ---
+    // the voicemail beep: a clean 1 kHz tone (before and after the message)
+    beep: () => sweep({ from: 1000, to: 1000, duration: 0.35, volume: 0.15 }),
+    // tapping the phone: a short dry click
     click: () => burst({ duration: 0.04, frequency: 2500, type: 'highpass', volume: 0.5 }),
-    // the phone line: a soft hiss while the boss talks (on / off)
+    // a soft hiss under the voicemail, like an old recording (on / off)
     line: (on) => {
       if (!context) return
       if (on && !lineSource) {

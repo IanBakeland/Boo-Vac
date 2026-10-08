@@ -33,38 +33,41 @@
         <h1>Boo-Vac</h1>
         <p class="tagline">Your first night shift at Dust &amp; Ghost Cleaning Co.</p>
       </div>
-      <!-- the phone: 1. incoming call, 2. the call (voice + subtitles), 3. call ended -->
-      <div class="phone">
+      <!-- the phone: 1. lock screen with a voicemail notification, 2. the voicemail app -->
+      <div class="phone buzzing">
         <div class="phone-notch"></div>
         <div class="phone-screen">
           <div class="phone-status"><span class="phone-clock"></span><span>▂▄▆ ▮</span></div>
-          <div class="call call-incoming">
-            <p class="call-label">Incoming call</p>
-            <div class="call-avatar"><span>B</span></div>
-            <p class="call-name">THE BOSS</p>
-            <p class="call-name-note">Dust &amp; Ghost Cleaning Co.</p>
-            <div class="call-buttons">
-              <button class="call-button decline-button" aria-label="Decline"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></button>
-              <button class="call-button accept-button" aria-label="Accept"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></button>
+          <div class="screen screen-lock">
+            <p class="lock-date"></p>
+            <p class="lock-clock phone-clock"></p>
+            <button class="notification">
+              <span class="notification-app">📞 Phone · now</span>
+              <span class="notification-title">1 new voicemail</span>
+              <span class="notification-from">The Boss · Dust &amp; Ghost Cleaning Co.</span>
+              <span class="notification-preview"></span>
+              <span class="notification-action">Tap to listen</span>
+            </button>
+          </div>
+          <div class="screen screen-voicemail hidden">
+            <p class="app-title">Voicemail</p>
+            <div class="message">
+              <div class="message-avatar">B</div>
+              <div>
+                <p class="message-from">The Boss</p>
+                <p class="message-when">today, 23:41</p>
+              </div>
             </div>
-            <div class="call-button-labels"><span>Decline</span><span>Accept</span></div>
-          </div>
-          <div class="call call-active hidden">
-            <div class="call-avatar small"><span>B</span></div>
-            <p class="call-status">Connecting…</p>
-            <p class="call-timer">0:00</p>
-            <div class="call-wave"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span><span style="--i:4"></span><span style="--i:5"></span><span style="--i:6"></span><span style="--i:7"></span><span style="--i:8"></span><span style="--i:9"></span><span style="--i:10"></span><span style="--i:11"></span><span style="--i:12"></span><span style="--i:13"></span><span style="--i:14"></span><span style="--i:15"></span><span style="--i:16"></span><span style="--i:17"></span></div>
-            <p class="call-subtitle"></p>
+            <div class="message-wave"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span><span style="--i:4"></span><span style="--i:5"></span><span style="--i:6"></span><span style="--i:7"></span><span style="--i:8"></span><span style="--i:9"></span><span style="--i:10"></span><span style="--i:11"></span><span style="--i:12"></span><span style="--i:13"></span><span style="--i:14"></span><span style="--i:15"></span><span style="--i:16"></span><span style="--i:17"></span><span style="--i:18"></span><span style="--i:19"></span><span style="--i:20"></span><span style="--i:21"></span><span style="--i:22"></span><span style="--i:23"></span></div>
+            <div class="message-progress"><div class="message-progress-fill"></div></div>
+            <div class="message-times"><span class="message-elapsed">0:00</span><span class="message-total"></span></div>
+            <button class="play-button" aria-label="Play">▶</button>
+            <p class="message-transcript"></p>
             <button class="skip-button">Skip ›</button>
-          </div>
-          <div class="call call-ended hidden">
-            <div class="call-avatar small"><span>B</span></div>
-            <p class="call-duration"></p>
-            <p class="call-label">Three ghosts. One night.</p>
           </div>
         </div>
       </div>
-      <p class="intro-hint">Your phone is ringing… pick up!</p>
+      <p class="intro-hint">Your phone buzzes… you have a voicemail.</p>
       <div class="intro-after">
         <button class="start-button" disabled>Loading…</button>
         <ul class="controls-list">

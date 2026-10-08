@@ -17,8 +17,8 @@ const canvas = document.querySelector('canvas.webgl')
 
 // sound (starts on the first click, browsers don't allow sound before that)
 const audio = createAudio()
-// the intro starts right away (the phone rings while the models load)
-createIntro({ audio, $start: document.querySelector('#start') })
+// the intro starts right away (a voicemail on your phone, while the models load)
+const intro = createIntro({ audio, $start: document.querySelector('#start') })
 const scene = new THREE.Scene()
 
 const size = {
@@ -35,6 +35,8 @@ scene.add(camera)
 // first person: the mouse turns the camera while the pointer is locked
 // https://threejs.org/docs/#examples/en/controls/PointerLockControls
 const controls = new PointerLockControls(camera, canvas)
+// a refused lock is handled in lockPointer(): the addon's own error log isn't needed
+document.removeEventListener('pointerlockerror', controls._onPointerlockError)
 
 const renderer = new THREE.WebGPURenderer({
   canvas: canvas,
@@ -302,14 +304,19 @@ const setGameState = (next) => {
 }
 
 let unlockedAt = 0
+// lock the mouse for first-person look. The browser may refuse (e.g. a click right after Esc):
+// then nothing happens and you just click again (no error in the console)
+const lockPointer = () => canvas.requestPointerLock()?.catch?.(() => {})
 $startButton.addEventListener('click', () => {
+  // the shift starts: nothing from the intro may keep playing
+  intro.stop()
   audio.start()
-  controls.lock()
+  lockPointer()
 })
 $pause.addEventListener('click', () => {
   if (performance.now() - unlockedAt > PLAYER.relockDelay) {
     audio.start()
-    controls.lock()
+    lockPointer()
   }
 })
 controls.addEventListener('lock', () => setGameState('playing'))

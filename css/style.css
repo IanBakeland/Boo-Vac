@@ -223,7 +223,7 @@ body
     margin-bottom: 2px;
 }
 
-/* --- start screen: the intro with the ringing phone --- */
+/* --- start screen: the intro, a voicemail on your phone --- */
 .overlay.start
 {
     cursor: default;
@@ -299,197 +299,175 @@ body
     opacity: 0.85;
 }
 
-/* vibrating: a short buzz, then still, again and again */
-.phone.ringing
+/* a notification buzz: two short shakes, then a long pause */
+.phone.buzzing
 {
-    animation: buzz 1.6s infinite;
+    animation: buzz 4s infinite;
 }
 
 @keyframes buzz
 {
-    0%, 36%, 100% { transform: translate(0, 0) rotate(0deg); }
-    3%, 15%, 27% { transform: translate(-3px, 0) rotate(-1.5deg); }
-    9%, 21%, 33% { transform: translate(3px, 0) rotate(1.5deg); }
+    0%, 12%, 100% { transform: translate(0, 0) rotate(0deg); }
+    2%, 8% { transform: translate(-3px, 0) rotate(-1.5deg); }
+    5%, 11% { transform: translate(3px, 0) rotate(1.5deg); }
 }
 
-.call
+.screen
 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 34px 18px 0;
+    padding: 30px 16px 0;
     text-align: center;
 }
 
-.call.hidden
+.screen.hidden
 {
     display: none;
 }
 
-.call-label
+/* 1. the lock screen */
+.lock-date
 {
+    margin-top: 10px;
     font-size: 0.85rem;
-    opacity: 0.7;
+    opacity: 0.75;
 }
 
-/* the caller's photo: a circle with pulsing rings while it rings */
-.call-avatar
+.lock-clock
 {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 96px;
-    height: 96px;
-    margin: 22px 0 14px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #9be35b, #2f8f4e);
-    color: #0b1020;
-    font-size: 2.6rem;
-    font-weight: 900;
+    font-size: 4rem;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.02em;
 }
 
-.call-avatar.small
-{
-    width: 64px;
-    height: 64px;
-    margin: 10px 0 8px;
-    font-size: 1.7rem;
-}
-
-.ringing .call-avatar::before,
-.ringing .call-avatar::after
-{
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 2px solid #9be35b;
-    animation: ring-pulse 1.6s infinite;
-}
-
-.ringing .call-avatar::after
-{
-    animation-delay: 0.8s;
-}
-
-@keyframes ring-pulse
-{
-    from { transform: scale(1); opacity: 0.8; }
-    to { transform: scale(1.8); opacity: 0; }
-}
-
-.call-name
-{
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-}
-
-.call-name-note
-{
-    font-size: 0.8rem;
-    opacity: 0.65;
-}
-
-.call-buttons
+.notification
 {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
     width: 100%;
-    padding: 0 18px;
-    margin-top: 120px;
-}
-
-.call-button
-{
-    display: grid;
-    place-items: center;
-    width: 64px;
-    height: 64px;
+    margin-top: 40px;
+    padding: 12px 14px;
     border: none;
-    border-radius: 50%;
+    border-radius: 18px;
+    background: rgba(223, 230, 255, 0.14);
+    backdrop-filter: blur(10px);
+    color: #dfe6ff;
+    font-family: inherit;
+    text-align: left;
     cursor: pointer;
+    animation: notification-glow 2s infinite;
     transition: transform 0.15s;
 }
 
-.call-button:hover
+.notification:hover
 {
-    transform: scale(1.1);
+    transform: scale(1.03);
 }
 
-.call-button svg
+@keyframes notification-glow
 {
-    width: 30px;
-    height: 30px;
-    fill: #fff;
+    0%, 100% { box-shadow: 0 0 0 0 rgba(155, 227, 91, 0); }
+    50% { box-shadow: 0 0 22px 2px rgba(155, 227, 91, 0.35); }
 }
 
-.decline-button
+.notification-app
 {
-    background: #e5484d;
-}
-
-/* the handset upside down: hanging up */
-.decline-button svg
-{
-    transform: rotate(135deg);
-}
-
-.accept-button
-{
-    background: #30a46c;
-    animation: accept-bounce 1.6s infinite;
-}
-
-@keyframes accept-bounce
-{
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-8px); }
-}
-
-.call-button-labels
-{
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    padding: 6px 22px 0;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     opacity: 0.7;
 }
 
-.call-status
+.notification-title
 {
-    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.notification-from
+{
+    font-size: 0.8rem;
+}
+
+.notification-preview
+{
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.75;
+}
+
+.notification-action
+{
+    margin-top: 4px;
+    color: #9be35b;
+    font-size: 0.8rem;
     font-weight: 700;
 }
 
-.call-timer
+/* 2. the voicemail app */
+.app-title
 {
-    font-variant-numeric: tabular-nums;
-    opacity: 0.7;
+    align-self: flex-start;
+    font-size: 1.4rem;
+    font-weight: 800;
 }
 
-/* the sound wave: bars that bounce while the boss talks */
-.call-wave
+.message
 {
     display: flex;
     align-items: center;
-    gap: 3px;
-    height: 46px;
-    margin: 14px 0;
+    gap: 12px;
+    width: 100%;
+    margin-top: 12px;
+    text-align: left;
 }
 
-.call-wave span
+.message-avatar
+{
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #9be35b, #2f8f4e);
+    color: #0b1020;
+    font-size: 1.3rem;
+    font-weight: 900;
+}
+
+.message-from
+{
+    font-weight: 800;
+}
+
+.message-when
+{
+    font-size: 0.75rem;
+    opacity: 0.65;
+}
+
+/* the sound wave: bars that bounce while the message plays */
+.message-wave
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 44px;
+    margin-top: 16px;
+}
+
+.message-wave span
 {
     width: 4px;
     height: 100%;
     border-radius: 2px;
     background: #9be35b;
     transform: scaleY(0.12);
-    transition: transform 0.2s;
 }
 
-.call-wave.talking span
+.message-wave.talking span
 {
     animation: talk 0.5s ease-in-out infinite alternate;
     animation-delay: calc(var(--i) * -0.137s);
@@ -502,31 +480,78 @@ body
     100% { transform: scaleY(0.35); }
 }
 
-/* the subtitles of the voicemail */
-.call-subtitle
+.message-progress
 {
-    min-height: 130px;
-    font-size: 0.95rem;
+    width: 100%;
+    height: 4px;
+    margin-top: 12px;
+    border-radius: 2px;
+    background: rgba(223, 230, 255, 0.2);
+    overflow: hidden;
+}
+
+.message-progress-fill
+{
+    width: 0%;
+    height: 100%;
+    background: #9be35b;
+}
+
+.message-times
+{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 4px;
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.65;
+}
+
+.play-button
+{
+    width: 56px;
+    height: 56px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 50%;
+    background: #9be35b;
+    color: #0b1020;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.play-button:hover
+{
+    transform: scale(1.08);
+}
+
+.play-button:disabled
+{
+    opacity: 0.4;
+    cursor: default;
+    transform: none;
+}
+
+/* the transcript of the voicemail */
+.message-transcript
+{
+    min-height: 100px;
+    margin-top: 10px;
+    font-size: 0.9rem;
     font-style: italic;
-    line-height: 1.45;
+    line-height: 1.4;
 }
 
 .skip-button
 {
-    margin-top: 6px;
-    padding: 6px 16px;
+    padding: 5px 16px;
     border: 1px solid rgba(223, 230, 255, 0.4);
     border-radius: 999px;
     background: transparent;
     color: #dfe6ff;
     cursor: pointer;
-}
-
-.call-duration
-{
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 8px;
 }
 
 .intro-hint
@@ -550,7 +575,7 @@ body
     gap: 12px;
 }
 
-.start.call-done .intro-after
+.start.message-done .intro-after
 {
     display: flex;
 }
