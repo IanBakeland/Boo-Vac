@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -84,6 +84,26 @@ if (dust) {
   renderer.compute(dust.init)
 }
 
+// the Librarian: the nearest book near the ghost flies at the player
+const throwBook = (from) => {
+  let nearest = null
+  let nearestDistance = THROW.range
+  props.props.forEach((prop) => {
+    if (!prop.body || !prop.mesh.name.startsWith('Prop_Book')) return
+    const p = prop.body.translation()
+    const distance = Math.hypot(p.x - from.x, p.y - from.y, p.z - from.z)
+    if (distance < nearestDistance) {
+      nearest = prop
+      nearestDistance = distance
+    }
+  })
+  if (!nearest) return
+  const p = nearest.body.translation()
+  const toPlayer = new THREE.Vector3(camera.position.x - p.x, camera.position.y - p.y, camera.position.z - p.z).normalize()
+  nearest.body.setLinvel({ x: toPlayer.x * THROW.speed, y: toPlayer.y * THROW.speed + THROW.lift, z: toPlayer.z * THROW.speed }, true)
+  nearest.body.setAngvel({ x: Math.random() * 10, y: Math.random() * 10, z: Math.random() * 10 }, true)
+}
+
 // game stats (for the HUD now, and the invoice at the end)
 const stats = { caught: 0, escapes: 0 }
 
@@ -94,7 +114,8 @@ const ghost = await createGhost({
   hidingSpots: room.hidingSpots,
   castAim: physics.castAim,
   onCapture: () => { stats.caught++ },
-  onEscape: () => { stats.escapes++ }
+  onEscape: () => { stats.escapes++ },
+  onThrow: (from) => throwBook(from)
 })
 scene.add(ghost.mesh)
 
@@ -134,6 +155,7 @@ const $max = document.querySelector('#max')
 const $crosshair = document.querySelector('#crosshair')
 const $tug = document.querySelector('#tug')
 const $tugArrow = $tug.querySelector('.tug-arrow')
+const $tugName = $tug.querySelector('.tug-name')
 const $tugFill = $tug.querySelector('.tug-fill')
 const $maxFill = $max.querySelector('.max-fill')
 // HUD: only touch the DOM when the value changed
@@ -154,14 +176,15 @@ const updateHud = () => {
   }
   // tug meter: the arrow shows which way YOU must move the mouse (against the ghost)
   const tugging = ghost.isTugging()
-  const { meter, pullDir, correct } = ghost.tug
-  const tugState = tugging ? `${pullDir}-${correct}-${Math.round(meter * 50)}` : 'off'
+  const { meter, pullDir, correct, round, rounds } = ghost.tug
+  const tugState = tugging ? `${pullDir}-${correct}-${Math.round(meter * 50)}-${round}` : 'off'
   if (tugState !== shownTug) {
     shownTug = tugState
     $tug.classList.toggle('hidden', !tugging)
     $tug.classList.toggle('correct', correct)
     $tugArrow.textContent = pullDir > 0 ? '◀ PULL' : 'PULL ▶'
     $tugFill.style.width = `${meter * 100}%`
+    $tugName.textContent = rounds > 1 ? `${ghost.getName()} · round ${round}/${rounds}` : ghost.getName()
   }
   // MAX button: charge bar in 5% steps, so the DOM only changes ~20 times per charge
   const maxState = `${maxActive}-${Math.round(maxCharge * 20)}`

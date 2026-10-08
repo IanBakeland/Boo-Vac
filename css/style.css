@@ -227,3 +227,10 @@ body
     text-align: center;
     text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
 }
+
+#tug .tug-name
+{
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}

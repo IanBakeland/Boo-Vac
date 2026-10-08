@@ -3,7 +3,7 @@ import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import gsap from 'gsap'
 
-import { MODELS, GHOST, GHOSTS, ETHER, FLASHLIGHT, TUG } from '../config.js'
+import { MODELS, GHOST, GHOSTS, ETHER, FLASHLIGHT, TUG, THROW } from '../config.js'
 import { suctionStrength } from '../physics.js'
 import etherShader from '../shaders/ether/fragment.wgsl?raw'
 
@@ -20,7 +20,8 @@ const PLAY_ONCE = ['captured', 'giggle']
 
 // hidingSpots: the Hide_* furniture, castAim: physics ray (how far until something is in the way)
 // onCapture / onEscape: called when a ghost is sucked up / gets away
-export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEscape }) => {
+// onThrow(center): the Librarian throws a book from near `center`
+export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEscape, onThrow }) => {
   const gltf = await new GLTFLoader().loadAsync(MODELS.ghost.file)
 
   // root: position + rotation of the ghost; the model inside is scaled to real size
@@ -98,8 +99,9 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
   // into the nozzle) or 'done' (all ghosts caught)
   let phase = 'hidden'
   let exposure = 0
-  // which ghost of GHOSTS is active
+  // which ghost of GHOSTS is active, and its tug-of-war numbers (TUG + its own overrides)
   let current = 0
+  let tugConfig = TUG
   // presence: 0 while hidden, fades to 1 when emerging (the model's opacity follows it)
   const fade = { presence: 0 }
   // the spot's model inside its group: we shake that one, so the physics body stays untouched
@@ -136,13 +138,22 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
   const startGhost = (index) => {
     current = index
     const config = GHOSTS[index]
+    tugConfig = { ...TUG, ...config.tug }
     tint.value.setRGB(...config.tint, THREE.SRGBColorSpace)
     hideIn(config.hideSpot)
   }
 
-  // the tug is lost: fly to a random other hiding spot and hide there
+  // the tug is lost: fly to a random other hiding spot and hide there (Dusty giggles first)
+  let giggleCall = null
   const escape = () => {
     phase = 'escaping'
+    if (GHOSTS[current].giggle) {
+      setState('giggle')
+      giggleCall = gsap.delayedCall(THROW.giggleTime, flyAway)
+    } else flyAway()
+    onEscape?.(GHOSTS[current])
+  }
+  const flyAway = () => {
     setState('escape')
     const others = hidingSpots.filter((s) => s !== spot)
     const next = others[Math.floor(Math.random() * others.length)]
@@ -152,7 +163,6 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     gsap.to(mesh.position, { x: target.x, y: target.y, z: target.z, duration: GHOST.escapeDuration, ease: 'power1.inOut' })
     // fades out on the way
     gsap.to(fade, { presence: 0, duration: GHOST.escapeDuration, ease: 'power2.in', onComplete: () => hideIn(next.name) })
-    onEscape?.(GHOSTS[current])
   }
 
   // the tug is won: spiral into the nozzle, then the next ghost
@@ -178,6 +188,7 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
   // next ghost, or done after the last one
   const nextGhost = () => {
     gsap.killTweensOf([mesh.position, mesh.scale, fade, captureState])
+    giggleCall?.kill()
     if (current + 1 < GHOSTS.length) startGhost(current + 1)
     else {
       phase = 'done'
@@ -245,7 +256,9 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
 
   // camera, lamp (position + direction), nozzle and the vacuum power drive the aura
   // --- tug-of-war ---
-  const tug = { meter: 0, pullDir: 1, correct: false }
+  // round / rounds: Granny Clock must be beaten twice
+  const tug = { meter: 0, pullDir: 1, correct: false, round: 1, rounds: 1 }
+  let throwTimer = 0
   let dirTimer = 0
   let lostTimer = 0
   let sideOffset = 0
@@ -260,7 +273,10 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     phase = 'tug'
     tug.meter = TUG.startMeter
     tug.pullDir = Math.random() < 0.5 ? -1 : 1
-    dirTimer = randomBetween(TUG.dirInterval)
+    tug.round = 1
+    tug.rounds = GHOSTS[current].rounds ?? 1
+    throwTimer = GHOSTS[current].throwInterval ?? 0
+    dirTimer = randomBetween(tugConfig.dirInterval)
     lostTimer = 0
     sideOffset = 0
     anchor.copy(mesh.position)
@@ -285,15 +301,15 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
     // every few seconds the ghost picks a (new) direction to pull
     dirTimer -= dt
     if (dirTimer <= 0) {
-      dirTimer = randomBetween(TUG.dirInterval)
+      dirTimer = randomBetween(tugConfig.dirInterval)
       tug.pullDir = Math.random() < 0.5 ? -1 : 1
     }
     // correct: sucking, and the mouse moved far enough the other way
     tug.correct = sucking && Math.sign(mouseDX) === -tug.pullDir && Math.abs(mouseDX) >= TUG.inputThreshold
-    tug.meter = THREE.MathUtils.clamp(tug.meter + (tug.correct ? TUG.fillRate : -TUG.drainRate) * dt, 0, 1)
+    tug.meter = THREE.MathUtils.clamp(tug.meter + (tug.correct ? tugConfig.fillRate : -tugConfig.drainRate) * dt, 0, 1)
 
     // the ghost drifts sideways (slower while you resist) and gets pulled in as the meter fills
-    sideOffset += tug.pullDir * TUG.driftSpeed * (tug.correct ? TUG.driftResist : 1) * dt
+    sideOffset += tug.pullDir * tugConfig.driftSpeed * (tug.correct ? TUG.driftResist : 1) * dt
     sideOffset = THREE.MathUtils.clamp(sideOffset, -driftLimit.left, driftLimit.right)
     mesh.position.copy(anchor)
       .addScaledVector(tugRight, sideOffset)
@@ -301,8 +317,21 @@ export const createGhost = async ({ iTime, hidingSpots, castAim, onCapture, onEs
 
     // won: full meter. Lost: the meter ran empty, or the ghost was out of the beam for too long
     lostTimer = shown < TUG.lostVisibility ? lostTimer + dt : 0
-    if (tug.meter >= 1) capture()
-    else if (lostTimer > TUG.lostTime || tug.meter <= 0) escape()
+    // the Librarian throws a book every throwInterval seconds
+    if (GHOSTS[current].throwInterval) {
+      throwTimer -= dt
+      if (throwTimer <= 0) {
+        throwTimer = GHOSTS[current].throwInterval
+        onThrow?.(center)
+      }
+    }
+    if (tug.meter >= 1) {
+      // Granny Clock: one more round, the meter starts over
+      if (tug.round < tug.rounds) {
+        tug.round++
+        tug.meter = TUG.startMeter
+      } else capture()
+    } else if (lostTimer > TUG.lostTime || tug.meter <= 0) escape()
   }
 
   let time = 0

@@ -117,13 +117,39 @@ export const GHOST = {
   captureTurns: 2           // turns around the nozzle on the way in
 }
 
-// The three ghosts, in order (their tug-of-war behaviour comes in step 4.6).
-// tint: Ether color (sRGB), hideSpot: where it hides first
+// The three ghosts, in order. tint: Ether color (sRGB), hideSpot: where it hides first,
+// tug: overrides for TUG (its personality in the tug-of-war)
 export const GHOSTS = [
-  { name: 'Dusty', hideSpot: 'Hide_Vase', tint: [0.8, 0.88, 1.0] },
-  { name: 'The Librarian', hideSpot: 'Hide_Bookshelf', tint: [0.55, 1.0, 0.6] },
-  { name: 'Granny Clock', hideSpot: 'Hide_Clock', tint: [0.85, 0.6, 1.0] }
+  {
+    name: 'Dusty', // the tutorial: slow and weak, giggles when it gets away
+    hideSpot: 'Hide_Vase',
+    tint: [0.8, 0.88, 1.0],
+    giggle: true,
+    tug: { dirInterval: [1.5, 2.5], fillRate: 0.45, drainRate: 0.2 }
+  },
+  {
+    name: 'The Librarian', // throws books at you during the tug
+    hideSpot: 'Hide_Bookshelf',
+    tint: [0.55, 1.0, 0.6],
+    throwInterval: 2,
+    tug: { dirInterval: [1.0, 1.8], fillRate: 0.35, drainRate: 0.25 }
+  },
+  {
+    name: 'Granny Clock', // the boss: fast, strong, and you have to win twice
+    hideSpot: 'Hide_Clock',
+    tint: [0.85, 0.6, 1.0],
+    rounds: 2,
+    tug: { dirInterval: [0.6, 1.2], fillRate: 0.3, drainRate: 0.3, driftSpeed: 0.9 }
+  }
 ]
+
+// The Librarian's book throwing
+export const THROW = {
+  range: 2.5,   // m: picks the nearest book within this distance of the ghost
+  speed: 7,     // m/s toward the player
+  lift: 2.5,    // m/s upward, so it flies in an arc
+  giggleTime: 0.8 // s: Dusty giggles this long before fleeing
+}
 
 // Tug-of-war (Dusty's numbers; every ghost gets its own in 4.6)
 export const TUG = {
