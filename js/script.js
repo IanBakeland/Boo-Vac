@@ -4,21 +4,45 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 
 import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW, INVOICE } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
+import { createAudio } from './audio.js'
+import { createIntro } from './intro.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
 import { createFlashlight } from './objects/flashlight.js'
 import { createVacuum } from './objects/vacuum.js'
 import { createDust } from './objects/dust.js'
 import { createGhost } from './objects/ghost.js'
-import { createAudio } from './audio.js'
-import { createIntro } from './intro.js'
 
+// --- HTML elements ---
 const canvas = document.querySelector('canvas.webgl')
+const $start = document.querySelector('#start')
+const $startButton = $start.querySelector('.start-button')
+const $pause = document.querySelector('#pause')
+const $resume = $pause.querySelector('.action')
+const $invoice = document.querySelector('#invoice')
+const $hud = document.querySelector('#hud')
+const $ghostCount = $hud.querySelector('.ghost-count')
+const $tankCount = $hud.querySelector('.tank-count')
+const $muteLabel = $hud.querySelector('.mute-label')
+const $crosshair = document.querySelector('#crosshair')
+const $mode = document.querySelector('#mode')
+const $max = document.querySelector('#max')
+const $maxFill = $max.querySelector('.max-fill')
+const $tug = document.querySelector('#tug')
+const $tugName = $tug.querySelector('.tug-name')
+const $tugArrow = $tug.querySelector('.tug-arrow')
+const $tugFill = $tug.querySelector('.tug-fill')
+const $fps = document.querySelector('#fps')
 
 // sound (starts on the first click, browsers don't allow sound before that)
 const audio = createAudio()
 // the intro starts right away (a voicemail on your phone, while the models load)
-const intro = createIntro({ audio, $start: document.querySelector('#start') })
+const intro = createIntro({ audio, $start })
+
+// ?debug in the URL: collider lines, FPS, suction self-check, debug keys
+const DEBUG = new URLSearchParams(window.location.search).has('debug')
+
+// --- setup ---
 const scene = new THREE.Scene()
 
 const size = {
@@ -29,7 +53,7 @@ const size = {
 const camera = new THREE.PerspectiveCamera(CAMERA.fov, size.width / size.height, CAMERA.near, CAMERA.far)
 camera.position.fromArray(LAYOUT.spawn.position)
 camera.lookAt(...LAYOUT.spawn.lookAt)
-// the camera is in the scene because the vacuum and flashlight will be its children
+// the camera is in the scene because the vacuum and flashlight are its children
 scene.add(camera)
 
 // first person: the mouse turns the camera while the pointer is locked
@@ -48,6 +72,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 // wait for the GPU: compute shaders (dust) need an initialized renderer
 await renderer.init()
 
+// --- the world ---
 const room = await createRoom()
 scene.add(room.mesh)
 // physics: the apartment as triangle meshes, our furniture as boxes
@@ -65,14 +90,11 @@ room.furniture.forEach((piece) => { if (piece.userData.layout.dynamic) props.add
 // so without it the player would have no collision in the very first frame
 physics.step(PHYSICS.fixedStep)
 
-// ?debug in the URL: show every collider as lines
-const DEBUG = new URLSearchParams(window.location.search).has('debug')
 if (DEBUG) {
   checkSuctionForce()
   physics.updateDebugLines()
   scene.add(physics.debugLines)
 }
-
 
 // the Shadertoy shaders' clock (Ether ghost aura, suction cone, beam, dust), updated every frame
 const iTime = uniform(0)
@@ -92,6 +114,10 @@ if (dust) {
   scene.add(dust.mesh)
   renderer.compute(dust.init)
 }
+
+// --- the ghosts ---
+// game stats (for the HUD, and the invoice at the end)
+const stats = { caught: 0, escapes: 0, startTime: 0, endTime: 0 }
 
 // the Librarian: the nearest book near the ghost flies at the player
 const throwBook = (from) => {
@@ -113,9 +139,6 @@ const throwBook = (from) => {
   nearest.body.setLinvel({ x: toPlayer.x * THROW.speed, y: toPlayer.y * THROW.speed + THROW.lift, z: toPlayer.z * THROW.speed }, true)
   nearest.body.setAngvel({ x: Math.random() * 10, y: Math.random() * 10, z: Math.random() * 10 }, true)
 }
-
-// game stats (for the HUD, and the invoice at the end)
-const stats = { caught: 0, escapes: 0, startTime: 0, endTime: 0 }
 
 // the three ghosts (model + Blender animations + Ether aura), all hiding at the same time:
 // catch them in any order. A small Ether wisp shows where each one hides.
@@ -147,58 +170,78 @@ ghosts.forEach((g) => scene.add(g.mesh))
 // the ghost you're fighting right now (or null)
 const tuggingGhost = () => ghosts.find((g) => g.isTugging()) ?? null
 
-// --- input ---
-// e.code is the physical key: WASD also works on AZERTY (there it's ZQSD)
-const keys = new Set()
-let jumpRequested = false
-window.addEventListener('keydown', (e) => {
-  keys.add(e.code)
-  if (e.code === 'Space') {
-    // no page scrolling, and holding space doesn't jump again and again
-    e.preventDefault()
-    if (!e.repeat) jumpRequested = true
+// --- screens: game state machine (start -> playing <-> paused -> invoice) ---
+const game = { state: 'start' }
+const setGameState = (next) => {
+  game.state = next
+  const playing = next === 'playing'
+  $start.classList.toggle('hidden', next !== 'start')
+  $pause.classList.toggle('hidden', next !== 'paused')
+  $invoice.classList.toggle('hidden', next !== 'invoice')
+  $hud.classList.toggle('hidden', !playing)
+  $max.classList.toggle('hidden', !playing)
+  $crosshair.classList.toggle('hidden', !playing)
+  $mode.classList.toggle('hidden', !playing)
+  switch (next) {
+    case 'playing':
+      // the clock starts with the first click on "Start shift"
+      if (!stats.startTime) stats.startTime = performance.now()
+      break
+    case 'paused':
+      // Chrome refuses to lock the mouse again right away: show "click to resume" after a moment
+      $resume.classList.add('waiting')
+      setTimeout(() => $resume.classList.remove('waiting'), PLAYER.relockDelay)
+      break
+    case 'invoice':
+      showInvoice()
+      break
   }
-  // MAX: only with a full charge
-  if (e.code === MAX.key && controls.isLocked && !maxActive && maxCharge >= 1) {
-    maxActive = true
-    audio.max()
-  }
-  // M: sound on/off
-  if (e.code === 'KeyM') $muteLabel.classList.toggle('hidden', !audio.toggleMute())
-  // debug: G makes the nearest hidden ghost come out right away
-  if (DEBUG && e.code === 'KeyG') {
-    const hidden = ghosts.filter((g) => g.isHidden())
-    hidden.sort((a, b) => a.center.distanceTo(camera.position) - b.center.distanceTo(camera.position))
-    hidden[0]?.emerge()
-  }
-  // debug: P drops all props from 1 m higher
-  if (DEBUG && e.code === 'KeyP') props.drop()
-})
-window.addEventListener('keyup', (e) => keys.delete(e.code))
+}
 
-// pointer lock needs a click: the start / pause overlays catch it
-const $start = document.querySelector('#start')
-const $pause = document.querySelector('#pause')
-const $resume = $pause.querySelector('.action')
-const $startButton = $start.querySelector('.start-button')
-const $hud = document.querySelector('#hud')
-const $tankCount = $hud.querySelector('.tank-count')
-const $ghostCount = $hud.querySelector('.ghost-count')
-const $max = document.querySelector('#max')
-const $crosshair = document.querySelector('#crosshair')
-const $tug = document.querySelector('#tug')
-const $tugArrow = $tug.querySelector('.tug-arrow')
-const $tugName = $tug.querySelector('.tug-name')
-const $tugFill = $tug.querySelector('.tug-fill')
-const $maxFill = $max.querySelector('.max-fill')
-const $mode = document.querySelector('#mode')
-const $muteLabel = $hud.querySelector('.mute-label')
-// HUD: only touch the DOM when the value changed
-let shownTank = -1
+// the last ghost is caught: a moment to enjoy it, then the invoice (and the mouse is free again)
+const endShift = () => {
+  stats.endTime = performance.now()
+  setTimeout(() => {
+    setGameState('invoice')
+    document.exitPointerLock()
+  }, INVOICE.delay * 1000)
+}
+
+// the invoice: your pay minus everything the boss bills you for
+const euro = (amount) => `${amount < 0 ? '−' : ''}€${Math.abs(amount).toFixed(2)}`
+const showInvoice = () => {
+  const seconds = Math.round((stats.endTime - stats.startTime) / 1000)
+  const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+  const items = props.tank.length
+  const lines = [
+    ['Ghost removal', `${stats.caught} × €${INVOICE.perGhost}`, stats.caught * INVOICE.perGhost],
+    ['Night shift', time, INVOICE.shiftPay],
+    ["Client's property sucked up", `${items} × €${INVOICE.perItem}`, -items * INVOICE.perItem],
+    ['Overtime (ghosts that got away)', `${stats.escapes} × €${INVOICE.perEscape}`, -stats.escapes * INVOICE.perEscape],
+    ['1 cat, returned', '', 0],
+    ['Vacuum bag (used)', '', -INVOICE.vacuumBag]
+  ]
+  const total = lines.reduce((sum, line) => sum + line[2], 0)
+  // stars: start at 5, lose one per escape and one per 8 items of the client's stuff
+  const stars = THREE.MathUtils.clamp(5 - stats.escapes - Math.floor(items / 8), 1, 5)
+  const notes = { 5: 'Employee of the month!', 4: 'Solid work. Mind the furniture.', 3: 'Not bad for a first night.', 2: 'We need to talk about your technique.', 1: "Don't call us, we'll call you." }
+  $invoice.querySelector('.invoice-meta').textContent = `Invoice #BV-${String(Math.floor(Math.random() * 9000) + 1000)} · Villa, night shift`
+  $invoice.querySelector('.invoice-lines').innerHTML = lines.map(([label, detail, amount]) =>
+    `<tr><td>${label}</td><td class="detail">${detail}</td><td class="amount ${amount < 0 ? 'minus' : ''}">${euro(amount)}</td></tr>`).join('')
+  const $total = $invoice.querySelector('.invoice-total')
+  $total.textContent = `Total: ${euro(total)}`
+  $total.classList.toggle('minus', total < 0)
+  $invoice.querySelector('.invoice-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars)
+  $invoice.querySelector('.invoice-note').textContent = `"${notes[stars]}" — the boss`
+}
+$invoice.querySelector('.again-button').addEventListener('click', () => window.location.reload())
+
+// --- HUD (only touches the DOM when a value changed) ---
 let shownCaught = -1
-let shownMax = ''
-let shownTug = ''
+let shownTank = -1
 let shownMode = ''
+let shownTug = ''
+let shownMax = ''
 const updateHud = () => {
   if (stats.caught !== shownCaught) {
     shownCaught = stats.caught
@@ -244,8 +287,7 @@ const updateHud = () => {
   }
 }
 
-// ?debug: frames per second, updated twice a second
-const $fps = document.querySelector('#fps')
+// ?debug: frames per second and the ghosts' exposure, updated twice a second
 if (DEBUG) $fps.classList.remove('hidden')
 let fpsFrames = 0
 let fpsTime = 0
@@ -259,7 +301,7 @@ const updateFps = (dt) => {
   fpsTime = 0
 }
 
-// MAX mode: press F when charged -> 3 s of x2.5 force, then recharge
+// --- MAX mode: press F when charged -> MAX.duration s of extra force, then recharge ---
 let maxCharge = 1
 let maxActive = false
 const updateMax = (dt) => {
@@ -274,39 +316,40 @@ const updateMax = (dt) => {
   }
   vacuum.state.boost = maxActive ? MAX.multiplier : 1
 }
-// --- game state machine: start -> playing <-> paused -> invoice ---
-const game = { state: 'start' }
-const $invoice = document.querySelector('#invoice')
-const setGameState = (next) => {
-  game.state = next
-  const playing = next === 'playing'
-  $start.classList.toggle('hidden', next !== 'start')
-  $pause.classList.toggle('hidden', next !== 'paused')
-  $invoice.classList.toggle('hidden', next !== 'invoice')
-  $hud.classList.toggle('hidden', !playing)
-  $max.classList.toggle('hidden', !playing)
-  $crosshair.classList.toggle('hidden', !playing)
-  $mode.classList.toggle('hidden', !playing)
-  switch (next) {
-    case 'playing':
-      // the clock starts with the first click on "Start shift"
-      if (!stats.startTime) stats.startTime = performance.now()
-      break
-    case 'paused':
-      // Chrome refuses to lock the mouse again right away: show "click to resume" after a moment
-      $resume.classList.add('waiting')
-      setTimeout(() => $resume.classList.remove('waiting'), PLAYER.relockDelay)
-      break
-    case 'invoice':
-      showInvoice()
-      break
-  }
-}
 
-let unlockedAt = 0
-// lock the mouse for first-person look. The browser may refuse (e.g. a click right after Esc):
-// then nothing happens and you just click again (no error in the console)
+// --- input ---
+// e.code is the physical key: WASD also works on AZERTY (there it's ZQSD)
+const keys = new Set()
+let jumpRequested = false
+window.addEventListener('keydown', (e) => {
+  keys.add(e.code)
+  if (e.code === 'Space') {
+    // no page scrolling, and holding space doesn't jump again and again
+    e.preventDefault()
+    if (!e.repeat) jumpRequested = true
+  }
+  // MAX: only with a full charge
+  if (e.code === MAX.key && controls.isLocked && !maxActive && maxCharge >= 1) {
+    maxActive = true
+    audio.max()
+  }
+  // M: sound on/off
+  if (e.code === 'KeyM') $muteLabel.classList.toggle('hidden', !audio.toggleMute())
+  // debug: G makes the nearest hidden ghost come out right away
+  if (DEBUG && e.code === 'KeyG') {
+    const hidden = ghosts.filter((g) => g.isHidden())
+    hidden.sort((a, b) => a.center.distanceTo(camera.position) - b.center.distanceTo(camera.position))
+    hidden[0]?.emerge()
+  }
+  // debug: P drops all props from 1 m higher
+  if (DEBUG && e.code === 'KeyP') props.drop()
+})
+window.addEventListener('keyup', (e) => keys.delete(e.code))
+
+// pointer lock needs a click: "Start shift" and the pause screen catch it.
+// The browser may refuse (e.g. a click right after Esc): then nothing happens and you just click again
 const lockPointer = () => canvas.requestPointerLock()?.catch?.(() => {})
+let unlockedAt = 0
 $startButton.addEventListener('click', () => {
   // the shift starts: nothing from the intro may keep playing
   intro.stop()
@@ -331,68 +374,6 @@ controls.addEventListener('unlock', () => {
   }
 })
 
-// the last ghost is caught: a moment to enjoy it, then the invoice (and the mouse is free again)
-const endShift = () => {
-  stats.endTime = performance.now()
-  setTimeout(() => {
-    setGameState('invoice')
-    document.exitPointerLock()
-  }, INVOICE.delay * 1000)
-}
-
-// --- the invoice: your pay minus everything the boss bills you for ---
-const euro = (amount) => `${amount < 0 ? '−' : ''}€${Math.abs(amount).toFixed(2)}`
-const showInvoice = () => {
-  const seconds = Math.round((stats.endTime - stats.startTime) / 1000)
-  const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-  const items = props.tank.length
-  const lines = [
-    ['Ghost removal', `${stats.caught} × €${INVOICE.perGhost}`, stats.caught * INVOICE.perGhost],
-    ['Night shift', time, INVOICE.shiftPay],
-    ["Client's property sucked up", `${items} × €${INVOICE.perItem}`, -items * INVOICE.perItem],
-    ['Overtime (ghosts that got away)', `${stats.escapes} × €${INVOICE.perEscape}`, -stats.escapes * INVOICE.perEscape],
-    ['1 cat, returned', '', 0],
-    ['Vacuum bag (used)', '', -INVOICE.vacuumBag]
-  ]
-  const total = lines.reduce((sum, line) => sum + line[2], 0)
-  // stars: start at 5, lose one per escape and one per 8 items of the client's stuff
-  const stars = THREE.MathUtils.clamp(5 - stats.escapes - Math.floor(items / 8), 1, 5)
-  const notes = { 5: 'Employee of the month!', 4: 'Solid work. Mind the furniture.', 3: 'Not bad for a first night.', 2: 'We need to talk about your technique.', 1: "Don't call us, we'll call you." }
-  $invoice.querySelector('.invoice-meta').textContent = `Invoice #BV-${String(Math.floor(Math.random() * 9000) + 1000)} · Villa, night shift`
-  $invoice.querySelector('.invoice-lines').innerHTML = lines.map(([label, detail, amount]) =>
-    `<tr><td>${label}</td><td class="detail">${detail}</td><td class="amount ${amount < 0 ? 'minus' : ''}">${euro(amount)}</td></tr>`).join('')
-  const $total = $invoice.querySelector('.invoice-total')
-  $total.textContent = `Total: ${euro(total)}`
-  $total.classList.toggle('minus', total < 0)
-  $invoice.querySelector('.invoice-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars)
-  $invoice.querySelector('.invoice-note').textContent = `"${notes[stars]}" — the boss`
-}
-$invoice.querySelector('.again-button').addEventListener('click', () => window.location.reload())
-
-// tug-of-war input: horizontal mouse movement, added up over the last TUG.inputWindow seconds
-const mouseMoves = []
-document.addEventListener('mousemove', (e) => {
-  if (controls.isLocked) mouseMoves.push({ time: performance.now(), dx: e.movementX })
-})
-const recentMouseDX = () => {
-  const since = performance.now() - TUG.inputWindow * 1000
-  while (mouseMoves.length && mouseMoves[0].time < since) mouseMoves.shift()
-  return mouseMoves.reduce((sum, move) => sum + move.dx, 0)
-}
-
-// during the tug the camera follows the ghost (the mouse is busy pulling)
-const aimMatrix = new THREE.Matrix4()
-const aimQuaternion = new THREE.Quaternion()
-const followGhost = (dt, ghost) => {
-  aimMatrix.lookAt(camera.position, ghost.center, camera.up)
-  aimQuaternion.setFromRotationMatrix(aimMatrix)
-  camera.quaternion.slerp(aimQuaternion, Math.min(1, dt * TUG.aimSpeed))
-  // screen shake: stronger as the meter fills
-  const shake = TUG.shake * ghost.tug.meter
-  camera.position.x += (Math.random() - 0.5) * 2 * shake
-  camera.position.y += (Math.random() - 0.5) * 2 * shake
-}
-
 // left mouse = suck, right mouse = blow
 document.addEventListener('mousedown', (e) => {
   if (!controls.isLocked) return
@@ -412,6 +393,18 @@ document.addEventListener('mouseup', (e) => {
 // no right-click menu
 window.addEventListener('contextmenu', (e) => e.preventDefault())
 
+// tug-of-war input: horizontal mouse movement, added up over the last TUG.inputWindow seconds
+const mouseMoves = []
+document.addEventListener('mousemove', (e) => {
+  if (controls.isLocked) mouseMoves.push({ time: performance.now(), dx: e.movementX })
+})
+const recentMouseDX = () => {
+  const since = performance.now() - TUG.inputWindow * 1000
+  while (mouseMoves.length && mouseMoves[0].time < since) mouseMoves.shift()
+  return mouseMoves.reduce((sum, move) => sum + move.dx, 0)
+}
+
+// --- the player ---
 let verticalSpeed = 0
 let grounded = true
 const forwardDir = new THREE.Vector3()
@@ -446,11 +439,25 @@ const movePlayer = (dt) => {
   camera.position.set(result.position.x, result.position.y - PLAYER.height / 2 + CAMERA.eyeHeight, result.position.z)
 }
 
+// during the tug the camera follows the ghost (the mouse is busy pulling)
+const aimMatrix = new THREE.Matrix4()
+const aimQuaternion = new THREE.Quaternion()
+const followGhost = (dt, ghost) => {
+  aimMatrix.lookAt(camera.position, ghost.center, camera.up)
+  aimQuaternion.setFromRotationMatrix(aimMatrix)
+  camera.quaternion.slerp(aimQuaternion, Math.min(1, dt * TUG.aimSpeed))
+  // screen shake: stronger as the meter fills
+  const shake = TUG.shake * ghost.tug.meter
+  camera.position.x += (Math.random() - 0.5) * 2 * shake
+  camera.position.y += (Math.random() - 0.5) * 2 * shake
+}
+
+// --- the game loop ---
 // THREE.Clock is deprecated since r183 (it logs a warning), Timer replaces it
 // https://threejs.org/docs/#api/en/core/Timer
 const timer = new THREE.Timer()
-
 const viewDirection = new THREE.Vector3()
+
 const draw = (timestamp) => {
   timer.update(timestamp)
   const dt = Math.min(timer.getDelta(), MAX_DT)
@@ -459,7 +466,7 @@ const draw = (timestamp) => {
 
   if (controls.isLocked) movePlayer(dt)
   // tug-of-war: the mouse pulls instead of turning the camera, the camera follows the ghost
-  const fighting = tuggingGhost()
+  let fighting = tuggingGhost()
   controls.enabled = fighting === null
   if (fighting) followGhost(dt, fighting)
   // the camera moved: update its matrices before reading the nozzle and lamp positions
@@ -494,9 +501,9 @@ const draw = (timestamp) => {
   }
   props.update()
   if (DEBUG) physics.updateDebugLines()
-  // the vacuum sound follows the power, the mode, MAX and the tug meter
-  const fightingNow = tuggingGhost()
-  audio.update({ power, mode, boost, tug: fightingNow?.tug.meter ?? 0, tugging: fightingNow !== null })
+  // the vacuum sound follows the power, the mode, MAX and the tug meter (the tug may have just ended)
+  fighting = tuggingGhost()
+  audio.update({ power, mode, boost, tug: fighting?.tug.meter ?? 0, tugging: fighting !== null })
   // dust: same suction as the props (MAX makes it stronger too)
   dust?.update(renderer, dt, power * boost, mode)
   updateHud()
@@ -518,12 +525,12 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 
+// --- everything is loaded: the shift can start ---
 // no real WebGPU (old browser): three.js falls back to WebGL, the dust is off
 if (!renderer.backend.isWebGPUBackend) document.querySelector('#no-webgpu').classList.remove('hidden')
 // touch screens: the game needs a mouse and keyboard (it still renders)
 if (window.matchMedia('(pointer: coarse)').matches) $start.querySelector('.touch-notice').classList.remove('hidden')
 
-// everything is loaded: the shift can start
 $startButton.disabled = false
 $startButton.textContent = 'Start shift'
 

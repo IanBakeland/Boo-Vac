@@ -235,7 +235,7 @@ Check online (not just locally):
 **Done when:** the room is in `assets-raw/` and credited.
 
 ### 2.3 Prepare the models · 🤖 · 30 min
-1. Copy the models the game uses into `public/models/` with short lowercase names: `room.glb`, `ghost.glb`, `vacuum.glb`, `furniture/<name>.glb`, `props/<name>.glb`. (The painting is an OBJ: load it with `OBJLoader` + `MTLLoader`, or skip it.)
+1. Copy the models the game uses into `public/models/` with short lowercase names: `apartment.glb`, `ghost.glb`, `vacuum.glb`, `furniture/<name>.glb`, `props/<name>.glb`. (The painting is an OBJ: load it with `OBJLoader` + `MTLLoader`, or skip it.)
 2. Measure each model (bounding box) and put a scale factor per model in `config.js`, so everything is real size: bookshelf ~2 m high, clock ~2 m, chair ~0.9 m, table ~0.75 m.
 3. Update `ROOM` in `config.js` to the downloaded room's real inside size (scale the room if it's far from ~6 × 5 × 2.8 m).
 

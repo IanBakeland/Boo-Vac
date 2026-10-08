@@ -3,7 +3,7 @@ import { wgslFn, uniform, uv, colorSpaceToWorking } from 'three/tsl'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import gsap from 'gsap'
 
-import { MODELS, GHOST, ETHER, FLASHLIGHT, TUG, THROW } from '../config.js'
+import { MODELS, GHOST, ETHER, FLASHLIGHT, TUG } from '../config.js'
 import { suctionStrength } from '../physics.js'
 import etherShader from '../shaders/ether/fragment.wgsl?raw'
 
@@ -154,7 +154,7 @@ export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSp
     targetSpot = free.length ? free[Math.floor(Math.random() * free.length)].name : spot.name
     if (config.giggle) {
       setState('giggle')
-      giggleCall = gsap.delayedCall(THROW.giggleTime, flyAway)
+      giggleCall = gsap.delayedCall(GHOST.giggleTime, flyAway)
     } else flyAway()
     onEscape?.(config)
   }
@@ -429,17 +429,13 @@ export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSp
 
   return {
     mesh,
-    model,
     center,
     tug,
     name: config.name,
     isTugging: () => phase === 'tug',
     isHidden: () => phase === 'hidden',
-    isDone: () => phase === 'done',
     // the spot this ghost occupies (or is flying to); null once caught
     getSpot: () => (phase === 'done' || phase === 'captured' ? null : targetSpot ?? spot.name),
-    getState: () => state,
-    setState,
     getExposure: () => Math.min(exposure, 1),
     emerge,
     onPropCaptured,

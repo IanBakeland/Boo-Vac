@@ -39,7 +39,7 @@ export const createFlashlight = ({ camera, iTime }) => {
   const flashlight = wgslFn(flashlightShader)
   const materials = new Map()
   // give every mesh in `object` the flashlight material, keeping its own color/texture as albedo
-  // (unlit basic materials, like the window, stay as they are)
+  // (unlit basic materials stay as they are)
   const lightUp = (object) => {
     object.traverse((child) => {
       if (!child.isMesh || child.material.isMeshBasicMaterial) return
@@ -81,5 +81,5 @@ export const createFlashlight = ({ camera, iTime }) => {
     camera.getWorldDirection(uniforms.lampDir.value)
   }
 
-  return { mesh, ambientLight, uniforms, lightUp, update }
+  return { ambientLight, uniforms, lightUp, update }
 }

@@ -67,7 +67,6 @@ export const createAudio = () => {
   let musicGain = null
   let reverb = null
   let lineSource = null
-  let lineGain = null
   let drones = []
   let tension = -1 // tug meter while tugging, -1 when there's no tug (no heartbeat)
 
@@ -311,7 +310,7 @@ export const createAudio = () => {
         filter.type = 'bandpass'
         filter.frequency.value = 1800
         filter.Q.value = 0.5
-        lineGain = context.createGain()
+        const lineGain = context.createGain()
         lineGain.gain.value = 0.025
         lineSource.connect(filter).connect(lineGain).connect(master)
         lineSource.start()

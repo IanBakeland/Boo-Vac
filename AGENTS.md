@@ -223,7 +223,7 @@ AGENTS.md  PLAN.md
 .gitignore                  node_modules/, dist/, .DS_Store, *.blend1
 ```
 
-Asset paths in code are **relative without a leading slash** (`'models/room.glb'`), like the course (`'assets/Room.glb'`). Together with `base: './'` this works locally and on GitHub Pages. **Paths are case-sensitive on GitHub Pages**: match file names exactly.
+Asset paths in code are **relative without a leading slash** (`'models/apartment.glb'`), like the course (`'assets/Room.glb'`). Together with `base: './'` this works locally and on GitHub Pages. **Paths are case-sensitive on GitHub Pages**: match file names exactly.
 
 ### 5.2 Frame order in `draw()`
 
@@ -245,7 +245,7 @@ Asset paths in code are **relative without a leading slash** (`'models/room.glb'
 
 ### 5.4 Coordinates and scale
 
-- 1 unit = 1 meter. The level is the downloaded **apartment** ("Apartment 2", Poly Pizza, CC BY 3.0), scaled ×7 to about **11.7 m × 11.8 m × 2.66 m** (x × z × y), centered on the origin, floor at y = 0 (`MODELS.room` in `config.js`). It has a living room, kitchen, hallway and an empty blue room, and no ceiling (one plane is added in code). Its own furniture stays.
+- 1 unit = 1 meter. The level is the downloaded **apartment** ("Apartment 2", Poly Pizza, CC BY 3.0), scaled ×7 to about **11.7 m × 11.8 m × 2.66 m** (x × z × y), centered on the origin, floor at y = 0 (`MODELS.apartment` in `config.js`). It has a living room, kitchen, hallway and an empty blue room, and no ceiling (one plane is added in code). Its own furniture stays.
 - Player eye height 1.6 m, walk speed 2.2 m/s, keep 0.4 m away from walls.
 - Camera: `PerspectiveCamera(70, aspect, 0.05, 50)`. Add the camera to the scene (`scene.add(camera)`) because the vacuum and flashlight are children of the camera (scene-graph lesson).
 

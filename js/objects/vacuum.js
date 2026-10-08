@@ -14,13 +14,13 @@ export const createVacuum = ({ camera, iTime }) => {
   const flowDir = uniform(1)
 
   // the vacuum model in your right hand (loads in the background)
-  const holder = new THREE.Group()
-  holder.position.fromArray(VACUUM.model.position)
-  holder.rotation.fromArray(VACUUM.model.rotation.map(THREE.MathUtils.degToRad))
-  camera.add(holder)
+  const model = new THREE.Group()
+  model.position.fromArray(VACUUM.model.position)
+  model.rotation.fromArray(VACUUM.model.rotation.map(THREE.MathUtils.degToRad))
+  camera.add(model)
   new GLTFLoader().load(MODELS.vacuum.file, (gltf) => {
     gltf.scene.scale.setScalar(MODELS.vacuum.scale)
-    holder.add(gltf.scene)
+    model.add(gltf.scene)
   })
 
   // open cone along the cylinder's y axis, narrow end on top
@@ -41,8 +41,8 @@ export const createVacuum = ({ camera, iTime }) => {
   })
   material.colorNode = colorSpaceToWorking(suction({ uv: uv(), iTime, power, flowDir }), THREE.SRGBColorSpace)
 
+  // the swirl cone starts at the nozzle tip
   const mesh = new THREE.Mesh(geometry, material)
-  // temporary nozzle spot (the vacuum model's Nozzle empty replaces this later)
   mesh.position.fromArray(VACUUM.nozzleOffset)
   camera.add(mesh)
 
@@ -82,5 +82,5 @@ export const createVacuum = ({ camera, iTime }) => {
   }
 
   // aimPoint: what's under the crosshair (the ghosts use it: aiming at a hiding spot counts)
-  return { mesh, model: holder, state, nozzle, aimPoint, setMode, update }
+  return { state, nozzle, aimPoint, setMode, update }
 }

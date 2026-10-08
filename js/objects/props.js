@@ -54,6 +54,7 @@ export const createProps = async ({ physics }) => {
       mesh.quaternion.copy(body.rotation())
     })
   }
+  update()
 
   // every physics step while the vacuum runs: push each prop with the shared suction force
   const force = new THREE.Vector3()
@@ -111,7 +112,6 @@ export const createProps = async ({ physics }) => {
     })
     return caught
   }
-  update()
 
   // debug: lift every prop 1 m and let it drop
   const drop = () => {

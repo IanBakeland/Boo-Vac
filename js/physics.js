@@ -7,7 +7,7 @@ import { PHYSICS, PLAYER, LAYOUT, SUCTION } from './config.js'
 
 // --- shared suction model (AGENTS.md §7), the 3D version of the course's compute particle swirl ---
 // Returns the acceleration (m/s²) the vacuum gives a point. Multiply by mass for a force.
-// The WGSL dust shader (step 3.6) uses the exact same formula.
+// The WGSL dust shader (shaders/dust/update.wgsl) uses the exact same formula.
 const cosInner = Math.cos(THREE.MathUtils.degToRad(SUCTION.innerAngle))
 const cosOuter = Math.cos(THREE.MathUtils.degToRad(SUCTION.outerAngle))
 const _dirOut = new THREE.Vector3()
