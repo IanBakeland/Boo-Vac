@@ -214,23 +214,224 @@ body
     margin-bottom: 4px;
 }
 
-/* temporary end message (the invoice screen replaces it in step 4.7) */
-#all-caught
-{
-    position: absolute;
-    top: 30%;
-    width: 100%;
-    color: #9be35b;
-    font-family: system-ui, sans-serif;
-    font-size: 2.5rem;
-    font-weight: 800;
-    text-align: center;
-    text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
-}
+
 
 #tug .tug-name
 {
     font-size: 0.85rem;
     opacity: 0.8;
     margin-bottom: 2px;
+}
+
+/* --- start screen --- */
+.overlay.start
+{
+    cursor: default;
+    overflow-y: auto;
+    padding: 24px;
+    background: radial-gradient(circle at 50% 30%, rgba(30, 40, 80, 0.85), rgba(5, 8, 20, 0.95));
+}
+
+.start .tagline
+{
+    opacity: 0.75;
+    margin-top: -0.6rem;
+}
+
+.voicemail
+{
+    max-width: 900px;
+}
+
+.voicemail .from
+{
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-bottom: 0.6rem;
+}
+
+.voicemail .cards
+{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.voicemail .card
+{
+    position: relative;
+    box-sizing: border-box;
+    width: 280px;
+    padding: 16px 16px 16px 44px;
+    border-radius: 10px;
+    background: rgba(223, 230, 255, 0.08);
+    border: 1px solid rgba(223, 230, 255, 0.2);
+    font-style: italic;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.voicemail .card-number
+{
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    font-style: normal;
+    font-weight: 800;
+    color: #9be35b;
+}
+
+.start-button,
+.again-button
+{
+    padding: 12px 36px;
+    border: none;
+    border-radius: 999px;
+    background: #9be35b;
+    color: #0b1020;
+    font-size: 1.15rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.start-button:disabled
+{
+    background: rgba(223, 230, 255, 0.3);
+    cursor: wait;
+}
+
+.controls-list
+{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 18px;
+    list-style: none;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.start .note
+{
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+.notice
+{
+    color: #ffb84d;
+    font-weight: 700;
+}
+
+/* no WebGPU: banner at the top */
+.banner
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    padding: 8px;
+    background: #ffb84d;
+    color: #0b1020;
+    font-family: system-ui, sans-serif;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* --- invoice --- */
+.overlay.invoice
+{
+    cursor: default;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.invoice .paper
+{
+    width: min(460px, 100%);
+    padding: 28px;
+    border-radius: 6px;
+    background: #f4f1e8;
+    color: #1d1d1d;
+    font-family: 'Courier New', monospace;
+    text-align: left;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    transform: rotate(-1deg);
+}
+
+.invoice h2
+{
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.invoice-meta
+{
+    margin: 4px 0 16px;
+    font-size: 0.8rem;
+    text-align: center;
+    opacity: 0.7;
+}
+
+.invoice-lines
+{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.invoice-lines td
+{
+    padding: 5px 0;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.2);
+    vertical-align: top;
+}
+
+.invoice-lines .detail
+{
+    opacity: 0.6;
+    padding: 5px 8px;
+    white-space: nowrap;
+}
+
+.invoice-lines .amount
+{
+    text-align: right;
+    white-space: nowrap;
+}
+
+.invoice .minus
+{
+    color: #b3261e;
+}
+
+.invoice-total
+{
+    margin-top: 12px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-align: right;
+}
+
+.invoice-stars
+{
+    margin-top: 10px;
+    font-size: 1.8rem;
+    text-align: center;
+    color: #e0a800;
+}
+
+.invoice-note
+{
+    margin: 6px 0 18px;
+    font-style: italic;
+    text-align: center;
+}
+
+.invoice .again-button
+{
+    display: block;
+    margin: 0 auto;
 }

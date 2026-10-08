@@ -178,6 +178,16 @@ export const TUG = {
   stretchMin: 0.4        // Ether stretch at an empty meter (x the suction), 1 at a full meter
 }
 
+// The invoice at the end of the shift (money in euro)
+export const INVOICE = {
+  perGhost: 100,       // you get paid per ghost
+  shiftPay: 20,        // flat pay for the night
+  perItem: 12,         // the client's property you sucked up is billed to you
+  perEscape: 50,       // "overtime" for every ghost that got away
+  vacuumBag: 4.99,     // joke line
+  delay: 2.5           // s after the last capture before the invoice shows
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],

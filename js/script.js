@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW, INVOICE } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -104,8 +104,8 @@ const throwBook = (from) => {
   nearest.body.setAngvel({ x: Math.random() * 10, y: Math.random() * 10, z: Math.random() * 10 }, true)
 }
 
-// game stats (for the HUD now, and the invoice at the end)
-const stats = { caught: 0, escapes: 0 }
+// game stats (for the HUD, and the invoice at the end)
+const stats = { caught: 0, escapes: 0, startTime: 0, endTime: 0 }
 
 // the three ghosts (model + Blender animations + Ether aura), all hiding at the same time:
 // catch them in any order. A small Ether wisp shows where each one hides.
@@ -118,7 +118,11 @@ const ghosts = await Promise.all(GHOSTS.map((config) => createGhost({
   takenSpots: () => ghosts.map((g) => g.getSpot()).filter((spot) => spot !== null),
   // only one tug-of-war at a time
   canStartTug: () => !ghosts.some((g) => g.isTugging()),
-  onCapture: () => { stats.caught++ },
+  onCapture: () => {
+    stats.caught++
+    // the last ghost: the shift is over
+    if (stats.caught === GHOSTS.length) endShift()
+  },
   onEscape: () => { stats.escapes++ },
   onThrow: (from) => throwBook(from)
 })))
@@ -154,10 +158,10 @@ window.addEventListener('keyup', (e) => keys.delete(e.code))
 const $start = document.querySelector('#start')
 const $pause = document.querySelector('#pause')
 const $resume = $pause.querySelector('.action')
+const $startButton = $start.querySelector('.start-button')
 const $hud = document.querySelector('#hud')
 const $tankCount = $hud.querySelector('.tank-count')
 const $ghostCount = $hud.querySelector('.ghost-count')
-const $allCaught = document.querySelector('#all-caught')
 const $max = document.querySelector('#max')
 const $crosshair = document.querySelector('#crosshair')
 const $tug = document.querySelector('#tug')
@@ -174,8 +178,6 @@ const updateHud = () => {
   if (stats.caught !== shownCaught) {
     shownCaught = stats.caught
     $ghostCount.textContent = shownCaught
-    // all ghosts: for now a message (the invoice screen comes in step 4.7)
-    $allCaught.classList.toggle('hidden', shownCaught < GHOSTS.length)
   }
   if (props.tank.length !== shownTank) {
     shownTank = props.tank.length
@@ -234,27 +236,85 @@ const updateMax = (dt) => {
   }
   vacuum.state.boost = maxActive ? MAX.multiplier : 1
 }
+// --- game state machine: start -> playing <-> paused -> invoice ---
+const game = { state: 'start' }
+const $invoice = document.querySelector('#invoice')
+const setGameState = (next) => {
+  game.state = next
+  const playing = next === 'playing'
+  $start.classList.toggle('hidden', next !== 'start')
+  $pause.classList.toggle('hidden', next !== 'paused')
+  $invoice.classList.toggle('hidden', next !== 'invoice')
+  $hud.classList.toggle('hidden', !playing)
+  $max.classList.toggle('hidden', !playing)
+  $crosshair.classList.toggle('hidden', !playing)
+  switch (next) {
+    case 'playing':
+      // the clock starts with the first click on "Start shift"
+      if (!stats.startTime) stats.startTime = performance.now()
+      break
+    case 'paused':
+      // Chrome refuses to lock the mouse again right away: show "click to resume" after a moment
+      $resume.classList.add('waiting')
+      setTimeout(() => $resume.classList.remove('waiting'), PLAYER.relockDelay)
+      break
+    case 'invoice':
+      showInvoice()
+      break
+  }
+}
+
 let unlockedAt = 0
-$start.addEventListener('click', () => controls.lock())
+$startButton.addEventListener('click', () => controls.lock())
 $pause.addEventListener('click', () => {
   if (performance.now() - unlockedAt > PLAYER.relockDelay) controls.lock()
 })
-controls.addEventListener('lock', () => {
-  $start.classList.add('hidden')
-  $pause.classList.add('hidden')
-  $hud.classList.remove('hidden')
-  $max.classList.remove('hidden')
-  $crosshair.classList.remove('hidden')
-})
+controls.addEventListener('lock', () => setGameState('playing'))
 controls.addEventListener('unlock', () => {
-  // Esc: pause, stop the vacuum and forget held keys
+  // Esc: stop the vacuum and forget held keys; pause (unless the shift is over)
   unlockedAt = performance.now()
-  $pause.classList.remove('hidden')
-  $resume.classList.add('waiting')
-  setTimeout(() => $resume.classList.remove('waiting'), PLAYER.relockDelay)
   vacuum.setMode(null)
   keys.clear()
+  if (game.state === 'playing') setGameState('paused')
 })
+
+// the last ghost is caught: a moment to enjoy it, then the invoice (and the mouse is free again)
+const endShift = () => {
+  stats.endTime = performance.now()
+  setTimeout(() => {
+    setGameState('invoice')
+    document.exitPointerLock()
+  }, INVOICE.delay * 1000)
+}
+
+// --- the invoice: your pay minus everything the boss bills you for ---
+const euro = (amount) => `${amount < 0 ? '−' : ''}€${Math.abs(amount).toFixed(2)}`
+const showInvoice = () => {
+  const seconds = Math.round((stats.endTime - stats.startTime) / 1000)
+  const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+  const items = props.tank.length
+  const lines = [
+    ['Ghost removal', `${stats.caught} × €${INVOICE.perGhost}`, stats.caught * INVOICE.perGhost],
+    ['Night shift', time, INVOICE.shiftPay],
+    ["Client's property sucked up", `${items} × €${INVOICE.perItem}`, -items * INVOICE.perItem],
+    ['Overtime (ghosts that got away)', `${stats.escapes} × €${INVOICE.perEscape}`, -stats.escapes * INVOICE.perEscape],
+    ['1 cat, returned', '', 0],
+    ['Vacuum bag (used)', '', -INVOICE.vacuumBag]
+  ]
+  const total = lines.reduce((sum, line) => sum + line[2], 0)
+  // stars: start at 5, lose one per escape and one per 8 items of the client's stuff
+  const stars = THREE.MathUtils.clamp(5 - stats.escapes - Math.floor(items / 8), 1, 5)
+  const notes = { 5: 'Employee of the month!', 4: 'Solid work. Mind the furniture.', 3: 'Not bad for a first night.', 2: 'We need to talk about your technique.', 1: "Don't call us, we'll call you." }
+  $invoice.querySelector('.invoice-meta').textContent = `Invoice #BV-${String(Math.floor(Math.random() * 9000) + 1000)} · Villa, night shift`
+  $invoice.querySelector('.invoice-lines').innerHTML = lines.map(([label, detail, amount]) =>
+    `<tr><td>${label}</td><td class="detail">${detail}</td><td class="amount ${amount < 0 ? 'minus' : ''}">${euro(amount)}</td></tr>`).join('')
+  const $total = $invoice.querySelector('.invoice-total')
+  $total.textContent = `Total: ${euro(total)}`
+  $total.classList.toggle('minus', total < 0)
+  $invoice.querySelector('.invoice-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars)
+  $invoice.querySelector('.invoice-note').textContent = `"${notes[stars]}" — the boss`
+}
+$invoice.querySelector('.again-button').addEventListener('click', () => window.location.reload())
 
 // tug-of-war input: horizontal mouse movement, added up over the last TUG.inputWindow seconds
 const mouseMoves = []
@@ -399,5 +459,14 @@ window.addEventListener('resize', () => {
   renderer.setSize(size.width, size.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
+
+// no real WebGPU (old browser): three.js falls back to WebGL, the dust is off
+if (!renderer.backend.isWebGPUBackend) document.querySelector('#no-webgpu').classList.remove('hidden')
+// touch screens: the game needs a mouse and keyboard (it still renders)
+if (window.matchMedia('(pointer: coarse)').matches) $start.querySelector('.touch-notice').classList.remove('hidden')
+
+// everything is loaded: the shift can start
+$startButton.disabled = false
+$startButton.textContent = 'Start shift'
 
 renderer.setAnimationLoop(draw)

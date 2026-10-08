@@ -10,7 +10,6 @@
   <canvas class="webgl"></canvas>
   <div id="ui">
     <div id="crosshair" class="hidden"></div>
-    <div id="all-caught" class="hidden">All ghosts caught!</div>
     <div id="tug" class="hidden">
       <div class="tug-name"></div>
       <div class="tug-arrow"></div>
@@ -26,14 +25,45 @@
       <div class="max-bar"><div class="max-fill"></div></div>
     </div>
     <div id="fps" class="hidden"></div>
-    <div id="start" class="overlay">
+    <div id="no-webgpu" class="banner hidden">Your browser has no WebGPU: running in fallback mode, some effects are off.</div>
+    <div id="start" class="overlay start">
       <h1>Boo-Vac</h1>
-      <p class="action">Click to start</p>
-      <p class="controls">WASD walk · Space jump · Mouse look · Left mouse suck · Right mouse blow · F MAX · Esc pause</p>
+      <p class="tagline">Dust &amp; Ghost Cleaning Co. · your first night shift</p>
+      <div class="voicemail">
+        <p class="from">📞 1 new voicemail from the boss</p>
+        <div class="cards">
+          <div class="card"><span class="card-number">1</span>"Welcome to the crew! Small thing: old houses have <em>dust ghosts</em>. The more dust, the more ghosts."</div>
+          <div class="card"><span class="card-number">2</span>"Find stuff that shakes, vacuum at it, and the ghost pops out. Then pull the mouse against it. Don't let go, or it hides again."</div>
+          <div class="card"><span class="card-number">3</span>"Oh, and anything you suck up is the client's property. We'll bill you. Good luck!"</div>
+        </div>
+      </div>
+      <button class="start-button" disabled>Loading…</button>
+      <ul class="controls-list">
+        <li><b>WASD</b> walk</li>
+        <li><b>Space</b> jump</li>
+        <li><b>Mouse</b> look / aim</li>
+        <li><b>Left mouse</b> suck</li>
+        <li><b>Right mouse</b> blow</li>
+        <li><b>F</b> MAX power</li>
+        <li><b>Esc</b> pause</li>
+      </ul>
+      <p class="note">Best on desktop Chrome / Edge / Safari 26</p>
+      <p class="notice touch-notice hidden">This game needs a mouse and keyboard.</p>
     </div>
     <div id="pause" class="overlay hidden">
       <h1>Paused</h1>
       <p class="action">Click to resume</p>
+    </div>
+    <div id="invoice" class="overlay invoice hidden">
+      <div class="paper">
+        <h2>Dust &amp; Ghost Cleaning Co.</h2>
+        <p class="invoice-meta"></p>
+        <table class="invoice-lines"></table>
+        <div class="invoice-total"></div>
+        <div class="invoice-stars"></div>
+        <p class="invoice-note"></p>
+        <button class="again-button">Play again</button>
+      </div>
     </div>
   </div>
   <script type="module" src="js/script.js"></script>
