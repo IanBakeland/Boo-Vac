@@ -178,6 +178,7 @@ There is **no stun/flash mechanic** (removed on purpose). The flashlight is alwa
 - **Motor:** sawtooth `OscillatorNode` → `BiquadFilterNode` (lowpass) → gain. Frequency 70→160 Hz and cutoff 400→1800 Hz follow `power` and the tug meter.
 - **Plop:** short noise burst (an `AudioBuffer` of random samples, 60 ms, fast decay).
 - **Ghost giggle / moan:** generated too for now (vibrato sweeps in `js/audio.js`); real CC0 recordings in `public/sounds/` are optional (credit them in the README).
+- **Background music** (student's request), generated too: a breathing drone (A minor ↔ F), a random eerie music-box phrase in A harmonic minor with reverb, and a heartbeat during the tug that speeds up with the meter (`MUSIC` in `config.js`).
 - **Suck vs blow must be unmistakable:** suck = high narrow hiss + rising start chirp, blow = low wide rumble + falling start chirp. Visually: blue-white inward swirl vs orange outward streaks, and a SUCK / BLOW label under the crosshair.
 - **MAX** (F): motor pitch and gain up while MAX is active.
 - Create the `AudioContext` on the Start click. Respect the mute toggle.

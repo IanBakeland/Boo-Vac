@@ -1,7 +1,7 @@
 // All sounds are generated with the Web Audio API (no files, no library):
 // https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API
 // (beyond the course: oscillators, filters and gain envelopes)
-import { AUDIO } from './config.js'
+import { AUDIO, MUSIC } from './config.js'
 
 export const createAudio = () => {
   let context = null
@@ -57,14 +57,144 @@ export const createAudio = () => {
     airGain.gain.value = 0
     airSource.connect(air).connect(airGain).connect(master)
     airSource.start()
+
+    startMusic()
+  }
+
+  // --- background music: a drone, an eerie music box and (in the tug) a heartbeat ---
+  // notes are scheduled a little ahead on the audio clock, so the timing never stutters
+  // (https://web.dev/articles/audio-scheduling)
+  let musicGain = null
+  let reverb = null
+  let drones = []
+  let tension = -1 // tug meter while tugging, -1 when there's no tug (no heartbeat)
+
+  // reverb: a "big empty house" echo, made from noise that fades out over 3 s
+  const createReverb = () => {
+    const length = context.sampleRate * 3
+    const impulse = context.createBuffer(2, length, context.sampleRate)
+    for (let channel = 0; channel < 2; channel++) {
+      const data = impulse.getChannelData(channel)
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3)
+    }
+    const convolver = context.createConvolver()
+    convolver.buffer = impulse
+    return convolver
+  }
+
+  const startMusic = () => {
+    musicGain = context.createGain()
+    musicGain.gain.value = MUSIC.volume
+    musicGain.connect(master)
+    reverb = createReverb()
+    const wet = context.createGain()
+    wet.gain.value = 0.6
+    reverb.connect(wet).connect(musicGain)
+
+    // drone: two low triangle waves through a lowpass that slowly opens and closes (breathing)
+    const filter = context.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = 300
+    const breathe = context.createOscillator()
+    const breatheDepth = context.createGain()
+    breathe.frequency.value = 0.07
+    breatheDepth.gain.value = 180
+    breathe.connect(breatheDepth).connect(filter.frequency)
+    breathe.start()
+    const droneGain = context.createGain()
+    droneGain.gain.value = MUSIC.droneVolume
+    filter.connect(droneGain)
+    droneGain.connect(musicGain)
+    droneGain.connect(reverb)
+    drones = MUSIC.chords[0].map((frequency) => {
+      const osc = context.createOscillator()
+      osc.type = 'triangle'
+      osc.frequency.value = frequency
+      // slightly out of tune with itself: a slow, uneasy beating
+      osc.detune.value = Math.random() * 10 - 5
+      osc.connect(filter)
+      osc.start()
+      return osc
+    })
+
+    setInterval(scheduleMusic, 100)
+  }
+
+  // one music-box note: a sine plus a soft octave, a quick "ting" that rings out
+  const musicBox = (frequency, time) => {
+    const gain = context.createGain()
+    gain.gain.setValueAtTime(0, time)
+    gain.gain.linearRampToValueAtTime(MUSIC.boxVolume, time + 0.005)
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 1.8)
+    gain.connect(musicGain)
+    gain.connect(reverb)
+    ;[[frequency, 1], [frequency * 2, 0.3]].forEach(([f, level]) => {
+      const osc = context.createOscillator()
+      osc.frequency.value = f
+      const partial = context.createGain()
+      partial.gain.value = level
+      osc.connect(partial).connect(gain)
+      osc.start(time)
+      osc.stop(time + 1.9)
+    })
+  }
+
+  // one heartbeat thump: a very low sine that drops in pitch
+  const thump = (time, volume) => {
+    const osc = context.createOscillator()
+    osc.frequency.setValueAtTime(70, time)
+    osc.frequency.exponentialRampToValueAtTime(35, time + 0.15)
+    const gain = context.createGain()
+    gain.gain.setValueAtTime(volume, time)
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2)
+    osc.connect(gain).connect(musicGain)
+    osc.start(time)
+    osc.stop(time + 0.22)
+  }
+
+  const randomBetween = ([min, max]) => min + Math.random() * (max - min)
+  let nextPhrase = 0
+  let nextChord = 0
+  let chord = 0
+  let nextHeart = 0
+  const scheduleMusic = () => {
+    const now = context.currentTime
+    const ahead = now + 0.3
+    const beat = 60 / MUSIC.tempo
+    // the chords slowly alternate: the drone glides to the next one
+    if (nextChord < ahead) {
+      nextChord = Math.max(nextChord, now)
+      MUSIC.chords[chord].forEach((frequency, i) => drones[i].frequency.setTargetAtTime(frequency, nextChord, 1.5))
+      chord = (chord + 1) % MUSIC.chords.length
+      nextChord += MUSIC.chordBeats * beat
+    }
+    // a random phrase on the music box, then a rest
+    if (nextPhrase < ahead) {
+      let time = Math.max(nextPhrase, now)
+      const phrase = MUSIC.phrases[Math.floor(Math.random() * MUSIC.phrases.length)]
+      phrase.forEach(([note, beats]) => {
+        musicBox(MUSIC.scale[note], time)
+        time += beats * beat
+      })
+      nextPhrase = time + Math.round(randomBetween(MUSIC.rest)) * beat
+    }
+    // heartbeat during the tug: "lub-dub", faster as the meter fills
+    if (tension < 0) nextHeart = now
+    else if (nextHeart < ahead) {
+      const time = Math.max(nextHeart, now)
+      thump(time, MUSIC.heartVolume)
+      thump(time + 0.18, MUSIC.heartVolume * 0.6)
+      nextHeart = time + MUSIC.heartbeat[0] + (MUSIC.heartbeat[1] - MUSIC.heartbeat[0]) * tension
+    }
   }
 
   // smooth change of an audio parameter (no clicks)
   const glide = (param, value, time = 0.05) => param.setTargetAtTime(value, context.currentTime, time)
 
-  // every frame: power 0-1, mode 'suck' / 'blow', boost (MAX > 1), tug meter 0-1
-  const update = ({ power, mode, boost, tug }) => {
+  // every frame: power 0-1, mode 'suck' / 'blow', boost (MAX > 1), tug meter 0-1, tugging: a tug is on
+  const update = ({ power, mode, boost, tug, tugging }) => {
     if (!context) return
+    tension = tugging ? tug : -1
     const boosted = boost > 1 ? AUDIO.maxPitch : 1
     // the tug-of-war makes the motor strain: higher pitch as the meter fills
     const strain = 1 + tug * AUDIO.tugPitch

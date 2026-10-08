@@ -485,7 +485,8 @@ const draw = (timestamp) => {
   props.update()
   if (DEBUG) physics.updateDebugLines()
   // the vacuum sound follows the power, the mode, MAX and the tug meter
-  audio.update({ power, mode, boost, tug: tuggingGhost()?.tug.meter ?? 0 })
+  const fightingNow = tuggingGhost()
+  audio.update({ power, mode, boost, tug: fightingNow?.tug.meter ?? 0, tugging: fightingNow !== null })
   // dust: same suction as the props (MAX makes it stronger too)
   dust?.update(renderer, dt, power * boost, mode)
   updateHud()

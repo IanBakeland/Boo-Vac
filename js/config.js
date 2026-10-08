@@ -203,6 +203,31 @@ export const AUDIO = {
   blowVolume: 0.35
 }
 
+// Background music (also generated, see js/audio.js): a drone + an eerie music box + a heartbeat in the tug
+export const MUSIC = {
+  volume: 0.35,          // compared to the sound effects
+  tempo: 72,             // beats per minute
+  droneVolume: 0.12,
+  // two chords that slowly alternate (Hz): A minor (A1 + E2) and F major (F1 + C2)
+  chords: [[55, 82.41], [43.65, 65.41]],
+  chordBeats: 16,        // beats per chord
+  boxVolume: 0.16,
+  // the music box: A minor with the "wrong" G# (harmonic minor), the classic creepy music-box sound
+  // A3 C4 D4 E4 F4 G#4 A4 C5 E5
+  scale: [220, 261.63, 293.66, 329.63, 349.23, 415.3, 440, 523.25, 659.25],
+  // phrases: [scale index, length in beats] (picked at random, with rests in between)
+  phrases: [
+    [[6, 1], [4, 1], [5, 1], [6, 2], [3, 3]],
+    [[3, 0.5], [4, 0.5], [5, 1], [4, 1], [3, 1], [0, 3]],
+    [[8, 1], [7, 1], [6, 1], [5, 1], [6, 4]],
+    [[0, 1], [3, 1], [6, 1], [5, 2], [4, 3]],
+    [[7, 1.5], [5, 0.5], [6, 1], [3, 1], [4, 1], [3, 3]]
+  ],
+  rest: [2, 6],          // beats of silence between two phrases
+  heartbeat: [1.1, 0.5], // s between beats: tug meter empty -> full (it races as you win)
+  heartVolume: 0.5
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],
