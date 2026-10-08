@@ -228,6 +228,28 @@ export const MUSIC = {
   heartVolume: 0.5
 }
 
+// The intro: the boss calls (Web Speech API voice + subtitles)
+export const INTRO = {
+  clock: '23:58',
+  ringEvery: 3,          // s between two rings
+  callBackDelay: 1.5,    // s: declined? the boss calls again after this
+  // voice: a bit lower and faster, like a hurried boss (1 = normal)
+  pitch: 0.8,
+  rate: 1.05,
+  // the first voice found (by name) is used; otherwise any English voice
+  preferredVoices: ['Google UK English Male', 'Daniel', 'Alex', 'Microsoft Guy', 'Microsoft David', 'Google US English'],
+  linePause: 0.35,       // s between two lines
+  readTime: 0.35,        // s per word when the browser has no speech (subtitles only)
+  musicDuck: 0.3,        // music volume during the call (x normal)
+  lines: [
+    'Hey, new guy! Welcome to the crew at Dust and Ghost Cleaning. Listen, one small thing nobody told you.',
+    'Old houses have dust ghosts. The more dust, the more ghosts.',
+    "Find stuff that shakes, point your vacuum at it, and the ghost pops out. Then pull the mouse against it. Don't let go, or it hides again.",
+    "Oh, and anything you suck up is the client's property. We'll bill you.",
+    "Three ghosts. One night. Don't break anything. Good luck!"
+  ]
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],

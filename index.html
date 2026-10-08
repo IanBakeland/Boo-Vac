@@ -29,28 +29,56 @@
     <div id="fps" class="hidden"></div>
     <div id="no-webgpu" class="banner hidden">Your browser has no WebGPU: running in fallback mode, some effects are off.</div>
     <div id="start" class="overlay start">
-      <h1>Boo-Vac</h1>
-      <p class="tagline">Dust &amp; Ghost Cleaning Co. · your first night shift</p>
-      <div class="voicemail">
-        <p class="from">📞 1 new voicemail from the boss</p>
-        <div class="cards">
-          <div class="card"><span class="card-number">1</span>"Welcome to the crew! Small thing: old houses have <em>dust ghosts</em>. The more dust, the more ghosts."</div>
-          <div class="card"><span class="card-number">2</span>"Find stuff that shakes, vacuum at it, and the ghost pops out. Then pull the mouse against it. Don't let go, or it hides again."</div>
-          <div class="card"><span class="card-number">3</span>"Oh, and anything you suck up is the client's property. We'll bill you. Good luck!"</div>
+      <div class="intro-title">
+        <h1>Boo-Vac</h1>
+        <p class="tagline">Your first night shift at Dust &amp; Ghost Cleaning Co.</p>
+      </div>
+      <!-- the phone: 1. incoming call, 2. the call (voice + subtitles), 3. call ended -->
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="phone-status"><span class="phone-clock"></span><span>▂▄▆ ▮</span></div>
+          <div class="call call-incoming">
+            <p class="call-label">Incoming call</p>
+            <div class="call-avatar"><span>B</span></div>
+            <p class="call-name">THE BOSS</p>
+            <p class="call-name-note">Dust &amp; Ghost Cleaning Co.</p>
+            <div class="call-buttons">
+              <button class="call-button decline-button" aria-label="Decline"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></button>
+              <button class="call-button accept-button" aria-label="Accept"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></button>
+            </div>
+            <div class="call-button-labels"><span>Decline</span><span>Accept</span></div>
+          </div>
+          <div class="call call-active hidden">
+            <div class="call-avatar small"><span>B</span></div>
+            <p class="call-status">Connecting…</p>
+            <p class="call-timer">0:00</p>
+            <div class="call-wave"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span><span style="--i:4"></span><span style="--i:5"></span><span style="--i:6"></span><span style="--i:7"></span><span style="--i:8"></span><span style="--i:9"></span><span style="--i:10"></span><span style="--i:11"></span><span style="--i:12"></span><span style="--i:13"></span><span style="--i:14"></span><span style="--i:15"></span><span style="--i:16"></span><span style="--i:17"></span></div>
+            <p class="call-subtitle"></p>
+            <button class="skip-button">Skip ›</button>
+          </div>
+          <div class="call call-ended hidden">
+            <div class="call-avatar small"><span>B</span></div>
+            <p class="call-duration"></p>
+            <p class="call-label">Three ghosts. One night.</p>
+          </div>
         </div>
       </div>
-      <button class="start-button" disabled>Loading…</button>
-      <ul class="controls-list">
-        <li><b>WASD</b> walk</li>
-        <li><b>Space</b> jump</li>
-        <li><b>Mouse</b> look / aim</li>
-        <li><b>Left mouse</b> suck</li>
-        <li><b>Right mouse</b> blow</li>
-        <li><b>F</b> MAX power</li>
-        <li><b>M</b> mute</li>
-        <li><b>Esc</b> pause</li>
-      </ul>
-      <p class="note">Best on desktop Chrome / Edge / Safari 26</p>
+      <p class="intro-hint">Your phone is ringing… pick up!</p>
+      <div class="intro-after">
+        <button class="start-button" disabled>Loading…</button>
+        <ul class="controls-list">
+          <li><b>WASD</b> walk</li>
+          <li><b>Space</b> jump</li>
+          <li><b>Mouse</b> look / aim</li>
+          <li><b>Left mouse</b> suck</li>
+          <li><b>Right mouse</b> blow</li>
+          <li><b>F</b> MAX power</li>
+          <li><b>M</b> mute</li>
+          <li><b>Esc</b> pause</li>
+        </ul>
+      </div>
+      <p class="note">Best on desktop Chrome / Edge / Safari 26 · sound on</p>
       <p class="notice touch-notice hidden">This game needs a mouse and keyboard.</p>
     </div>
     <div id="pause" class="overlay hidden">

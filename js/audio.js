@@ -66,6 +66,8 @@ export const createAudio = () => {
   // (https://web.dev/articles/audio-scheduling)
   let musicGain = null
   let reverb = null
+  let lineSource = null
+  let lineGain = null
   let drones = []
   let tension = -1 // tug meter while tugging, -1 when there's no tug (no heartbeat)
 
@@ -293,6 +295,53 @@ export const createAudio = () => {
     },
     // the Librarian throws a book
     whoosh: () => burst({ duration: 0.35, frequency: 400, sweepTo: 2000, volume: 0.3 }),
+    // --- the phone in the intro ---
+    // one ring: the classic double ring (two tones together: 400 + 450 Hz, "ring-ring")
+    ring: () => {
+      if (!context) return
+      const now = context.currentTime
+      ;[0, 0.6].forEach((offset) => {
+        const gain = context.createGain()
+        gain.gain.setValueAtTime(0, now + offset)
+        gain.gain.linearRampToValueAtTime(0.12, now + offset + 0.02)
+        gain.gain.setValueAtTime(0.12, now + offset + 0.4)
+        gain.gain.linearRampToValueAtTime(0, now + offset + 0.42)
+        gain.connect(master)
+        ;[400, 450].forEach((frequency) => {
+          const osc = context.createOscillator()
+          osc.frequency.value = frequency
+          osc.connect(gain)
+          osc.start(now + offset)
+          osc.stop(now + offset + 0.45)
+        })
+      })
+    },
+    // picking up / hanging up: a short dry click
+    click: () => burst({ duration: 0.04, frequency: 2500, type: 'highpass', volume: 0.5 }),
+    // the phone line: a soft hiss while the boss talks (on / off)
+    line: (on) => {
+      if (!context) return
+      if (on && !lineSource) {
+        lineSource = context.createBufferSource()
+        lineSource.buffer = noise
+        lineSource.loop = true
+        const filter = context.createBiquadFilter()
+        filter.type = 'bandpass'
+        filter.frequency.value = 1800
+        filter.Q.value = 0.5
+        lineGain = context.createGain()
+        lineGain.gain.value = 0.025
+        lineSource.connect(filter).connect(lineGain).connect(master)
+        lineSource.start()
+      } else if (!on && lineSource) {
+        lineSource.stop()
+        lineSource = null
+      }
+    },
+    // the music gets quieter while the boss talks
+    musicVolume: (level) => {
+      if (musicGain) glide(musicGain.gain, MUSIC.volume * level, 0.3)
+    },
     toggleMute: () => {
       muted = !muted
       if (master) glide(master.gain, muted ? 0 : AUDIO.volume)

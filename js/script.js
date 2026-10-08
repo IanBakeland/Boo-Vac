@@ -11,8 +11,14 @@ import { createVacuum } from './objects/vacuum.js'
 import { createDust } from './objects/dust.js'
 import { createGhost } from './objects/ghost.js'
 import { createAudio } from './audio.js'
+import { createIntro } from './intro.js'
 
 const canvas = document.querySelector('canvas.webgl')
+
+// sound (starts on the first click, browsers don't allow sound before that)
+const audio = createAudio()
+// the intro starts right away (the phone rings while the models load)
+createIntro({ audio, $start: document.querySelector('#start') })
 const scene = new THREE.Scene()
 
 const size = {
@@ -84,9 +90,6 @@ if (dust) {
   scene.add(dust.mesh)
   renderer.compute(dust.init)
 }
-
-// sound (starts on the first click, browsers don't allow sound before that)
-const audio = createAudio()
 
 // the Librarian: the nearest book near the ghost flies at the player
 const throwBook = (from) => {
