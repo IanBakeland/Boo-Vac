@@ -230,7 +230,89 @@ body
     overflow-y: auto;
     padding: 24px 16px;
     gap: 14px;
-    background: radial-gradient(circle at 50% 45%, rgba(30, 40, 80, 0.75), rgba(3, 5, 12, 0.97) 70%);
+    /* fully covers the game: you're outside the house, not in it yet */
+    background: #05081a;
+}
+
+/* everything on the start screen sits in front of the illustration */
+.start > *:not(.intro-scene)
+{
+    position: relative;
+    z-index: 1;
+}
+
+/* --- intro background: outside the villa at night (an SVG drawing in index.html) --- */
+.intro-scene
+{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+/* a dark vignette over the scene, so the phone and text stay readable */
+.start::after
+{
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(ellipse at 50% 50%, rgba(3, 5, 12, 0.55) 0%, rgba(3, 5, 12, 0.15) 45%, rgba(3, 5, 12, 0.7) 100%);
+    pointer-events: none;
+}
+
+.intro-scene .twinkle
+{
+    animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes twinkle
+{
+    50% { opacity: 0.2; }
+}
+
+.intro-scene .clouds
+{
+    animation: drift 60s linear infinite alternate;
+}
+
+@keyframes drift
+{
+    to { transform: translateX(160px); }
+}
+
+.intro-scene .flicker
+{
+    animation: flicker 3.5s infinite;
+}
+
+@keyframes flicker
+{
+    0%, 18%, 22%, 62%, 64%, 100% { opacity: 1; }
+    20%, 63% { opacity: 0.25; }
+}
+
+/* the ghost in the attic window: hidden most of the time, peeks up for a moment */
+.intro-scene .peek
+{
+    animation: peek 9s ease-in-out infinite;
+}
+
+@keyframes peek
+{
+    0%, 70%, 100% { transform: translateY(16px); opacity: 0; }
+    76%, 90% { transform: translateY(0); opacity: 0.9; }
+}
+
+.intro-scene .mist
+{
+    animation: mist 18s ease-in-out infinite alternate;
+}
+
+@keyframes mist
+{
+    to { transform: translateX(120px); }
 }
 
 .intro-title

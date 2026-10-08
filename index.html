@@ -29,6 +29,170 @@
     <div id="fps" class="hidden"></div>
     <div id="no-webgpu" class="banner hidden">Your browser has no WebGPU: running in fallback mode, some effects are off.</div>
     <div id="start" class="overlay start">
+      <!-- intro background: outside the villa at night (you're not in the house yet) -->
+      <svg class="intro-scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#05081a"/>
+            <stop offset="0.6" stop-color="#16204a"/>
+            <stop offset="1" stop-color="#2b2850"/>
+          </linearGradient>
+          <radialGradient id="moon-glow">
+            <stop offset="0" stop-color="#fff6d6" stop-opacity="0.45"/>
+            <stop offset="1" stop-color="#fff6d6" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#8fa3d6" stop-opacity="0"/>
+            <stop offset="1" stop-color="#8fa3d6" stop-opacity="0.35"/>
+          </linearGradient>
+          <radialGradient id="window-light">
+            <stop offset="0" stop-color="#ffd27a" stop-opacity="0.6"/>
+            <stop offset="1" stop-color="#ffd27a" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1600" height="900" fill="url(#sky)"/>
+        <g class="stars" fill="#dfe6ff">
+            <circle cx="540" cy="158" r="1" class="twinkle" style="animation-delay:-2.6s"/>
+            <circle cx="1374" cy="85" r="1"/>
+            <circle cx="1322" cy="385" r="1"/>
+            <circle cx="276" cy="46" r="2.2" class="twinkle" style="animation-delay:-3.4s"/>
+            <circle cx="1535" cy="160" r="1"/>
+            <circle cx="893" cy="74" r="2.2"/>
+            <circle cx="39" cy="518" r="1.4" class="twinkle" style="animation-delay:-3.3s"/>
+            <circle cx="183" cy="456" r="1.4"/>
+            <circle cx="933" cy="391" r="1.8"/>
+            <circle cx="295" cy="416" r="1.4" class="twinkle" style="animation-delay:-1.4s"/>
+            <circle cx="489" cy="259" r="2.2"/>
+            <circle cx="1165" cy="512" r="1.8"/>
+            <circle cx="1383" cy="196" r="1.8" class="twinkle" style="animation-delay:-2.6s"/>
+            <circle cx="1351" cy="70" r="1.4"/>
+            <circle cx="1227" cy="418" r="1.4"/>
+            <circle cx="1425" cy="239" r="2.2" class="twinkle" style="animation-delay:-2.4s"/>
+            <circle cx="286" cy="235" r="1.8"/>
+            <circle cx="1107" cy="100" r="1.4"/>
+            <circle cx="424" cy="101" r="2.2" class="twinkle" style="animation-delay:-1.4s"/>
+            <circle cx="770" cy="245" r="1.4"/>
+            <circle cx="1250" cy="153" r="1.8"/>
+            <circle cx="277" cy="305" r="1.8" class="twinkle" style="animation-delay:-2.2s"/>
+            <circle cx="1167" cy="130" r="1"/>
+            <circle cx="1446" cy="197" r="1"/>
+            <circle cx="160" cy="230" r="1.8" class="twinkle" style="animation-delay:-1.6s"/>
+            <circle cx="1482" cy="227" r="1"/>
+            <circle cx="470" cy="82" r="1.8"/>
+            <circle cx="1439" cy="439" r="1.8" class="twinkle" style="animation-delay:-2.6s"/>
+            <circle cx="337" cy="385" r="1.8"/>
+            <circle cx="1517" cy="454" r="1.4"/>
+            <circle cx="1566" cy="421" r="1.4" class="twinkle" style="animation-delay:-0.8s"/>
+            <circle cx="1301" cy="201" r="2.2"/>
+            <circle cx="1477" cy="346" r="1"/>
+            <circle cx="1451" cy="318" r="1" class="twinkle" style="animation-delay:-2.9s"/>
+            <circle cx="443" cy="451" r="2.2"/>
+            <circle cx="97" cy="307" r="2.2"/>
+            <circle cx="89" cy="193" r="2.2" class="twinkle" style="animation-delay:-2.9s"/>
+            <circle cx="709" cy="103" r="1.4"/>
+            <circle cx="405" cy="94" r="2.2"/>
+            <circle cx="239" cy="471" r="1" class="twinkle" style="animation-delay:-0.7s"/>
+            <circle cx="888" cy="339" r="2.2"/>
+            <circle cx="1149" cy="423" r="2.2"/>
+            <circle cx="1433" cy="29" r="1.8" class="twinkle" style="animation-delay:-3.3s"/>
+            <circle cx="1331" cy="57" r="2.2"/>
+            <circle cx="16" cy="74" r="1.4"/>
+            <circle cx="258" cy="218" r="1.4" class="twinkle" style="animation-delay:-3.6s"/>
+            <circle cx="1167" cy="315" r="1"/>
+            <circle cx="972" cy="277" r="1.4"/>
+            <circle cx="83" cy="12" r="1.4" class="twinkle" style="animation-delay:-1.3s"/>
+            <circle cx="1026" cy="296" r="2.2"/>
+            <circle cx="1068" cy="432" r="1.8"/>
+            <circle cx="466" cy="352" r="1" class="twinkle" style="animation-delay:-1.2s"/>
+            <circle cx="75" cy="202" r="2.2"/>
+            <circle cx="1472" cy="476" r="1"/>
+            <circle cx="1522" cy="84" r="1.4" class="twinkle" style="animation-delay:-1.7s"/>
+            <circle cx="450" cy="142" r="1.8"/>
+            <circle cx="1214" cy="130" r="1.4"/>
+            <circle cx="510" cy="313" r="1.4" class="twinkle" style="animation-delay:-1.7s"/>
+            <circle cx="1322" cy="189" r="1.8"/>
+            <circle cx="88" cy="172" r="1.8"/>
+            <circle cx="953" cy="54" r="1" class="twinkle" style="animation-delay:-3.0s"/>
+            <circle cx="1238" cy="481" r="1"/>
+            <circle cx="1348" cy="406" r="1.4"/>
+            <circle cx="399" cy="240" r="1.8" class="twinkle" style="animation-delay:-4.0s"/>
+            <circle cx="808" cy="180" r="1"/>
+            <circle cx="602" cy="280" r="1.8"/>
+            <circle cx="290" cy="85" r="1" class="twinkle" style="animation-delay:-0.4s"/>
+            <circle cx="330" cy="121" r="1.4"/>
+            <circle cx="631" cy="318" r="1.8"/>
+            <circle cx="605" cy="27" r="1.4" class="twinkle" style="animation-delay:-0.5s"/>
+        </g>
+        <!-- moon -->
+        <circle cx="1280" cy="170" r="190" fill="url(#moon-glow)"/>
+        <circle cx="1280" cy="170" r="62" fill="#f5efd2"/>
+        <circle cx="1262" cy="155" r="10" fill="#e3dbb8"/>
+        <circle cx="1298" cy="190" r="7" fill="#e3dbb8"/>
+        <!-- clouds drifting past -->
+        <g class="clouds" fill="#0d1330" opacity="0.8">
+          <ellipse cx="300" cy="200" rx="180" ry="26"/>
+          <ellipse cx="380" cy="185" rx="110" ry="22"/>
+          <ellipse cx="1150" cy="260" rx="200" ry="20"/>
+          <ellipse cx="1240" cy="248" rx="120" ry="18"/>
+        </g>
+        <!-- the hill -->
+        <path d="M0 720 Q400 610 800 640 T1600 690 V900 H0 Z" fill="#090d1d"/>
+        <!-- the villa: main house, tower with a pointy roof, gables, chimney -->
+        <g fill="#04060d">
+          <rect x="610" y="420" width="420" height="240"/>
+          <polygon points="590,425 820,300 1050,425"/>
+          <rect x="930" y="300" width="28" height="80"/>
+          <rect x="520" y="360" width="120" height="300"/>
+          <polygon points="505,365 580,220 655,365"/>
+          <rect x="574" y="200" width="12" height="30"/>
+          <polygon points="760,430 820,370 880,430"/>
+          <rect x="660" y="600" width="320" height="10"/>
+        </g>
+        <!-- windows: a few lit (one flickers), the rest dark -->
+        <g>
+          <circle cx="580" cy="440" r="60" fill="url(#window-light)"/>
+          <rect class="flicker" x="562" y="420" width="36" height="46" fill="#ffcf6b"/>
+          <rect x="660" y="460" width="40" height="52" fill="#ffcf6b"/>
+          <rect x="740" y="460" width="40" height="52" fill="#141a33"/>
+          <rect x="860" y="460" width="40" height="52" fill="#141a33"/>
+          <rect x="940" y="460" width="40" height="52" fill="#141a33"/>
+          <rect x="805" y="398" width="30" height="26" fill="#141a33"/>
+          <rect x="562" y="520" width="36" height="46" fill="#141a33"/>
+          <rect x="790" y="560" width="60" height="100" fill="#141a33"/>
+        </g>
+        <!-- a little ghost peeking out of the dark right window, now and then -->
+        <g transform="translate(151 64)"><g class="peek">
+          <path d="M809 424 v-14 a11 11 0 0 1 22 0 v14 l-4 -4 l-4 4 l-3 -4 l-3 4 l-4 -4 z" fill="#e8f0ff"/>
+          <circle cx="816" cy="408" r="2" fill="#04060d"/>
+          <circle cx="824" cy="408" r="2" fill="#04060d"/>
+        </g></g>
+        <!-- bare trees -->
+        <g stroke="#04060d" stroke-linecap="round" fill="none">
+          <path d="M320 700 L330 520 M327 580 L280 520 M329 560 L380 500 M330 520 L300 470 M330 520 L360 465" stroke-width="10"/>
+          <path d="M1260 700 L1250 540 M1252 600 L1210 550 M1251 570 L1300 520 M1250 540 L1230 490" stroke-width="9"/>
+        </g>
+        <!-- a crooked fence -->
+        <g fill="#04060d">
+          <rect x="440" y="650" width="760" height="6"/>
+          <rect x="440" y="672" width="760" height="6"/>
+          <rect x="440" y="630" width="9" height="60" transform="rotate(-4 444 690)"/><rect x="478" y="637" width="9" height="53" transform="rotate(1 482 690)"/><rect x="516" y="633" width="9" height="57" transform="rotate(-3 520 690)"/><rect x="554" y="640" width="9" height="50" transform="rotate(2 558 690)"/><rect x="592" y="636" width="9" height="54" transform="rotate(-2 596 690)"/><rect x="630" y="632" width="9" height="58" transform="rotate(3 634 690)"/><rect x="668" y="639" width="9" height="51" transform="rotate(-1 672 690)"/><rect x="706" y="635" width="9" height="55" transform="rotate(4 710 690)"/><rect x="744" y="631" width="9" height="59" transform="rotate(0 748 690)"/><rect x="782" y="638" width="9" height="52" transform="rotate(-4 786 690)"/><rect x="820" y="634" width="9" height="56" transform="rotate(1 824 690)"/><rect x="858" y="630" width="9" height="60" transform="rotate(-3 862 690)"/><rect x="896" y="637" width="9" height="53" transform="rotate(2 900 690)"/><rect x="934" y="633" width="9" height="57" transform="rotate(-2 938 690)"/><rect x="972" y="640" width="9" height="50" transform="rotate(3 976 690)"/><rect x="1010" y="636" width="9" height="54" transform="rotate(-1 1014 690)"/><rect x="1048" y="632" width="9" height="58" transform="rotate(4 1052 690)"/><rect x="1086" y="639" width="9" height="51" transform="rotate(0 1090 690)"/><rect x="1124" y="635" width="9" height="55" transform="rotate(-4 1128 690)"/><rect x="1162" y="631" width="9" height="59" transform="rotate(1 1166 690)"/><rect x="1200" y="638" width="9" height="52" transform="rotate(-3 1204 690)"/>
+        </g>
+        <!-- mist creeping along the ground -->
+        <rect class="mist" x="-200" y="600" width="2000" height="300" fill="url(#mist)"/>
+        <!-- the company van in front -->
+        <g class="van" transform="translate(140 690)">
+          <path d="M0 110 V40 Q0 20 20 20 H250 L310 60 Q330 66 330 86 V110 Z" fill="#c9d1e6"/>
+          <path d="M255 28 L300 62 H255 Z" fill="#3a4a70"/>
+          <rect x="20" y="40" width="210" height="44" fill="#9be35b" opacity="0.85"/>
+          <text x="125" y="60" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="16" fill="#0b1020">DUST &amp; GHOST</text>
+          <text x="125" y="78" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="600" font-size="11" fill="#0b1020">CLEANING CO. · 24/7</text>
+          <circle cx="70" cy="112" r="22" fill="#05070f"/>
+          <circle cx="70" cy="112" r="9" fill="#5a6585"/>
+          <circle cx="260" cy="112" r="22" fill="#05070f"/>
+          <circle cx="260" cy="112" r="9" fill="#5a6585"/>
+          <circle cx="324" cy="92" r="6" fill="#ffe9a8"/>
+        </g>
+      </svg>
       <div class="intro-title">
         <h1>Boo-Vac</h1>
         <p class="tagline">Your first night shift at Dust &amp; Ghost Cleaning Co.</p>
