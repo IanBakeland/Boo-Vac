@@ -1,4 +1,5 @@
-// Suction cone (own shader): swirling air streaks flowing into the nozzle
+// Suction cone (own shader): swirling air streaks flowing into the nozzle (suck, cool blue-white)
+// or straight out of it (blow, warm orange): two different colors so you always see which one is on
 // flowDir: 1 = suck (spiral in toward the nozzle), -1 = blow (straight out, no swirl)
 fn suction(uv: vec2f, iTime: f32, power: f32, flowDir: f32) -> vec4f {
   // CylinderGeometry: uv.y = 1 at the narrow end (nozzle), 0 at the wide end
@@ -22,8 +23,11 @@ fn suction(uv: vec2f, iTime: f32, power: f32, flowDir: f32) -> vec4f {
   // fade in just after the nozzle, fade out toward the wide end
   let ends = smoothstep(0.0, 0.08, along) * (1.0 - smoothstep(0.6, 1.0, along));
   // power 0 = fully invisible (additive: black adds nothing)
-  let brightness = streaks * ends * power * 0.5;
-  return vec4f(vec3f(0.75, 0.85, 1.0) * brightness, 1.0);
+  let brightness = streaks * ends * power * 0.6;
+  let suckColor = vec3f(0.7, 0.85, 1.0);
+  let blowColor = vec3f(1.0, 0.6, 0.25);
+  let color = select(blowColor, suckColor, flowDir > 0.0);
+  return vec4f(color * brightness, 1.0);
 }
 
 // GLSL mod (WGSL % behaves differently for negative numbers)

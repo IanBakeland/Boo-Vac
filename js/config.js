@@ -188,6 +188,21 @@ export const INVOICE = {
   delay: 2.5           // s after the last capture before the invoice shows
 }
 
+// Sound (all generated with Web Audio, see js/audio.js)
+export const AUDIO = {
+  volume: 0.6,            // master volume (M mutes)
+  motorPitch: [70, 160],  // Hz: motor at power 0 and at full power
+  motorCutoff: [400, 1800], // Hz: lowpass filter, the motor gets brighter with power
+  motorVolume: 0.12,
+  blowPitch: 0.8,         // blowing: the motor sounds a bit lower
+  maxPitch: 1.3,          // MAX: the motor screams higher
+  tugPitch: 0.4,          // tug meter full: +40% pitch (the motor strains)
+  suckAir: [1200, 2800],  // Hz: sucking hiss (high, "shhhh")
+  suckVolume: 0.18,
+  blowAir: [250, 600],    // Hz: blowing rumble (low, "whooo")
+  blowVolume: 0.35
+}
+
 export const VACUUM = {
   // nozzle tip (front of the floor head) relative to the camera: the suction cone starts here
   nozzleOffset: [0.22, -0.38, -0.78],

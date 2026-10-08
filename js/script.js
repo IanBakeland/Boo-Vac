@@ -10,6 +10,7 @@ import { createFlashlight } from './objects/flashlight.js'
 import { createVacuum } from './objects/vacuum.js'
 import { createDust } from './objects/dust.js'
 import { createGhost } from './objects/ghost.js'
+import { createAudio } from './audio.js'
 
 const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
@@ -84,6 +85,9 @@ if (dust) {
   renderer.compute(dust.init)
 }
 
+// sound (starts on the first click, browsers don't allow sound before that)
+const audio = createAudio()
+
 // the Librarian: the nearest book near the ghost flies at the player
 const throwBook = (from) => {
   let nearest = null
@@ -98,6 +102,7 @@ const throwBook = (from) => {
     }
   })
   if (!nearest) return
+  audio.whoosh()
   const p = nearest.body.translation()
   const toPlayer = new THREE.Vector3(camera.position.x - p.x, camera.position.y - p.y, camera.position.z - p.z).normalize()
   nearest.body.setLinvel({ x: toPlayer.x * THROW.speed, y: toPlayer.y * THROW.speed + THROW.lift, z: toPlayer.z * THROW.speed }, true)
@@ -119,11 +124,18 @@ const ghosts = await Promise.all(GHOSTS.map((config) => createGhost({
   // only one tug-of-war at a time
   canStartTug: () => !ghosts.some((g) => g.isTugging()),
   onCapture: () => {
+    audio.capture()
     stats.caught++
     // the last ghost: the shift is over
     if (stats.caught === GHOSTS.length) endShift()
   },
-  onEscape: () => { stats.escapes++ },
+  onEscape: (config) => {
+    stats.escapes++
+    // Dusty giggles at you, the others moan
+    if (config.giggle) audio.giggle()
+    else audio.moan()
+  },
+  onEmerge: () => audio.moan(),
   onThrow: (from) => throwBook(from)
 })))
 ghosts.forEach((g) => scene.add(g.mesh))
@@ -142,7 +154,12 @@ window.addEventListener('keydown', (e) => {
     if (!e.repeat) jumpRequested = true
   }
   // MAX: only with a full charge
-  if (e.code === MAX.key && controls.isLocked && !maxActive && maxCharge >= 1) maxActive = true
+  if (e.code === MAX.key && controls.isLocked && !maxActive && maxCharge >= 1) {
+    maxActive = true
+    audio.max()
+  }
+  // M: sound on/off
+  if (e.code === 'KeyM') $muteLabel.classList.toggle('hidden', !audio.toggleMute())
   // debug: G makes the nearest hidden ghost come out right away
   if (DEBUG && e.code === 'KeyG') {
     const hidden = ghosts.filter((g) => g.isHidden())
@@ -169,11 +186,14 @@ const $tugArrow = $tug.querySelector('.tug-arrow')
 const $tugName = $tug.querySelector('.tug-name')
 const $tugFill = $tug.querySelector('.tug-fill')
 const $maxFill = $max.querySelector('.max-fill')
+const $mode = document.querySelector('#mode')
+const $muteLabel = $hud.querySelector('.mute-label')
 // HUD: only touch the DOM when the value changed
 let shownTank = -1
 let shownCaught = -1
 let shownMax = ''
 let shownTug = ''
+let shownMode = ''
 const updateHud = () => {
   if (stats.caught !== shownCaught) {
     shownCaught = stats.caught
@@ -182,6 +202,19 @@ const updateHud = () => {
   if (props.tank.length !== shownTank) {
     shownTank = props.tank.length
     $tankCount.textContent = shownTank
+  }
+  // SUCK / BLOW under the crosshair (and the crosshair in that color) while the motor runs
+  const running = vacuum.state.power > 0.05
+  const modeState = running ? vacuum.state.mode : ''
+  if (modeState !== shownMode) {
+    shownMode = modeState
+    $mode.textContent = modeState.toUpperCase()
+    $mode.classList.remove('suck', 'blow')
+    $crosshair.classList.remove('suck', 'blow')
+    if (modeState) {
+      $mode.classList.add(modeState)
+      $crosshair.classList.add(modeState)
+    }
   }
   // tug meter: the arrow shows which way YOU must move the mouse (against the ghost)
   const fighting = tuggingGhost()
@@ -248,6 +281,7 @@ const setGameState = (next) => {
   $hud.classList.toggle('hidden', !playing)
   $max.classList.toggle('hidden', !playing)
   $crosshair.classList.toggle('hidden', !playing)
+  $mode.classList.toggle('hidden', !playing)
   switch (next) {
     case 'playing':
       // the clock starts with the first click on "Start shift"
@@ -265,9 +299,15 @@ const setGameState = (next) => {
 }
 
 let unlockedAt = 0
-$startButton.addEventListener('click', () => controls.lock())
+$startButton.addEventListener('click', () => {
+  audio.start()
+  controls.lock()
+})
 $pause.addEventListener('click', () => {
-  if (performance.now() - unlockedAt > PLAYER.relockDelay) controls.lock()
+  if (performance.now() - unlockedAt > PLAYER.relockDelay) {
+    audio.start()
+    controls.lock()
+  }
 })
 controls.addEventListener('lock', () => setGameState('playing'))
 controls.addEventListener('unlock', () => {
@@ -275,7 +315,10 @@ controls.addEventListener('unlock', () => {
   unlockedAt = performance.now()
   vacuum.setMode(null)
   keys.clear()
-  if (game.state === 'playing') setGameState('paused')
+  if (game.state === 'playing') {
+    setGameState('paused')
+    audio.pause()
+  }
 })
 
 // the last ghost is caught: a moment to enjoy it, then the invoice (and the mouse is free again)
@@ -343,8 +386,11 @@ const followGhost = (dt, ghost) => {
 // left mouse = suck, right mouse = blow
 document.addEventListener('mousedown', (e) => {
   if (!controls.isLocked) return
-  if (e.button === 0) vacuum.setMode('suck')
-  if (e.button === 2) vacuum.setMode('blow')
+  const mode = e.button === 0 ? 'suck' : e.button === 2 ? 'blow' : null
+  if (!mode) return
+  vacuum.setMode(mode)
+  // a different start sound for sucking (rising) and blowing (falling)
+  audio.modeStart(mode)
 })
 document.addEventListener('mouseup', (e) => {
   if (!controls.isLocked) return
@@ -434,11 +480,12 @@ const draw = (timestamp) => {
     const caught = props.capture(vacuum.nozzle)
     // clutter near the hiding spot exposes the ghost
     caught.forEach((prop) => ghosts.forEach((ghost) => ghost.onPropCaptured(prop)))
-    // placeholder for the "plop" sound (step 4.8)
-    if (caught.length > 0 && DEBUG) console.log('plop', props.tank.length)
+    if (caught.length > 0) audio.plop()
   }
   props.update()
   if (DEBUG) physics.updateDebugLines()
+  // the vacuum sound follows the power, the mode, MAX and the tug meter
+  audio.update({ power, mode, boost, tug: tuggingGhost()?.tug.meter ?? 0 })
   // dust: same suction as the props (MAX makes it stronger too)
   dust?.update(renderer, dt, power * boost, mode)
   updateHud()

@@ -80,7 +80,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 4.5 Escape + capture
 - [x] 4.6 Three ghost personalities
 - [x] 4.7 Screens: start, HUD, pause, invoice
-- [ ] 4.8 Audio
+- [x] 4.8 Audio
 
 **Phase 5: Polish and stretch**
 - [ ] 5.1 Playtest with 3 people

@@ -22,8 +22,8 @@ const PLAY_ONCE = ['captured', 'giggle']
 // hidingSpots: the Hide_* furniture, castAim: physics ray (how far until something is in the way)
 // takenSpots(): spot names other ghosts are in, canStartTug(): false while another ghost is in a tug
 // onCapture / onEscape: called when this ghost is sucked up / gets away
-// onThrow(center): the Librarian throws a book from near `center`
-export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSpots, canStartTug, onCapture, onEscape, onThrow }) => {
+// onThrow(center): the Librarian throws a book from near `center`, onEmerge: it pops out of its spot
+export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSpots, canStartTug, onCapture, onEscape, onThrow, onEmerge }) => {
   const gltf = await new GLTFLoader().loadAsync(MODELS.ghost.file)
   // its tug-of-war numbers: TUG + its own personality overrides
   const tugConfig = { ...TUG, ...config.tug }
@@ -212,6 +212,7 @@ export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSp
     fade.emerging = true
     gsap.delayedCall(GHOST.emergeDuration, () => { fade.emerging = false })
     setState('emerged')
+    onEmerge?.(config)
   }
 
   // a prop got sucked up: if it stood near the spot, the ghost is more exposed

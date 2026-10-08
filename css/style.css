@@ -435,3 +435,44 @@ body
     display: block;
     margin: 0 auto;
 }
+
+/* SUCK / BLOW label under the crosshair, in the same colors as the suction cone */
+#mode
+{
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 18px);
+    transform: translateX(-50%);
+    font-family: system-ui, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+}
+
+#mode.suck
+{
+    color: #9fd0ff;
+}
+
+#mode.blow
+{
+    color: #ffa040;
+}
+
+#crosshair.suck
+{
+    background: #9fd0ff;
+    box-shadow: 0 0 8px #9fd0ff;
+}
+
+#crosshair.blow
+{
+    background: #ffa040;
+    box-shadow: 0 0 8px #ffa040;
+}
+
+#hud .mute-label
+{
+    opacity: 0.7;
+    font-size: 0.8rem;
+}

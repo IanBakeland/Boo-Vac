@@ -10,6 +10,7 @@
   <canvas class="webgl"></canvas>
   <div id="ui">
     <div id="crosshair" class="hidden"></div>
+    <div id="mode" class="hidden"></div>
     <div id="tug" class="hidden">
       <div class="tug-name"></div>
       <div class="tug-arrow"></div>
@@ -18,6 +19,7 @@
     <div id="hud" class="hidden">
       <div class="ghost-label">Ghosts <span class="ghost-count">0</span>/<span class="ghost-total">3</span></div>
       <div class="tank-label">Sucked up: <span class="tank-count">0</span></div>
+      <div class="mute-label hidden">Sound off (M)</div>
     </div>
     <div id="max" class="hidden">
       <div class="max-key">F</div>
@@ -45,6 +47,7 @@
         <li><b>Left mouse</b> suck</li>
         <li><b>Right mouse</b> blow</li>
         <li><b>F</b> MAX power</li>
+        <li><b>M</b> mute</li>
         <li><b>Esc</b> pause</li>
       </ul>
       <p class="note">Best on desktop Chrome / Edge / Safari 26</p>

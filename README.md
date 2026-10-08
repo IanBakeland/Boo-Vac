@@ -16,6 +16,7 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 | Left mouse (hold) | Suck |
 | Right mouse (hold) | Blow |
 | F | MAX: 3 s of extra strong suction/blowing that also moves furniture (recharges) |
+| M | Mute |
 | Esc | Pause |
 | M | Mute |
 
@@ -30,6 +31,7 @@ Best on desktop Chrome / Edge / Safari 26.
 - Physics: Rapier (props sucked in a spiral, captured, blown out, thrown by a ghost)
 - Room and furniture from Poly Pizza, laid out in code
 - Blender animation: ghost model clips driven per game state with `AnimationMixer`
+- Sound: generated live with the Web Audio API (motor, air, plop, ghost moans), no sound files
 - Mechanic inspired by Luigi's Mansion. No Nintendo assets are used.
 
 ## Run locally
