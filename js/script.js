@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
@@ -84,9 +84,18 @@ if (dust) {
   renderer.compute(dust.init)
 }
 
+// game stats (for the HUD now, and the invoice at the end)
+const stats = { caught: 0, escapes: 0 }
+
 // the ghost (model + Blender animations + Ether aura): hides in its spot until exposed,
-// a small Ether wisp shows where it is
-const ghost = await createGhost({ iTime, hidingSpots: room.hidingSpots, castAim: physics.castAim })
+// a small Ether wisp shows where it is. After a capture the next ghost takes over.
+const ghost = await createGhost({
+  iTime,
+  hidingSpots: room.hidingSpots,
+  castAim: physics.castAim,
+  onCapture: () => { stats.caught++ },
+  onEscape: () => { stats.escapes++ }
+})
 scene.add(ghost.mesh)
 
 // --- input ---
@@ -105,8 +114,9 @@ window.addEventListener('keydown', (e) => {
   // debug: 1-5 switch the ghost's animation state
   const debugStates = { Digit1: 'emerged', Digit2: 'tug', Digit3: 'escape', Digit4: 'giggle', Digit5: 'captured' }
   if (DEBUG && debugStates[e.code]) ghost.setState(debugStates[e.code])
-  // debug: G makes the ghost come out right away
+  // debug: G makes the ghost come out right away, N skips to the next ghost
   if (DEBUG && e.code === 'KeyG') ghost.emerge()
+  if (DEBUG && e.code === 'KeyN') ghost.skip()
   // debug: P drops all props from 1 m higher
   if (DEBUG && e.code === 'KeyP') props.drop()
 })
@@ -118,6 +128,8 @@ const $pause = document.querySelector('#pause')
 const $resume = $pause.querySelector('.action')
 const $hud = document.querySelector('#hud')
 const $tankCount = $hud.querySelector('.tank-count')
+const $ghostCount = $hud.querySelector('.ghost-count')
+const $allCaught = document.querySelector('#all-caught')
 const $max = document.querySelector('#max')
 const $crosshair = document.querySelector('#crosshair')
 const $tug = document.querySelector('#tug')
@@ -126,9 +138,16 @@ const $tugFill = $tug.querySelector('.tug-fill')
 const $maxFill = $max.querySelector('.max-fill')
 // HUD: only touch the DOM when the value changed
 let shownTank = -1
+let shownCaught = -1
 let shownMax = ''
 let shownTug = ''
 const updateHud = () => {
+  if (stats.caught !== shownCaught) {
+    shownCaught = stats.caught
+    $ghostCount.textContent = shownCaught
+    // all ghosts: for now a message (the invoice screen comes in step 4.7)
+    $allCaught.classList.toggle('hidden', shownCaught < GHOSTS.length)
+  }
   if (props.tank.length !== shownTank) {
     shownTank = props.tank.length
     $tankCount.textContent = shownTank

@@ -206,3 +206,24 @@ body
 {
     background: #9be35b;
 }
+
+#hud .ghost-label
+{
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+/* temporary end message (the invoice screen replaces it in step 4.7) */
+#all-caught
+{
+    position: absolute;
+    top: 30%;
+    width: 100%;
+    color: #9be35b;
+    font-family: system-ui, sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-align: center;
+    text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+}

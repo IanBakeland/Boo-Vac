@@ -89,8 +89,6 @@ export const GHOST = {
   visibleRange: [5, 7],     // m: fully visible closer than 5 m, invisible beyond 7 m
   visibleRadius: 0.4,       // m: the ghost counts as a ball this big (not a point) for "is it in the beam?"
   visibilitySmoothing: 6,   // per second: how fast it fades in/out (no hard popping)
-  tint: [0.8, 0.88, 1.0],   // Dusty: pale blue-grey (sRGB), per ghost later (4.6)
-  hideSpot: 'Hide_Vase',    // where the (first) ghost hides
   // hiding: the spot trembles every few seconds
   trembleInterval: [3, 5],  // s: random time between two trembles
   trembleDuration: 0.8,     // s
@@ -110,8 +108,22 @@ export const GHOST = {
   minPlayerDistance: 1.5,   // m: never closer to the player than this
   emergeDuration: 0.8,      // s
   hoverAmount: 0.05,        // m: gentle up and down floating
-  hoverSpeed: 1.5           // per second
+  hoverSpeed: 1.5,          // per second
+  // escape: flies (through walls, it's a ghost) to another hiding spot
+  escapeDuration: 1.5,      // s
+  // capture: spirals into the nozzle and shrinks away
+  captureDuration: 1.0,     // s
+  captureSpiral: 0.3,       // m: radius of the spiral at the start
+  captureTurns: 2           // turns around the nozzle on the way in
 }
+
+// The three ghosts, in order (their tug-of-war behaviour comes in step 4.6).
+// tint: Ether color (sRGB), hideSpot: where it hides first
+export const GHOSTS = [
+  { name: 'Dusty', hideSpot: 'Hide_Vase', tint: [0.8, 0.88, 1.0] },
+  { name: 'The Librarian', hideSpot: 'Hide_Bookshelf', tint: [0.55, 1.0, 0.6] },
+  { name: 'Granny Clock', hideSpot: 'Hide_Clock', tint: [0.85, 0.6, 1.0] }
+]
 
 // Tug-of-war (Dusty's numbers; every ghost gets its own in 4.6)
 export const TUG = {

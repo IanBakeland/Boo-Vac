@@ -77,7 +77,7 @@ The full spec (what everything should be and how it works) is in [`AGENTS.md`](A
 - [x] 4.2 Ether aura on the ghost + beam visibility
 - [x] 4.3 Hiding spots: trembling + exposure + emerge
 - [x] 4.4 Tug-of-war
-- [ ] 4.5 Escape + capture
+- [x] 4.5 Escape + capture
 - [ ] 4.6 Three ghost personalities
 - [ ] 4.7 Screens: start, HUD, pause, invoice
 - [ ] 4.8 Audio
