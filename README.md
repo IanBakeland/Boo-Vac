@@ -16,7 +16,6 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 | Left mouse (hold) | Suck |
 | Right mouse (hold) | Blow |
 | F | MAX: 3 s of extra strong suction/blowing that also moves furniture (recharges) |
-| M | Mute |
 | Esc | Pause |
 | M | Mute |
 
