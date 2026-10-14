@@ -765,6 +765,49 @@ kbd.key
     letter-spacing: 0.06em;
 }
 
+/* restart: quieter than "resume" (no border), turns red-ish on hover because you lose your progress */
+.restart-button
+{
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 6px 18px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--bone);
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    letter-spacing: 0.06em;
+    opacity: 0.7;
+    cursor: pointer;
+    transition: opacity 0.2s, color 0.2s, background 0.2s;
+}
+
+.restart-button span
+{
+    transition: transform 0.4s;
+}
+
+.restart-button:hover,
+.restart-button:focus-visible
+{
+    opacity: 1;
+    color: #ff9a9e;
+    background: rgba(208, 72, 78, 0.15);
+}
+
+.restart-button:hover span
+{
+    transform: rotate(-180deg);
+}
+
+.restart-button:focus-visible
+{
+    outline: 2px solid #ff9a9e;
+    outline-offset: 2px;
+}
+
 .pause-keys
 {
     display: flex;

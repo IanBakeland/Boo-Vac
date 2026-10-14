@@ -252,14 +252,20 @@ const showInvoice = () => {
   $invoice.querySelector('.invoice-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars)
   $invoice.querySelector('.invoice-note').textContent = `"${notes[stars]}" — the boss`
 }
-// play again: a new shift on a fresh page, so WebGPU, physics, ghosts, props, sound and every timer
+// play again / restart: a new shift on a fresh page, so WebGPU, physics, ghosts, props, sound and every timer
 // really start from zero (#again: the intro skips the voicemail you already heard)
-$invoice.querySelector('.again-button').addEventListener('click', () => {
+const newShift = () => {
   $curtain.classList.add('closed')
   setTimeout(() => {
     history.replaceState(null, '', '#again')
     window.location.reload()
   }, OUTRO.replayFade * 1000)
+}
+$invoice.querySelector('.again-button').addEventListener('click', newShift)
+// the pause screen's restart button (stopPropagation: a click on the pause screen itself resumes)
+$pause.querySelector('.restart-button').addEventListener('click', (e) => {
+  e.stopPropagation()
+  newShift()
 })
 
 // --- HUD (only touches the DOM when a value changed) ---
