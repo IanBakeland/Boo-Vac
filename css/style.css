@@ -1106,6 +1106,9 @@ body.paused :is(#tug, #prompt, #toast, #vignette)
     height: 100%;
     z-index: 0;
     transform-origin: var(--door-x) var(--door-y);
+    /* draw the villa once and zoom that picture: without this the browser redraws it at every zoom step
+       (up to 9x the screen, during the dive into the door and the ending) and black gaps flicker in */
+    will-change: transform;
     /* the opening: the camera tilts down from the sky to the villa */
     opacity: 0;
     transform: translateY(45vh) scale(1.1);

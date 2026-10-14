@@ -247,6 +247,17 @@ export const ETHER = {
   maxStretch: 0.6
 }
 
+// VHS filter, only during a tug-of-war (post FX, ported Shadertoy shader)
+// numbers are added to / multiply linear colors, so small values already show (the screen is dark)
+export const VHS = {
+  fade: 0.4,        // s: the tape kicks in when a tug starts, clears when it ends
+  vignette: 2.2,    // original 3: dark corners
+  // tug just started (meter 0)
+  calm: { grain: 0.06, stripes: 0.04, wobble: 1.0, roll: 0.02 },
+  // full tug meter: the ghost really messes with the tape
+  tug: { grain: 0.14, stripes: 0.12, wobble: 2.5, roll: 0.08 }
+}
+
 export const GHOST = {
   crossFade: 0.25,          // s: blend between two animation clips
   // visible only in the flashlight beam: same cone as the lamp (FLASHLIGHT.angle / penumbra)

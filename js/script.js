@@ -8,6 +8,7 @@ import { createPhysics, checkSuctionForce } from './physics.js'
 import { createAudio } from './audio.js'
 import { createIntro } from './intro.js'
 import { createOutro } from './outro.js'
+import { createPostfx } from './postfx.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
 import { createFlashlight } from './objects/flashlight.js'
@@ -126,6 +127,10 @@ if (dust) {
   scene.add(dust.mesh)
   renderer.compute(dust.init)
 }
+
+// VHS filter over the frame (WGSL needs real WebGPU, like the dust)
+const postfx = renderer.backend.isWebGPUBackend ? createPostfx({ renderer, scene, camera, iTime }) : null
+const render = () => postfx ? postfx.render() : renderer.render(scene, camera)
 
 // --- the ghosts ---
 // game stats (for the HUD, and the invoice at the end)
@@ -622,7 +627,7 @@ const draw = (timestamp) => {
 
   // paused: time stands still. Nothing moves (ghosts, physics, MAX, dust, shaders), the frozen frame is still drawn
   if (game.state === 'paused') {
-    renderer.render(scene, camera)
+    render()
     return
   }
   // shader time only runs while playing (so it doesn't jump after a pause)
@@ -670,9 +675,10 @@ const draw = (timestamp) => {
   audio.update({ power, mode, boost, tug: fighting?.tug.meter ?? 0, tugging: fighting !== null })
   // dust: same suction as the props (MAX makes it stronger too)
   dust?.update(renderer, dt, power * boost, mode)
+  postfx?.update(fighting !== null, fighting?.tug.meter ?? 0)
   updateHud(dt)
   if (DEBUG) updateFps(dt)
-  renderer.render(scene, camera)
+  render()
 }
 
 window.addEventListener('resize', () => {

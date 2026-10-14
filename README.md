@@ -3,7 +3,11 @@
 A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and WGSL.
 
 **Live:** https://ianbakeland.github.io/Boo-Vac/
-**Original Shadertoy shader:** [Ether by nimitz](https://www.shadertoy.com/view/MsjSW3) (CC BY-NC-SA 3.0), ported to WGSL and used as the ghost.
+**Original Shadertoy shaders** (both ported to WGSL):
+- [Ether by nimitz](https://www.shadertoy.com/view/MsjSW3) (CC BY-NC-SA 3.0): the ghost aura
+- [VCR distortion by ryk](https://www.shadertoy.com/view/ldjGzV) (CC BY-NC-SA 4.0): the VHS filter during a tug-of-war
+
+**Physics engine:** [Rapier](https://rapier.rs) (`@dimforge/rapier3d-compat`, WebAssembly)
 
 ## How to play
 
@@ -21,13 +25,49 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 
 Best on desktop Chrome / Edge / Safari 26.
 
+## The game
+
+You are the night-shift cleaner of Dust & Ghost Cleaning Co. Three ghosts hide in the clutter of a dark apartment. Search with your flashlight (ghosts are only visible in its beam), vacuum the clutter around a trembling hiding spot until the ghost pops out, then win a tug-of-war by moving the mouse against the ghost's pull. Catch all three (in any order) and you get the invoice.
+
+## How it works
+
+### Shadertoy ports
+
+Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` and wrapped with `wgslFn`, like in the course. The Shadertoy URL is in the header of each file.
+
+- **Ether → ghost aura** (`js/shaders/ether/`): the original 6-step raymarch, drawn on a billboard in front of the ghost model (`MeshBasicNodeMaterial`, additive). Added inputs make it interactive: `tint` (one color per ghost), `visibility` (computed in JS from the flashlight cone: outside the beam the ghost is invisible) and `stretch` (the smoke smears toward the nozzle while you suck, more as the tug meter fills, fully at capture).
+- **VCR distortion → VHS filter** (`js/shaders/vhs/`, `js/postfx.js`): post-processing over the whole frame with `THREE.RenderPipeline`. The rendered scene is the shader's `iChannel0` (same texture node for texture + sampler, the course trick), the original noise texture is replaced by a hash. It fades in when a tug-of-war starts and the grain, stripes, wobble and roll get stronger as the meter fills. At amount 0 the scene passes through untouched. Only with real WebGPU.
+
+### Own shaders
+
+- **Suction cone** (`js/shaders/suction/`): swirling air in front of the nozzle, procedural noise scrolled and twisted along a cone; blue-white inward when sucking, orange outward when blowing. Everything is multiplied by the vacuum's `power`.
+- **Flashlight beam** (`js/shaders/beam/`): a faint "volumetric" cone so the light is visible in the dusty air.
+- **Room flashlight lighting** (`js/shaders/flashlight/`): the apartment and furniture are lit by our own spotlight math (`albedo × (moonlight ambient + lamp × cone × facing × distance falloff)`), so the room is dark blue and the flashlight reveals the colors.
+- **Dust particles** (`js/shaders/dust/update.wgsl`, `js/objects/dust.js`): a compute shader (TSL storage buffers) moves the dust specks with the same suction formula as the physics (pull + tangent swirl + drag + per-speck speed limit). They glitter in the beam and spiral into the nozzle.
+
+### Physics (Rapier)
+
+`js/physics.js`, a [Rapier](https://rapier.rs) world (WebAssembly) stepped at a fixed 60 Hz.
+
+- **Player:** a kinematic character controller with a capsule, colliding with a trimesh of the apartment, so walls and furniture are solid and you can jump.
+- **Props** (books, cups, candles, pillows, ...): dynamic bodies. Each step the vacuum applies an impulse from one shared formula, `suctionForce()` (pull toward the nozzle + a swirl around its axis, inside a cone, fading with distance). The GPU dust uses the exact same formula in WGSL. Small props that reach the nozzle are removed from the world and counted in the tank; blowing pushes them away.
+- **MAX** (F): ×4 force for 3 s that also moves the heavy furniture (table, chair, vase).
+- **The Librarian** throws books at you with a Rapier impulse.
+
+### Game logic
+
+- `js/script.js`: `init()` + `draw()` (with `renderer.setAnimationLoop`), input, and a plain state machine: start → playing ⇄ paused → ending. Per ghost: hidden (trembling) → emerged → tug → escaped or captured.
+- `js/objects/ghost.js`: the Quaternius ghost model, its animation clips driven per state with an `AnimationMixer` (idle, hit, fast flying, giggle, death), the Ether aura and the tug-of-war.
+- `js/objects/vacuum.js`: the vacuum model on the camera, the nozzle aimed at what's under the crosshair, `power` spun up and down with gsap.
+- `js/intro.js` / `js/outro.js`: the voicemail intro on your phone (Web Speech API voice + transcript) and the ending (lights on, back out of the front door, the invoice).
+- `js/audio.js`: all sound and music generated live with the Web Audio API (no sound files).
+- `js/config.js`: every tunable number and the level layout.
+
 ## What's inside
 
-*(Work in progress: this list is updated as each feature is finished.)*
-
-- Ported Shadertoy shader (WGSL via `wgslFn`): Ether → ghost aura, revealed by the flashlight, stretched by the vacuum
+- 2 ported Shadertoy shaders: Ether (ghost aura) and VCR distortion (VHS post FX), both reacting to the player
 - Own shaders: suction cone, flashlight beam, room flashlight lighting, compute dust particles
-- Physics: Rapier (props sucked in a spiral, captured, blown out, thrown by a ghost)
+- Physics: Rapier (player controller, props sucked in a spiral, captured, blown out, furniture moved by MAX, books thrown by a ghost)
 - Room and furniture from Poly Pizza, laid out in code
 - Blender animation: ghost model clips driven per game state with `AnimationMixer`
 - Intro: a voicemail from the boss on your phone; his voice is the browser's speech synthesis (Web Speech API) with a transcript
@@ -46,6 +86,7 @@ npm run dev
 | Asset | Author | License | Link |
 |---|---|---|---|
 | Ether (shader) | nimitz | CC BY-NC-SA 3.0 | https://www.shadertoy.com/view/MsjSW3 |
+| VCR distortion (shader) | ryk | CC BY-NC-SA 4.0 | https://www.shadertoy.com/view/ldjGzV |
 | Grenze Gotisch (title font) | Omnibus-Type | SIL OFL 1.1 | https://fonts.google.com/specimen/Grenze+Gotisch |
 | IM Fell English SC (heading font) | Igino Marini | SIL OFL 1.1 | https://fonts.google.com/specimen/IM+Fell+English+SC |
 | Ghost (animated) | Quaternius | CC0 | https://poly.pizza/m/Iip30bDHmu |
