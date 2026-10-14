@@ -3,8 +3,8 @@
 // License CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/)
 // Ported to WGSL for Boo-Vac as a post-processing filter over the whole game.
 // Changes: iChannel0 = the rendered scene, the noise texture (iChannel1) is replaced by a hash,
-// every effect has a strength (calm while you search, stronger during a tug-of-war),
-// the big image roll only happens during a tug, and amount 0 = the untouched scene.
+// every effect has a strength (calm when a tug-of-war starts, stronger as its meter fills),
+// and amount 0 = the untouched scene (the filter is only on during a tug, see js/postfx.js).
 
 // main function first: wgslFn calls the first function in the file
 fn vhs(sceneTex: texture_2d<f32>, sceneTexSampler: sampler, uv: vec2f, iTime: f32, amount: f32, grain: f32, stripes: f32, wobble: f32, roll: f32, vignette: f32) -> vec4f {

@@ -98,7 +98,6 @@ npm run dev
 | Small Table | Quaternius | CC0 | https://poly.pizza/m/rAEBvfb1FT |
 | Rug | Quaternius | CC0 | https://poly.pizza/m/7H5qKjuxVY |
 | Chandelier | CreativeTrio | CC0 | https://poly.pizza/m/RPLTkXHOOM |
-| Wall painting | jeremy | CC BY | https://poly.pizza/m/62zn39CRkbG |
 | Tall Vase | Jarlan Perez | CC BY | https://poly.pizza/m/52xZtzRG244 |
 | Books | CreativeTrio | CC0 | https://poly.pizza/m/dxt7dETAy9 |
 | Book Stack | Danni Bittman | CC BY | https://poly.pizza/m/1WggoIFq8tx |

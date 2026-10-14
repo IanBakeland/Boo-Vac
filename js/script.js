@@ -109,7 +109,7 @@ if (DEBUG) {
   scene.add(physics.debugLines)
 }
 
-// the Shadertoy shaders' clock (Ether ghost aura, suction cone, beam, dust), updated every frame
+// the Shadertoy shaders' clock (Ether ghost aura, suction cone, beam, dust, VHS), updated every frame
 const iTime = uniform(0)
 
 const vacuum = createVacuum({ camera, iTime })

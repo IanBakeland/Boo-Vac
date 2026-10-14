@@ -354,7 +354,6 @@ export const THROW = {
 
 // --- the end of the shift ---
 
-// The invoice at the end of the shift (money in euro)
 // The in-game HUD
 export const HUD = {
   toastTime: 2.8,     // s an event title ("Dusty is out!") stays on screen
@@ -364,6 +363,7 @@ export const HUD = {
   promptVisibility: 0.2 // the "hold left mouse" hint shows once an emerged ghost is this visible in your beam
 }
 
+// The invoice at the end of the shift (money in euro)
 export const INVOICE = {
   perGhost: 100,       // you get paid per ghost
   shiftPay: 20,        // flat pay for the night

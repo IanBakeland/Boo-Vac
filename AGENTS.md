@@ -11,6 +11,7 @@
 - **What:** a small first-person game in the browser. In a dark, haunted room you search with a flashlight, vacuum up clutter to expose a hiding ghost, then win a tug-of-war to suck it into your vacuum.
 - **Why:** a school assignment (DEVINE, Creative Development). Port a Shadertoy fragment shader to WebGPU inside Three.js `WebGPURenderer`, make it interactive, deploy it online.
 - **Main ported shader:** *Ether* by nimitz: https://www.shadertoy.com/view/MsjSW3. It becomes the ghost.
+- **Second ported shader:** *VCR distortion* by ryk: https://www.shadertoy.com/view/ldjGzV. A VHS post-FX filter, only during a tug-of-war (`js/postfx.js`).
 - **Stack:** Vite + `three@^0.186` (`three/webgpu`, `three/tsl`, `three/addons`) + `@dimforge/rapier3d-compat` + `gsap`. Nothing else without asking.
 - **Golden rule:** use the techniques from the student's course whenever possible (section 3). The teacher gives more marks for that.
 - **Second rule:** online or it does not count. Deploy from day 1 and after every finished step.
@@ -37,8 +38,8 @@
 | Extra-mark category | How we earn it | Status goal |
 |---|---|---|
 | Interaction beyond looking around | Search, suck, blow, tug-of-war (mouse direction against the ghost), tank management | **Core** |
-| Physics | Rapier rigid bodies: props are sucked in a spiral, captured, blown out; the Librarian throws books | **Core** |
-| Multiple shaders | Ether ghost (port) + suction cone + flashlight beam + room flashlight lighting + compute dust (+ post FX as stretch) | **Core** |
+| Physics | Rapier rigid bodies: props are sucked in a spiral, captured, blown away; the Librarian throws books | **Core** |
+| Multiple shaders | Ether ghost (port) + suction cone + flashlight beam + room flashlight lighting + compute dust + VHS post FX (second Shadertoy port) | **Core** |
 | Additional WebGPU libraries | **Not targeted.** Rapier is a physics (WASM) library and gsap is an animation library; neither is a WebGPU library. Do not claim this category in the README. | Not claimed |
 | Own Blender models + baking | **Student's decision: no Blender in the core.** The room is downloaded (Poly Pizza) and furniture/props are placed in code. Baking is an **optional last step** (PLAN 5.5) once everything works. Do **not** claim this category in the README unless 5.5 is done. | Optional (end) |
 | Controlling Blender animations | Quaternius "Ghost" model (CC0, tagged *Animated* on Poly Pizza), its clips driven by an `AnimationMixer` per game state | **Core** (check the clips exist) |
@@ -99,6 +100,8 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 
 ## 4. Game design spec
 
+> The numbers in this section were the starting values. The tuned values live in `js/config.js`; when they differ, **`config.js` is the truth** (do not "fix" the game to match this spec).
+
 ### 4.1 Pitch and story
 
 **Boo-Vac.** You are the new night-shift cleaner at **Dust & Ghost Cleaning Co.**, a dodgy company that also handles "light paranormal nuisance". First job: one dusty old room in a villa, at midnight. Your tools: a flashlight and an overpowered vacuum.
@@ -110,7 +113,7 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 2. "Find stuff that shakes, vacuum the clutter around it, and the ghost pops out. Then just... pull. Don't let go, or it hides again."
 3. "Oh, and anything you suck up is the client's property. We'll bill you. Good luck!"
 
-**Ending:** after 3 ghosts, an **invoice screen** (pure HTML/CSS) with funny line items (time, items sucked × €12, escapes × €50 overtime, a joke line like "1 cat, returned, €0") and a star rating.
+**Ending** (`js/outro.js`, CSS on `#start[data-act="outro"]`): the house lights come on, the flashlight clicks off, the camera pulls back out of the front door (the intro's dive in reverse), the ghosts drop into a jar on the van, then an **invoice screen** (pure HTML/CSS) with funny line items (time, items sucked × €12, escapes × €50 overtime, a joke line like "1 cat, returned, €0") and a star rating.
 
 **IP note:** the mechanic is *inspired by* Luigi's Mansion. Do **not** use any Nintendo names, characters, logos, sounds or assets in the game. The README may say "Mechanic inspired by Luigi's Mansion".
 
@@ -165,19 +168,19 @@ There is **no stun/flash mechanic** (removed on purpose). The flashlight is alwa
 
 ### 4.6 HUD and screens (HTML/CSS overlay, no canvas UI)
 
-- **Start screen:** title, 3 intro cards, "Start shift" button, controls list, "Best on desktop Chrome / Edge / Safari 26" note.
+- **Start screen:** the villa intro + voicemail (above), then a briefing (controls as keycaps, 4 steps "how to catch a ghost"), "Start shift" button, "Best on desktop Chrome / Edge / Safari 26" note.
 - **HUD:** small crosshair, ghosts `0/3`, tank fill bar, tug-of-war meter (only during tug, center-bottom, shows the ghost's pull direction with an arrow).
 - **Pause overlay** on pointer-lock loss.
 - **Invoice screen** at the end, "Play again" button (reload is fine).
 - **Unsupported notices:**
-  - `navigator.gpu` missing → banner "Your browser has no WebGPU: running in fallback mode, some effects are off". Disable compute dust (S4).
+  - `navigator.gpu` missing → banner "Your browser has no WebGPU: running in fallback mode, some effects are off". Compute dust (S4) and the VHS post FX are off (both need real WebGPU).
   - Touch device (`matchMedia('(pointer: coarse)').matches`) → "This game needs a mouse and keyboard" (still render the scene).
 
 ### 4.7 Audio (Web Audio API, no library)
 
 - **Motor:** sawtooth `OscillatorNode` → `BiquadFilterNode` (lowpass) → gain. Frequency 70→160 Hz and cutoff 400→1800 Hz follow `power` and the tug meter.
 - **Plop:** short noise burst (an `AudioBuffer` of random samples, 60 ms, fast decay).
-- **Ghost giggle / moan:** generated too for now (vibrato sweeps in `js/audio.js`); real CC0 recordings in `public/sounds/` are optional (credit them in the README).
+- **Ghost giggle / moan:** generated too (vibrato sweeps in `js/audio.js`). There are no sound files: everything is Web Audio.
 - **Background music** (student's request), generated too: a breathing drone (A minor ↔ F), a random eerie music-box phrase in A harmonic minor with reverb, and a heartbeat during the tug that speeds up with the meter (`MUSIC` in `config.js`).
 - **Suck vs blow must be unmistakable:** suck = high narrow hiss + rising start chirp, blow = low wide rumble + falling start chirp. Visually: blue-white inward swirl vs orange outward streaks, and a SUCK / BLOW label under the crosshair.
 - **MAX** (F): motor pitch and gain up while MAX is active.
@@ -195,27 +198,29 @@ css/style.css
 vite.config.js              base: './'
 js/script.js                init(), draw(), game state machine, input
 js/config.js                every tunable number (sections 4–7) + LAYOUT (room, furniture, props, spawn)
-js/objects/room.js          loads room + furniture GLBs at LAYOUT positions, names them, flashlight material, hiding spots
-js/objects/props.js         loads prop GLBs at LAYOUT positions, creates dynamic bodies
-js/objects/vacuum.js        viewmodel attached to camera, nozzle, suction cone (S2), power tween, tank
-js/objects/flashlight.js    SpotLight + visible beam (S3)
+js/intro.js                 villa intro + voicemail (sets data-act on #start; the animation of each act is in CSS)
+js/outro.js                 the ending (lights on, back out of the door, jar, invoice)
+js/objects/room.js          loads room + furniture GLBs at LAYOUT positions, names them, hiding spots
+js/objects/props.js         loads prop GLBs at LAYOUT positions, creates dynamic bodies, suction, capture, tank
+js/objects/vacuum.js        viewmodel attached to camera, nozzle + aim point, suction cone (S2), power tween
+js/objects/flashlight.js    SpotLight + visible beam (S3) + room flashlight material (lightUp)
 js/objects/ghost.js         ghost model + AnimationMixer + Ether aura (S1) + ghost state
-js/objects/dust.js          compute dust (S4) + fallback
+js/objects/dust.js          compute dust (S4), WebGPU only (no CPU fallback)
 js/physics.js               Rapier world, step, sync, suctionForce()
 js/audio.js
-js/postfx.js                (stretch) RenderPipeline + post shader (S5/S7)
+js/postfx.js                RenderPipeline + VHS shader (only during a tug-of-war)
 js/shaders/ether/fragment.wgsl       S1 (Shadertoy port)
 js/shaders/suction/fragment.wgsl     S2
 js/shaders/beam/fragment.wgsl        S3
 js/shaders/flashlight/fragment.wgsl  room flashlight lighting
 js/shaders/dust/update.wgsl          S4 math (called from a TSL compute Fn)
-js/shaders/post/fragment.wgsl        S5 + S7 (stretch)
+js/shaders/vhs/fragment.wgsl         VHS post FX (Shadertoy port: VCR distortion by ryk)
 public/models/apartment.glb downloaded apartment (Poly Pizza), the level
 public/models/furniture/    bookshelf, clock, vase, table, ... (Poly Pizza)
 public/models/props/        book, cup, pillow, ... (Poly Pizza)
 public/models/vacuum.glb    nozzle = VACUUM.nozzleOffset in config.js
 public/models/ghost.glb     Quaternius Ghost (animated)
-public/sounds/*.mp3
+public/fonts/               title + heading fonts (woff2) and their OFL licenses
 (optional, PLAN 5.5) public/models/room-baked.glb, public/textures/baked.jpg, blender/room.blend
 README.md                   submission README (section 10)
 AGENTS.md  PLAN.md
@@ -223,7 +228,7 @@ AGENTS.md  PLAN.md
 .gitignore                  node_modules/, dist/, .DS_Store, *.blend1
 ```
 
-Asset paths in code are **relative without a leading slash** (`'models/apartment.glb'`), like the course (`'assets/Room.glb'`). Together with `base: './'` this works locally and on GitHub Pages. **Paths are case-sensitive on GitHub Pages**: match file names exactly.
+Asset paths in JS/HTML are **relative without a leading slash** (`'models/apartment.glb'`), like the course (`'assets/Room.glb'`). Together with `base: './'` this works locally and on GitHub Pages. **Paths are case-sensitive on GitHub Pages**: match file names exactly. Exception: `url('/fonts/...')` in `css/style.css` is correct (Vite rewrites public files referenced from CSS).
 
 ### 5.2 Frame order in `draw()`
 
@@ -241,7 +246,7 @@ Asset paths in code are **relative without a leading slash** (`'models/apartment
 
 ### 5.3 Game state machine (in `script.js`)
 
-`START → PLAYING ⇄ PAUSED → INVOICE`. Inside `PLAYING`, per ghost: `HIDDEN(trembling) → EMERGED → TUG → (ESCAPED → HIDDEN) | CAPTURED → next ghost`. Keep it a plain object with a `state` string and a `switch`, no state-machine library.
+`start → playing ⇄ paused`, `playing → ending → invoice` (`game.state` in `script.js`; "Play again" / Restart reload the page with `#again`). Inside `playing`, per ghost: `HIDDEN(trembling) → EMERGED → TUG → (ESCAPED → HIDDEN) | CAPTURED → next ghost`. Keep it a plain object with a `state` string and a `switch`, no state-machine library.
 
 ### 5.4 Coordinates and scale
 
@@ -293,7 +298,7 @@ All shaders are WGSL files used through `wgslFn`, unless noted. Each spec lists 
 - **Technique:** bright near the lamp (`1 - uv.y` falloff), soft edges via `smoothstep` across `uv.x` seam distance, slow noise for "dusty air". Very low overall opacity (≈0.05–0.12): it must not wash out the scene.
 - **Real light:** a `THREE.SpotLight` on the same transform lights props and the ghost model (lights lesson). Angle ~25°, penumbra 0.4, decay 2, distance 10. Shadows **off** (performance).
 
-### S4. Dust particles (compute, core with fallback)
+### S4. Dust particles (compute, core)
 
 - **What:** about 30 000 dust specks floating in the room. They glitter in the flashlight beam and get sucked into the nozzle in a spiral. They respawn at a random spot in the room when they reach the nozzle.
 - **Math:** identical in spirit to the course compute lesson (pull + tangent swirl + drag + per-particle random speed limit), but in 3D around the nozzle axis. See section 7 (shared suction model).
@@ -302,7 +307,7 @@ All shaders are WGSL files used through `wgslFn`, unless noted. Each spec lists 
   - Update: a TSL `Fn` compute node (`.compute(count)`) that reads `position` / `velocity` at `instanceIndex`, calls the WGSL update functions from `js/shaders/dust/update.wgsl` via `wgslFn` (e.g. `dustVelocity(...)` returns the new velocity), integrates, handles respawn, and writes back. Run with `renderer.compute(computeNode)` every frame.
   - Render: points or small sprites whose position comes from the position buffer (`toAttribute()` / `element(instanceIndex)`), size ~0.006–0.012 m, additive. Brightness = how close the speck is to the beam axis (same cone math as S1 visibility) + small base glow.
   - **First check the official example for this exact pattern in v0.186** (`webgpu_compute_particles`) and copy its structure. If `wgslFn` inside compute causes trouble, write the update in TSL instead, but keep the same math.
-- **Fallback (no WebGPU, or if compute does not work in time):** 600 `THREE.Points` updated on the CPU with the same `suctionForce()` from `physics.js`.
+- **No WebGPU:** no dust at all (the planned 600-point CPU fallback was not built).
 - **Done when:** dust visibly drifts, glitters in the beam, and spirals into the nozzle when sucking, at 60 fps on a mid-range laptop.
 
 ### Room flashlight lighting (own shader, core)
@@ -315,13 +320,12 @@ All shaders are WGSL files used through `wgslFn`, unless noted. Each spec lists 
 - **Ambient:** dark moonlight blue, around `vec3(0.05, 0.07, 0.12)`. If the room has a window, it can get a separate emissive basic material.
 - **Done when:** the room is dark blue, and the flashlight reveals its colors with a soft-edged spot.
 
-### S5 + S7. Post FX (stretch)
+### Post FX: VHS filter (built; replaces the planned S5 twirl / S7 atmosphere)
 
-- `js/postfx.js`: `renderPipeline = new THREE.RenderPipeline(renderer)`, `scenePass = pass(scene, camera)`, `sceneTex = scenePass.getTextureNode()`, `renderPipeline.outputNode = post({ sceneTex, sceneTexSampler: sceneTex, uv: screenUV, ... })` (same texture + sampler trick as the course). Compare a screenshot with and without the pipeline: if colors shift, fix the color-space conversion before going further.
-- `js/shaders/post/fragment.wgsl`: `fn post(sceneTex: texture_2d<f32>, sceneTexSampler: sampler, uv: vec2f, nozzleUV: vec2f, power: f32, iTime: f32, ghostNear: f32) -> vec4f`.
-  - **S5 twirl:** rotate `uv` around `nozzleUV` by an angle that falls off with distance (`smoothstep`) × `power` (like the course's ripple/displacement exercises).
-  - **S7 atmosphere:** vignette (smoothstep on distance from center), film grain (hash of `uv + iTime`), slight RGB split scaled by `ghostNear`.
-- Only add after the core is done. When enabled, `draw()` calls `renderPipeline.render()` instead of `renderer.render()`.
+- **Source:** *VCR distortion* by ryk, https://www.shadertoy.com/view/ldjGzV (CC BY-NC-SA 4.0), ported to `js/shaders/vhs/fragment.wgsl` (`fn vhs(sceneTex, sceneTexSampler, uv, iTime, amount, grain, stripes, wobble, roll, vignette)`). The original noise texture (iChannel1) is replaced by a hash.
+- `js/postfx.js`: `new THREE.RenderPipeline(renderer)`, `pass(scene, camera).getTextureNode()` as iChannel0, `outputNode = vhs({ sceneTex, sceneTexSampler: sceneTex, uv: screenUV, ... })` (same texture + sampler trick as the course).
+- `amount` is tweened 0 → 1 (gsap, `VHS.fade`) when a tug-of-war starts and back to 0 when it ends; grain/stripes/wobble/roll go from `VHS.calm` to `VHS.tug` with the tug meter. At `amount` 0 the shader returns the untouched scene, so the intro, play and ending look exactly as without it.
+- Only with real WebGPU (`renderer.backend.isWebGPUBackend`); otherwise `draw()` calls `renderer.render()` directly.
 
 ### S6. Tank (stretch)
 
@@ -349,7 +353,7 @@ force   = (pull + swirl) * cone * falloff * power      // mode 'suck'
 force   = dirOut * blowStrength * cone * falloff * power // mode 'blow' (no swirl)
 ```
 
-Start values (tune with lil-gui in debug mode): `range 3.0`, `cosInner cos(15°)`, `cosOuter cos(35°)`, `pullStrength 14`, `swirlStrength 5`, `blowStrength 18`.
+Start values (current values: `SUCTION` in `config.js`): `range 3.0`, `cosInner cos(15°)`, `cosOuter cos(35°)`, `pullStrength 14`, `swirlStrength 5`, `blowStrength 18`.
 
 **Debug check:** add one tiny self-check (`console.assert`) for `suctionForce`: a point straight in front of the nozzle at 1 m gets a force pointing to the nozzle; a point behind the nozzle gets zero. Run it once in debug mode.
 
@@ -359,11 +363,10 @@ Start values (tune with lil-gui in debug mode): `range 3.0`, `cosInner cos(15°)
 
 - Package: `@dimforge/rapier3d-compat` (WASM embedded, works with Vite without config). `import RAPIER from '@dimforge/rapier3d-compat'`, then `await RAPIER.init()` inside the async `init()`.
 - World: gravity `(0, -9.81, 0)`. Fixed step: accumulate `dt` and call `world.step()` at 60 Hz (max 3 steps per frame).
-- **Static colliders:** floor, ceiling and 4 walls as cuboids from the room dimensions in `config.js`. For every `Furniture_*` and `Hide_*` mesh: compute a `Box3` in world space → fixed cuboid collider.
+- **Static colliders:** the apartment and the ceiling plane as trimesh colliders. Every static `Furniture_*` / `Hide_*` piece: a `Box3` in world space → fixed cuboid collider. The table, chair and vase (`dynamic: true` in `LAYOUT`) are heavy dynamic bodies instead (only MAX moves them).
 - **Dynamic props:** every `Prop_*` mesh → dynamic body at its world transform, cuboid collider from its local bounding box (half extents × world scale), density ~300–600 (books heavier than pillows). Keep each mesh and body paired in an array.
 - **Forces:** each physics step, for each awake prop: `body.applyImpulse(suctionForce(...) × mass × stepDt, true)`. Clamp linear velocity to ~8 m/s.
 - **Capture:** remove body (`world.removeRigidBody`), hide or scale the mesh, push onto `tank`.
-- **Blow-out spawn:** recreate the body at the nozzle with an impulse along `nozzleDir`.
 - **Librarian throw:** pick the nearest `Prop_Book*` within 2.5 m of the ghost and apply an impulse toward the player (+ small upward component).
 - **Trembling hiding spots:** visual only (small random offset/rotation on the mesh, no physics).
 - **Player:** can jump (Space): vertical speed + gravity through the same character controller, so it can't tunnel through floors or ceilings. The apartment has interior walls, so a box clamp is not enough: give the player a Rapier `KinematicCharacterController` with a capsule collider and collide it with the apartment (trimesh collider from the apartment meshes). Done in PLAN step 3.1.
@@ -473,7 +476,7 @@ npm run dev
 - Target 60 fps on a mid-range laptop (integrated GPU) at `pixelRatio ≤ 2`.
 - No real-time shadows (`renderer.shadowMap.enabled = false`).
 - Ether billboard ≤ ~1.6 m. It is a 6-step raymarch per pixel, cheap at that size.
-- Dust ≤ 30 000 (WebGPU). Fallback 600 on the CPU.
+- Dust ≤ 30 000 (WebGPU only; currently `DUST.count` in `config.js`).
 - ≤ 60 dynamic Rapier bodies.
 - Test in: Chrome (primary), Edge, Safari 26 if available. Firefox only on Windows has WebGPU.
 - `WebGPURenderer` falls back to WebGL2 automatically. Compute dust is disabled in that case (section 4.6).
@@ -482,7 +485,7 @@ npm run dev
 
 ## 13. Debug mode
 
-- `?debug` in the URL enables: `lil-gui` (dev dependency; ask before adding) with every number from `config.js`, an FPS readout, suction cone gizmo lines, collider boxes, the `suctionForce` self-check, and keys: `G` = force-emerge the active ghost, `N` = skip to next ghost.
+- `?debug` in the URL enables (as built): an FPS + exposure readout, Rapier collider lines, the `suctionForce` self-check (console), and keys: `G` = the nearest hidden ghost emerges, `P` = drop all props from 1 m higher, `O` = play the ending. (`lil-gui` was planned but never added.)
 - Never ship with debug on by default.
 
 ---
@@ -490,7 +493,7 @@ npm run dev
 ## 14. Working agreements for the agent
 
 1. **One step at a time** from `PLAN.md`. Before coding, restate the step's goal in 1–2 sentences. After coding, list what changed, how to test it, and tick the box in `PLAN.md`.
-2. **Run it.** After each step: `npm run dev` and check the browser console has 0 errors. For build-affecting changes, run `npm run build && npm run preview` too.
+2. **Run it.** After each step: `npm run dev` and check the browser console has 0 errors. For build-affecting changes, run `npm run build && npm run preview` too. There is no linter or test suite: `npm run build` plus a browser check (with and without `?debug`) is the verification.
 3. **Commit + push** after each finished step with a clear message (`step 2.4: room and furniture layout`). Then check the deploy.
 4. **Never** commit `node_modules`, `dist`, `.env`, or `*.blend1`.
 5. **Ask before adding any dependency.** Allowed by default: `three`, `vite`, `@dimforge/rapier3d-compat`, `gsap`. `lil-gui` (dev) and `@types/three` (dev) on request.
@@ -521,6 +524,8 @@ npm run dev
 | Deploy action fails at `npm ci` | `package-lock.json` not committed or out of sync |
 | Additive objects hide things behind them | `depthWrite: false` missing on additive materials |
 | Ghost animation does not play | `mixer.update(dt)` missing, or wrong clip name |
+| Black flicker while the intro/outro zooms into the door | `will-change: transform` removed from `.intro-scene` in `css/style.css` (the 9× CSS zoom gets re-rasterized every frame) |
+| Intro/outro moments out of sync | Some timings exist twice: `INTRO.enterTime` and `OUTRO.fanfareAt` must match the CSS animation durations/delays on `#start` |
 
 ---
 
@@ -528,8 +533,8 @@ npm run dev
 
 - All boxes in section 1.1 ticked.
 - Core loop works for all 3 ghosts, start screen → invoice.
-- Shaders S1, S2, S3, S4 (or its fallback) and the room flashlight lighting are in and visibly react to interaction.
-- Rapier props: sucked, captured, tank fills, blown out. The Librarian throws books.
+- Shaders S1, S2, S3, S4, the VHS post FX and the room flashlight lighting are in and visibly react to interaction.
+- Rapier props: sucked, captured, tank fills, blown away. The Librarian throws books.
 - Room + furniture laid out in code; ghost animation clips driven by state. (Bake only if optional PLAN 5.5 is done.)
 - README complete with Shadertoy URL, live URL, credits.
 - Live URL tested in incognito Chrome; 60 fps-ish; no console errors.

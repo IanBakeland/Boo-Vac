@@ -329,7 +329,7 @@ Check online (not just locally):
 1. Agent first studies the official example for v0.186 and explains the pattern.
 2. `js/objects/dust.js` + `js/shaders/dust/update.wgsl` per AGENTS.md §6 S4. Start with 5 000 particles, then raise to 30 000 if fps allows.
 3. Brightness depends on the flashlight beam.
-4. Fallback: if `!navigator.gpu` (or if this step stalls for more than a day), use 600 CPU `Points` with the same `suctionForce()`.
+4. Fallback: if `!navigator.gpu` (or if this step stalls for more than a day), use 600 CPU `Points` with the same `suctionForce()`. *(Not built: the compute dust worked, so without WebGPU there is simply no dust.)*
 
 **Done when:** dust glitters in the beam and spirals into the nozzle, at a smooth framerate, online.
 **Commit:** `step 3.6: compute dust particles`
@@ -421,6 +421,8 @@ Fix the playtest notes: text, timings, forces, visibility. All in `config.js`.
 5. A cat (Quaternius) that flees: another Blender-animation showcase.
 
 Each stretch goal: own commit + deploy check. Stop if fps drops below ~50.
+
+*Built instead of 1–2: a VHS post-FX filter during the tug-of-war, a second Shadertoy port (VCR distortion by ryk), see AGENTS.md → "Post FX: VHS filter".*
 
 ### 5.4 Performance + browser pass · 🤖🧑 · 1–2 h
 1. Check the fps in debug mode; apply the AGENTS.md §12 budgets.
