@@ -687,7 +687,7 @@ body
 {
     opacity: 0;
     animation: type 0.01s steps(1) forwards;
-    animation-delay: calc(0.3s + var(--i) * 45ms);
+    animation-delay: calc(0.2s + var(--i) * 28ms);
 }
 
 @keyframes type
