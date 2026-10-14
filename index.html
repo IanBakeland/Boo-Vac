@@ -810,18 +810,34 @@
       </div>
       <p class="note">Best on desktop Chrome / Edge / Safari 26 · sound on</p>
     </div>
+    <!-- the pause screen: the frozen room behind it (dimmed, colorless), a menu in front.
+         Clicking anywhere outside the buttons resumes too (the mouse can only be locked again after a click) -->
     <div id="pause" class="overlay hidden">
-      <h1>Paused</h1>
-      <p class="action">Click to resume</p>
-      <button class="restart-button"><span aria-hidden="true">↻</span> Restart shift</button>
-      <ul class="pause-keys">
-        <li><kbd class="key">W</kbd><kbd class="key">A</kbd><kbd class="key">S</kbd><kbd class="key">D</kbd> walk</li>
-        <li><kbd class="key">Space</kbd> jump</li>
-        <li><span class="suck-text">left mouse</span> suck</li>
-        <li><span class="blow-text">right mouse</span> blow</li>
-        <li><kbd class="key">F</kbd> MAX</li>
-        <li><kbd class="key">M</kbd> mute</li>
-      </ul>
+      <div class="pause-dust" aria-hidden="true">
+        <i style="--x:14%; --y:28%; --d:0s"></i><i style="--x:82%; --y:22%; --d:-3s"></i><i style="--x:24%; --y:72%; --d:-6s"></i>
+        <i style="--x:70%; --y:66%; --d:-2s"></i><i style="--x:46%; --y:12%; --d:-8s"></i><i style="--x:90%; --y:84%; --d:-5s"></i>
+        <i style="--x:8%; --y:52%; --d:-9s"></i><i style="--x:58%; --y:88%; --d:-4s"></i>
+      </div>
+      <div class="pause-menu">
+        <div class="pause-heading">
+          <h1>Paused<svg class="pause-ghost" viewBox="0 0 22 30" aria-hidden="true"><path d="M1 28 V14 A10 10 0 0 1 21 14 V28 L17 24 L13 28 L11 24 L9 28 L5 24 Z"/><circle cx="7.5" cy="13" r="1.8"/><circle cx="14.5" cy="13" r="1.8"/></svg></h1>
+          <p class="pause-sub">The ghosts are holding their breath…</p>
+        </div>
+        <div class="pause-progress"><span class="pause-tally"></span><span class="pause-stats"></span></div>
+        <div class="pause-buttons">
+          <button class="pause-button resume-button action"><span class="pause-icon" aria-hidden="true">▶</span> Resume</button>
+          <button class="pause-button sound-button"><span class="pause-icon" aria-hidden="true">♪</span> <span class="sound-label">Sound: on</span></button>
+          <button class="pause-button restart-button"><span class="pause-icon" aria-hidden="true">↻</span> Restart shift</button>
+        </div>
+        <ul class="pause-keys">
+          <li><kbd class="key">W</kbd><kbd class="key">A</kbd><kbd class="key">S</kbd><kbd class="key">D</kbd> walk</li>
+          <li><kbd class="key">Space</kbd> jump</li>
+          <li><span class="suck-text">left mouse</span> suck</li>
+          <li><span class="blow-text">right mouse</span> blow</li>
+          <li><kbd class="key">F</kbd> MAX</li>
+          <li><kbd class="key">M</kbd> mute</li>
+        </ul>
+      </div>
     </div>
     <div id="invoice" class="overlay invoice hidden">
       <div class="paper">

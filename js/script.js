@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu'
+import gsap from 'gsap'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
@@ -20,6 +21,8 @@ const $start = document.querySelector('#start')
 const $startButton = $start.querySelector('.start-button')
 const $pause = document.querySelector('#pause')
 const $resume = $pause.querySelector('.action')
+const $soundLabel = $pause.querySelector('.sound-label')
+const $pauseButtons = [...$pause.querySelectorAll('.pause-button')]
 const $invoice = document.querySelector('#invoice')
 const $hud = document.querySelector('#hud')
 const $ghostCount = $hud.querySelector('.ghost-count')
@@ -188,12 +191,23 @@ const tuggingGhost = () => ghosts.find((g) => g.isTugging()) ?? null
 
 // --- screens: game state machine (start -> playing <-> paused -> ending -> invoice) ---
 const game = { state: 'start' }
+let pausedAt = 0
 const setGameState = (next) => {
   game.state = next
   const playing = next === 'playing'
   // leaving the start screen: the intro plays its own exit (into the house), then hides itself
   if (next !== 'start') intro.enter()
   $pause.classList.toggle('hidden', next !== 'paused')
+  // paused: time stops (gsap tweens like a ghost flying off, and the shift clock) and the room behind goes gray
+  const paused = next === 'paused'
+  gsap.globalTimeline.paused(paused)
+  document.body.classList.toggle('paused', paused)
+  if (paused) pausedAt = performance.now()
+  else if (pausedAt) {
+    // the paused time doesn't count for the invoice
+    if (stats.startTime) stats.startTime += performance.now() - pausedAt
+    pausedAt = 0
+  }
   $invoice.classList.toggle('hidden', next !== 'invoice')
   // the ending: the HUD stays a moment (the full ghost tally), the outro fades it out
   $hud.classList.toggle('hidden', !playing && next !== 'ending')
@@ -206,9 +220,13 @@ const setGameState = (next) => {
       if (!stats.startTime) stats.startTime = performance.now()
       break
     case 'paused':
-      // Chrome refuses to lock the mouse again right away: show "click to resume" after a moment
+      // Chrome refuses to lock the mouse again right away: Resume works after a moment
       $resume.classList.add('waiting')
       setTimeout(() => $resume.classList.remove('waiting'), PLAYER.relockDelay)
+      // how the shift is going: the HUD's ghost tally and the tank
+      $pause.querySelector('.pause-tally').innerHTML = $tallyIcons.innerHTML
+      $pause.querySelector('.pause-stats').textContent = `${stats.caught}/${GHOSTS.length} caught · ${props.tank.length} sucked up`
+      $resume.focus({ preventScroll: true })
       break
     case 'invoice':
       showInvoice()
@@ -266,6 +284,16 @@ $invoice.querySelector('.again-button').addEventListener('click', newShift)
 $pause.querySelector('.restart-button').addEventListener('click', (e) => {
   e.stopPropagation()
   newShift()
+})
+// sound on/off: the M key and the pause screen's button do the same
+const toggleSound = () => {
+  const muted = audio.toggleMute()
+  $muteLabel.classList.toggle('hidden', !muted)
+  $soundLabel.textContent = muted ? 'Sound: off' : 'Sound: on'
+}
+$pause.querySelector('.sound-button').addEventListener('click', (e) => {
+  e.stopPropagation()
+  toggleSound()
 })
 
 // --- HUD (only touches the DOM when a value changed) ---
@@ -454,7 +482,14 @@ window.addEventListener('keydown', (e) => {
     audio.max()
   }
   // M: sound on/off
-  if (e.code === 'KeyM') $muteLabel.classList.toggle('hidden', !audio.toggleMute())
+  if (e.code === 'KeyM') toggleSound()
+  // pause menu: arrow keys move between the buttons (Enter / Space press them)
+  if (game.state === 'paused' && (e.code === 'ArrowDown' || e.code === 'ArrowUp')) {
+    const step = e.code === 'ArrowDown' ? 1 : -1
+    const current = $pauseButtons.indexOf(document.activeElement)
+    $pauseButtons[(current + step + $pauseButtons.length) % $pauseButtons.length].focus()
+    e.preventDefault()
+  }
   // debug: G makes the nearest hidden ghost come out right away
   if (DEBUG && e.code === 'KeyG') {
     const hidden = ghosts.filter((g) => g.isHidden())
@@ -585,7 +620,13 @@ const draw = (timestamp) => {
   // (never negative: the very first frame can report a tiny negative delta)
   const dt = THREE.MathUtils.clamp(timer.getDelta(), 0, MAX_DT)
 
-  iTime.value = timer.getElapsed()
+  // paused: time stands still. Nothing moves (ghosts, physics, MAX, dust, shaders), the frozen frame is still drawn
+  if (game.state === 'paused') {
+    renderer.render(scene, camera)
+    return
+  }
+  // shader time only runs while playing (so it doesn't jump after a pause)
+  iTime.value += dt
 
   if (controls.isLocked) movePlayer(dt)
   // tug-of-war: the mouse pulls instead of turning the camera, the camera follows the ghost
