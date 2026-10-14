@@ -677,22 +677,90 @@
       <p class="intro-hint"></p>
       <!-- subtitles of the voicemail, in the bottom letterbox bar -->
       <p class="subtitles" aria-live="polite"></p>
+      <!-- after the message: the briefing. Controls on the left, how to catch a ghost on the right
+           (on wide screens the house and the door stay visible in between), "Start shift" at the bottom -->
       <div class="intro-after">
-        <p class="intro-pitch">Three ghosts. One night.</p>
-        <button class="start-button" disabled>Loading…</button>
-        <ul class="controls-list">
-          <li><b>WASD</b> walk</li>
-          <li><b>Space</b> jump</li>
-          <li><b>Mouse</b> look / aim</li>
-          <li><b>Left mouse</b> suck</li>
-          <li><b>Right mouse</b> blow</li>
-          <li><b>F</b> MAX power</li>
-          <li><b>M</b> mute</li>
-          <li><b>Esc</b> pause</li>
-        </ul>
+        <div class="briefing">
+          <section class="panel panel-controls" aria-labelledby="controls-title">
+            <h2 class="panel-title" id="controls-title">Controls</h2>
+            <div class="ctrl">
+              <span class="keys-wasd"><kbd class="key-w">W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
+              <span class="ctrl-label">Walk</span>
+            </div>
+            <div class="ctrl">
+              <kbd class="key-space">Space</kbd>
+              <span class="ctrl-label">Jump</span>
+            </div>
+            <div class="ctrl ctrl-mouse">
+              <span class="mouse-side suck"><b>Suck</b>hold left</span>
+              <svg class="mouse" viewBox="0 0 60 90" aria-hidden="true">
+                <path d="M30 3 C14 3 5 15 5 33 V60 C5 76 16 87 30 87 C44 87 55 76 55 60 V33 C55 15 46 3 30 3 Z" fill="#141a36" stroke="#4a5690" stroke-width="2"/>
+                <path class="mouse-left" d="M28.5 4.5 C15 5 6.5 16 6.5 33 V37 H28.5 Z" fill="#9fd0ff"/>
+                <path class="mouse-right" d="M31.5 4.5 C45 5 53.5 16 53.5 33 V37 H31.5 Z" fill="#ffa040"/>
+                <rect x="26.5" y="12" width="7" height="15" rx="3.5" fill="#0b0f22" stroke="#4a5690" stroke-width="1.5"/>
+              </svg>
+              <span class="mouse-side blow"><b>Blow</b>hold right</span>
+              <span class="mouse-aim">Move the mouse to look &amp; aim</span>
+            </div>
+            <div class="ctrl">
+              <kbd class="key-max">F</kbd>
+              <span class="ctrl-label"><b>MAX</b> power <small>4× for 3 s, then it recharges</small></span>
+            </div>
+            <div class="ctrl ctrl-minor">
+              <kbd>M</kbd><span class="ctrl-label">Mute</span>
+              <kbd>Esc</kbd><span class="ctrl-label">Pause</span>
+            </div>
+          </section>
+
+          <section class="panel panel-catch" aria-labelledby="catch-title">
+            <h2 class="panel-title" id="catch-title">How to catch a ghost</h2>
+            <ol class="steps">
+              <li class="step">
+                <svg class="step-art art-find" viewBox="0 0 88 64" aria-hidden="true">
+                  <ellipse cx="44" cy="40" rx="34" ry="24" fill="#fff3cf" opacity="0.12"/>
+                  <path class="wisp" d="M44 22 Q39 16 45 11 Q50 6 44 1" stroke="#b8c8ee" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <g class="tremble"><path d="M38 56 Q32 46 36 36 Q39 30 39 24 H49 Q49 30 52 36 Q56 46 50 56 Z" fill="#b98a5a"/><rect x="37" y="22" width="14" height="3" rx="1" fill="#d9ad78"/></g>
+                  <path d="M27 36 q-3 4 0 8 M61 36 q3 4 0 8" stroke="#e9e0c4" stroke-width="2" fill="none" stroke-linecap="round" class="shake-marks"/>
+                </svg>
+                <div><h3><span class="step-num">1</span>Find</h3><p>A hiding spot <b>trembles</b> and leaks a wisp. Ghosts only show in your <b>flashlight</b>.</p></div>
+              </li>
+              <li class="step">
+                <svg class="step-art art-expose" viewBox="0 0 88 64" aria-hidden="true">
+                  <path d="M88 20 L52 34 L52 46 L88 60 Z" fill="#9fd0ff" opacity="0.18"/>
+                  <use class="pop" href="#ghost-shape" x="23" y="14" width="20" height="27"/>
+                  <path d="M24 60 Q18 50 22 40 Q25 34 25 30 H41 Q41 34 44 40 Q48 50 42 60 Z" fill="#b98a5a"/>
+                  <rect x="23" y="28" width="20" height="3" rx="1" fill="#d9ad78"/>
+                  <g transform="translate(66 4) scale(0.26)"><path d="M30 3 C14 3 5 15 5 33 V60 C5 76 16 87 30 87 C44 87 55 76 55 60 V33 C55 15 46 3 30 3 Z" fill="#141a36" stroke="#4a5690" stroke-width="4"/><path class="click" d="M28.5 4.5 C15 5 6.5 16 6.5 33 V37 H28.5 Z" fill="#9fd0ff"/></g>
+                </svg>
+                <div><h3><span class="step-num">2</span>Expose</h3><p><b class="suck-text">Hold suck</b> on the spot, or suck up the clutter around it, until the ghost pops out.</p></div>
+              </li>
+              <li class="step">
+                <div class="step-art art-pull" aria-hidden="true">
+                  <span class="mini-arrow"><span class="pull-left">◀ PULL</span><span class="pull-right">PULL ▶</span></span>
+                  <span class="mini-bar"><span class="mini-fill"></span></span>
+                  <svg class="mini-mouse" viewBox="0 0 60 90"><path d="M30 3 C14 3 5 15 5 33 V60 C5 76 16 87 30 87 C44 87 55 76 55 60 V33 C55 15 46 3 30 3 Z" fill="#141a36" stroke="#4a5690" stroke-width="4"/><path d="M28.5 4.5 C15 5 6.5 16 6.5 33 V37 H28.5 Z" fill="#9fd0ff"/></svg>
+                </div>
+                <div><h3><span class="step-num">3</span>Pull</h3><p>Keep sucking, keep it in your beam and <b>move the mouse where the arrow points</b>. Green = it's working.</p></div>
+              </li>
+              <li class="step">
+                <svg class="step-art art-catch" viewBox="0 0 88 64" aria-hidden="true">
+                  <path d="M60 30 L84 22 L84 50 L60 42 Z" fill="#4a5478"/>
+                  <rect x="56" y="29" width="6" height="14" fill="#9be35b"/>
+                  <path class="swirl" d="M48 36 Q36 20 22 30 Q12 38 22 46 Q32 52 40 42" stroke="#b8c8ee" stroke-width="2" fill="none" stroke-dasharray="4 5" opacity="0.6"/>
+                  <use class="slurp" href="#ghost-shape" x="12" y="18" width="20" height="27"/>
+                </svg>
+                <div><h3><span class="step-num">4</span>Catch</h3><p><b>Fill the bar</b> to catch it. If the bar empties or the ghost leaves your beam, it escapes.</p></div>
+              </li>
+            </ol>
+          </section>
+        </div>
+        <div class="briefing-start">
+          <p class="intro-pitch">Three ghosts. One night.</p>
+          <button class="start-button" disabled>Loading…</button>
+          <p class="notice touch-notice hidden">This game needs a mouse and keyboard.</p>
+        </div>
       </div>
       <p class="note">Best on desktop Chrome / Edge / Safari 26 · sound on</p>
-      <p class="notice touch-notice hidden">This game needs a mouse and keyboard.</p>
     </div>
     <div id="pause" class="overlay hidden">
       <h1>Paused</h1>
