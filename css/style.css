@@ -306,8 +306,97 @@ body
     position: absolute;
     inset: 0;
     z-index: 0;
-    background: radial-gradient(ellipse at 50% 50%, rgba(3, 5, 12, 0.45) 0%, rgba(3, 5, 12, 0.1) 45%, rgba(3, 5, 12, 0.75) 100%);
+    /* film grain (a tiny noise image, drawn once and tiled) + the vignette */
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.8 0 0 0 0 0.85 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+        radial-gradient(ellipse at 50% 50%, rgba(3, 5, 12, 0.45) 0%, rgba(3, 5, 12, 0.1) 45%, rgba(3, 5, 12, 0.75) 100%);
     pointer-events: none;
+}
+
+/* --- depth: the scene is drawn in layers (sky 0 ... foreground 1, the --depth on each <g class="layer">).
+   Near layers move more: with the mouse (--mouse-x/y, set in intro.js) and in the opening's tilt down,
+   where the foreground starts lower and catches up (--tilt goes 1 -> 0) */
+@property --tilt
+{
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0;
+}
+
+.overlay.start
+{
+    transition: --tilt 4.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.start[data-act="black"]
+{
+    --tilt: 1;
+}
+
+.intro-scene .layer
+{
+    transform: translate(
+        calc(var(--mouse-x, 0) * var(--depth) * -18px),
+        calc(var(--mouse-y, 0) * var(--depth) * -8px + var(--tilt) * var(--depth) * 220px)
+    );
+}
+
+/* a few bats cross the moon every 24 s, flapping */
+.intro-scene .bats
+{
+    animation: bats 24s linear 3s infinite;
+    transform: translate(-200px, 300px);
+}
+
+@keyframes bats
+{
+    0% { transform: translate(-200px, 300px); }
+    35% { transform: translate(1800px, 120px); }
+    100% { transform: translate(1800px, 120px); }
+}
+
+.intro-scene .bat
+{
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: flap 0.22s ease-in-out infinite alternate;
+}
+
+@keyframes flap
+{
+    to { transform: scaleY(-0.6); }
+}
+
+.intro-scene .clouds-far
+{
+    animation: drift 90s linear infinite alternate-reverse;
+}
+
+/* chimney smoke: soft puffs that rise and fade */
+.intro-scene .smoke circle
+{
+    opacity: 0;
+    transform-box: fill-box;
+    animation: smoke 6s ease-out infinite;
+}
+
+@keyframes smoke
+{
+    20% { opacity: 0.18; }
+    100% { opacity: 0; transform: translate(-40px, -70px) scale(1.8); }
+}
+
+/* the tire swing sways in the wind */
+.intro-scene .swing
+{
+    transform-box: view-box;
+    animation: swing 5s ease-in-out infinite alternate;
+}
+
+@keyframes swing
+{
+    from { transform: rotate(-4deg); }
+    to { transform: rotate(4deg); }
 }
 
 .intro-scene .twinkle
@@ -427,6 +516,16 @@ body
 .start[data-line="3"] .headlight
 {
     animation: headlight 0.45s 3;
+}
+
+.start[data-line="3"] .headbeam
+{
+    animation: headbeam 0.45s 3;
+}
+
+@keyframes headbeam
+{
+    50% { opacity: 0.2; }
 }
 
 @keyframes headlight
@@ -1214,6 +1313,11 @@ body
     .flash
     {
         display: none;
+    }
+
+    .intro-scene .layer
+    {
+        transform: none;
     }
 }
 

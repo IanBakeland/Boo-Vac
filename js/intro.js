@@ -67,6 +67,12 @@ export const createIntro = ({ audio, $start }) => {
   aimAtDoor()
   window.addEventListener('resize', aimAtDoor)
 
+  // parallax: the mouse position (-1..1 from the center) shifts the scene's depth layers (see the CSS)
+  $start.addEventListener('mousemove', (e) => {
+    $start.style.setProperty('--mouse-x', (e.clientX / window.innerWidth) * 2 - 1)
+    $start.style.setProperty('--mouse-y', (e.clientY / window.innerHeight) * 2 - 1)
+  })
+
   // lightning: a double flash over the scene and thunder (silent before the first click: no sound allowed yet)
   const lightning = ({ glimpse = false } = {}) => {
     $flash.animate(
