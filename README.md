@@ -46,6 +46,8 @@ npm run dev
 | Asset | Author | License | Link |
 |---|---|---|---|
 | Ether (shader) | nimitz | CC BY-NC-SA 3.0 | https://www.shadertoy.com/view/MsjSW3 |
+| Grenze Gotisch (title font) | Omnibus-Type | SIL OFL 1.1 | https://fonts.google.com/specimen/Grenze+Gotisch |
+| IM Fell English SC (heading font) | Igino Marini | SIL OFL 1.1 | https://fonts.google.com/specimen/IM+Fell+English+SC |
 | Ghost (animated) | Quaternius | CC0 | https://poly.pizza/m/Iip30bDHmu |
 | Vacuum Cleaner | Zoe XR | CC BY | https://poly.pizza/m/1_kdZRnuCo8 |
 | Apartment 2 (the level) | Gabriele Romagnoli | CC BY 3.0 | https://poly.pizza/m/dtgO5dwwtkk |

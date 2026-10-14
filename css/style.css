@@ -4,6 +4,32 @@
     padding: 0;
 }
 
+/* --- typography ---
+   title: Grenze Gotisch, a gothic display face (horror-poster feel, still easy to read)
+   headings, captions, names: IM Fell English SC, an old engraved serif with real ink imperfections
+   interface and subtitles: the system font, clean and readable
+   Both fonts: SIL Open Font License, files and licences in public/fonts/ (Google Fonts) */
+@font-face
+{
+    font-family: 'Grenze Gotisch';
+    src: url('/fonts/grenze-gotisch.woff2') format('woff2');
+    font-weight: 800;
+    font-display: block;
+}
+
+@font-face
+{
+    font-family: 'IM Fell English SC';
+    src: url('/fonts/im-fell-english-sc.woff2') format('woff2');
+    font-display: swap;
+}
+
+:root
+{
+    --font-title: 'Grenze Gotisch', 'Times New Roman', serif;
+    --font-heading: 'IM Fell English SC', Georgia, serif;
+}
+
 html,
 body
 {
@@ -46,8 +72,10 @@ body
 
 .overlay h1
 {
-    font-size: 3rem;
-    letter-spacing: 0.05em;
+    font-family: var(--font-heading);
+    font-weight: normal;
+    font-size: 3.4rem;
+    letter-spacing: 0.06em;
 }
 
 .hidden
@@ -212,7 +240,9 @@ body
 
 #tug .tug-name
 {
-    font-size: 0.85rem;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    letter-spacing: 0.06em;
     opacity: 0.8;
     margin-bottom: 2px;
 }
@@ -675,10 +705,10 @@ body
     left: 50%;
     width: 90%;
     transform: translate(-50%, -50%);
-    font-size: 0.85rem;
-    letter-spacing: 0.35em;
-    text-transform: uppercase;
-    line-height: 2.2;
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    letter-spacing: 0.22em;
+    line-height: 2;
     opacity: 0.85;
     transition: opacity 1.2s;
 }
@@ -716,17 +746,24 @@ body
 
 .intro-title h1
 {
-    font-size: clamp(3.5rem, 11vw, 8rem);
-    font-weight: 900;
-    letter-spacing: 0.02em;
-    line-height: 1;
-    color: #e8f0ff;
-    text-shadow: 0 0 18px rgba(155, 227, 91, 0.55), 0 0 60px rgba(155, 227, 91, 0.25), 0 6px 0 #0b1020;
+    font-family: var(--font-title);
+    font-size: clamp(4.2rem, 13vw, 9.5rem);
+    font-weight: 800;
+    letter-spacing: 0.015em;
+    line-height: 0.95;
+    white-space: nowrap;
+    /* a hard dark offset (like an old poster print) and a faint ghostly green glow beneath */
+    filter: drop-shadow(0 5px 0 #05070f) drop-shadow(0 0 16px rgba(155, 227, 91, 0.35)) drop-shadow(0 0 50px rgba(155, 227, 91, 0.18));
 }
 
+/* each letter: bone-white at the top, cooling to moonlight blue at the bottom */
 .intro-title h1 span
 {
     display: inline-block;
+    background: linear-gradient(180deg, #fbf5e2 0%, #e9e0c4 45%, #a3b0d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .start[data-act="title"] .intro-title h1 span
@@ -758,9 +795,11 @@ body
 
 .start .tagline
 {
-    margin-top: 0.6rem;
-    opacity: 0.75;
-    letter-spacing: 0.08em;
+    margin-top: 0.7rem;
+    font-family: var(--font-heading);
+    font-size: clamp(0.95rem, 3.4vw, 1.25rem);
+    letter-spacing: 0.1em;
+    opacity: 0.8;
 }
 
 .start[data-act="title"] .intro-title,
@@ -1227,9 +1266,9 @@ body
 
 .intro-pitch
 {
-    font-size: 1.4rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    letter-spacing: 0.06em;
     text-shadow: 0 2px 12px #000;
 }
 
@@ -1366,7 +1405,9 @@ body
 
 .invoice h2
 {
-    font-size: 1.3rem;
+    font-family: var(--font-heading);
+    font-weight: normal;
+    font-size: 1.6rem;
     text-align: center;
 }
 
