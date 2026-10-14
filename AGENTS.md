@@ -12,7 +12,7 @@
 - **Why:** a school assignment (DEVINE, Creative Development). Port a Shadertoy fragment shader to WebGPU inside Three.js `WebGPURenderer`, make it interactive, deploy it online.
 - **Main ported shader:** *Ether* by nimitz: https://www.shadertoy.com/view/MsjSW3. It becomes the ghost.
 - **Second ported shader:** *VCR distortion* by ryk: https://www.shadertoy.com/view/ldjGzV. A VHS post-FX filter, only during a tug-of-war (`js/postfx.js`).
-- **Stack:** Vite + `three@^0.186` (`three/webgpu`, `three/tsl`, `three/addons`) + `@dimforge/rapier3d-compat` + `gsap`. Nothing else without asking.
+- **Stack:** Vite + `three@^0.186` (`three/webgpu`, `three/tsl`, `three/addons`) + `@dimforge/rapier3d-compat` + `gsap` + TypeGPU (`typegpu`, `@typegpu/three`, `@typegpu/noise`, dev `unplugin-typegpu`). Nothing else without asking.
 - **Golden rule:** use the techniques from the student's course whenever possible (section 3). The teacher gives more marks for that.
 - **Second rule:** online or it does not count. Deploy from day 1 and after every finished step.
 - **Third rule:** the student must be able to explain every line. Explain what you write in plain language, especially shader code.
@@ -40,7 +40,7 @@
 | Interaction beyond looking around | Search, suck, blow, tug-of-war (mouse direction against the ghost), tank management | **Core** |
 | Physics | Rapier rigid bodies: props are sucked in a spiral, captured, blown away; the Librarian throws books | **Core** |
 | Multiple shaders | Ether ghost (port) + suction cone + flashlight beam + room flashlight lighting + compute dust + VHS post FX (second Shadertoy port) | **Core** |
-| Additional WebGPU libraries | **Not targeted.** Rapier is a physics (WASM) library and gsap is an animation library; neither is a WebGPU library. Do not claim this category in the README. | Not claimed |
+| Additional WebGPU libraries | **TypeGPU** (Software Mansion): the dust's beam glitter + Perlin-noise twinkle is a `'use gpu'` function plugged into Three.js with `@typegpu/three` (`js/objects/dust.js`). Rapier (physics, WASM) and gsap (animation) are **not** WebGPU libraries: never claim them for this category. | Claimed (ask the teacher if TypeGPU counts) |
 | Own Blender models + baking | **Student's decision: no Blender in the core.** The room is downloaded (Poly Pizza) and furniture/props are placed in code. Baking is an **optional last step** (PLAN 5.5) once everything works. Do **not** claim this category in the README unless 5.5 is done. | Optional (end) |
 | Controlling Blender animations | Quaternius "Ghost" model (CC0, tagged *Animated* on Poly Pizza), its clips driven by an `AnimationMixer` per game state | **Core** (check the clips exist) |
 
@@ -496,7 +496,7 @@ npm run dev
 2. **Run it.** After each step: `npm run dev` and check the browser console has 0 errors. For build-affecting changes, run `npm run build && npm run preview` too. There is no linter or test suite: `npm run build` plus a browser check (with and without `?debug`) is the verification.
 3. **Commit + push** after each finished step with a clear message (`step 2.4: room and furniture layout`). Then check the deploy.
 4. **Never** commit `node_modules`, `dist`, `.env`, or `*.blend1`.
-5. **Ask before adding any dependency.** Allowed by default: `three`, `vite`, `@dimforge/rapier3d-compat`, `gsap`. `lil-gui` (dev) and `@types/three` (dev) on request.
+5. **Ask before adding any dependency.** Allowed by default: `three`, `vite`, `@dimforge/rapier3d-compat`, `gsap`, `typegpu`, `@typegpu/three`, `@typegpu/noise`, `unplugin-typegpu` (dev, in `vite.config.js`: it turns `'use gpu'` functions into WGSL). `lil-gui` (dev) and `@types/three` (dev) on request.
 6. **Course first** (section 3). If you deviate, say why in one sentence.
 7. **Explain shader code** line by line when you write or port it. The student must be able to defend it (the course explicitly says LLM-ported code must be understood).
 8. Keep every tunable number in `js/config.js`. No magic numbers scattered around.

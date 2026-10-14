@@ -233,7 +233,11 @@ export const DUST = {
   color: 0xfff1d6,     // same warm white as the flashlight
   baseGlow: 0.015,     // faint glow outside the beam
   beamGlow: 1.5,       // brightness inside the beam
-  beamRange: 7         // m: specks further from the lamp don't glitter
+  beamRange: 7,        // m: specks further from the lamp don't glitter
+  // twinkle (TypeGPU + Perlin noise): each speck's glitter flickers a little
+  twinkleScale: 8,     // noise pattern size: higher = neighbouring specks flicker more differently
+  twinkleSpeed: 2,     // how fast the flicker changes
+  twinkleAmount: 0.6   // 0 = no twinkle, 0.6 = brightness between ~40% and ~160%
 }
 
 // --- the ghosts ---

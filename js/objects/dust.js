@@ -2,7 +2,14 @@
 // lesson: the Three.js way), structure from the official example
 // https://threejs.org/examples/?q=compute#webgpu_compute_particles
 import * as THREE from 'three/webgpu'
-import { Fn, If, uniform, float, vec3, color, mix, hash, smoothstep, shapeCircle, instancedArray, instanceIndex, wgslFn } from 'three/tsl'
+import { Fn, If, uniform, float, vec3, mix, hash, shapeCircle, instancedArray, instanceIndex, wgslFn } from 'three/tsl'
+// TypeGPU (a WebGPU library by Software Mansion): GPU code written as JavaScript functions ('use gpu'),
+// turned into WGSL by unplugin-typegpu (vite.config.js) and plugged into Three.js as a TSL node
+// https://docs.swmansion.com/TypeGPU/ecosystem/typegpu-three/
+import * as t3 from '@typegpu/three'
+import { d } from 'typegpu'
+import * as std from 'typegpu/std'
+import { perlin3d } from '@typegpu/noise'
 
 import { DUST, ROOM, SUCTION } from '../config.js'
 import updateShader from '../shaders/dust/update.wgsl?raw'
@@ -76,12 +83,30 @@ export const createDust = ({ iTime, nozzle, lamp }) => {
   const position = positions.toAttribute()
   material.positionNode = position
   material.scaleNode = uniform(DUST.size)
-  // glitter in the flashlight beam: same cone math as the flashlight shader
-  const toSpeck = position.sub(lamp.lampPos)
-  const inBeam = smoothstep(lamp.cosOuter, lamp.cosInner, toSpeck.normalize().dot(lamp.lampDir))
-  const beamFade = float(1).sub(smoothstep(0, DUST.beamRange, toSpeck.length()))
-  const brightness = inBeam.mul(beamFade).mul(DUST.beamGlow).add(DUST.baseGlow)
-  material.colorNode = color(DUST.color).mul(brightness)
+  // glitter in the flashlight beam (TypeGPU): same cone math as the flashlight shader,
+  // and every speck twinkles with 3D Perlin noise (@typegpu/noise)
+  // fromTSL: read a Three.js (TSL) value inside the TypeGPU function
+  const speck = t3.fromTSL(position, d.vec3f)
+  const lampPos = t3.fromTSL(lamp.lampPos, d.vec3f)
+  const lampDir = t3.fromTSL(lamp.lampDir, d.vec3f)
+  const cosOuter = t3.fromTSL(lamp.cosOuter, d.f32)
+  const cosInner = t3.fromTSL(lamp.cosInner, d.f32)
+  const time = t3.fromTSL(iTime, d.f32)
+  const dustColor = new THREE.Color(DUST.color)
+  const { beamRange, beamGlow, baseGlow, twinkleScale, twinkleSpeed, twinkleAmount } = DUST
+  // toTSL: the function runs on the GPU for every speck's pixels, its result is the color node
+  material.colorNode = t3.toTSL(() => {
+    'use gpu'
+    const toSpeck = std.sub(speck.$, lampPos.$)
+    const inBeam = std.smoothstep(cosOuter.$, cosInner.$, std.dot(std.normalize(toSpeck), lampDir.$))
+    const beamFade = 1 - std.smoothstep(0, beamRange, std.length(toSpeck))
+    // perlin noise is about -1..1: the brightness wobbles around 1, a bit different for every speck
+    // (the noise pattern drifts along z over time, so the flicker keeps changing)
+    const noise = perlin3d.sample(std.add(std.mul(speck.$, twinkleScale), d.vec3f(0, 0, time.$ * twinkleSpeed)))
+    const twinkle = 1 + noise * twinkleAmount
+    const brightness = inBeam * beamFade * beamGlow * twinkle + baseGlow
+    return d.vec4f(std.mul(d.vec3f(dustColor.r, dustColor.g, dustColor.b), brightness), 1)
+  })
   // round instead of square
   material.opacityNode = shapeCircle()
 

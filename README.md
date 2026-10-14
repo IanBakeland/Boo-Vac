@@ -9,6 +9,8 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 
 **Physics engine:** [Rapier](https://rapier.rs) (`@dimforge/rapier3d-compat`, WebAssembly)
 
+**Additional WebGPU library:** [TypeGPU](https://docs.swmansion.com/TypeGPU/) by Software Mansion (dust glitter, see below)
+
 ## How to play
 
 | Input | Action |
@@ -43,7 +45,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - **Suction cone** (`js/shaders/suction/`): swirling air in front of the nozzle, procedural noise scrolled and twisted along a cone; blue-white inward when sucking, orange outward when blowing. Everything is multiplied by the vacuum's `power`.
 - **Flashlight beam** (`js/shaders/beam/`): a faint "volumetric" cone so the light is visible in the dusty air.
 - **Room flashlight lighting** (`js/shaders/flashlight/`): the apartment and furniture are lit by our own spotlight math (`albedo × (moonlight ambient + lamp × cone × facing × distance falloff)`), so the room is dark blue and the flashlight reveals the colors.
-- **Dust particles** (`js/shaders/dust/update.wgsl`, `js/objects/dust.js`): a compute shader (TSL storage buffers) moves the dust specks with the same suction formula as the physics (pull + tangent swirl + drag + per-speck speed limit). They glitter in the beam and spiral into the nozzle.
+- **Dust particles** (`js/shaders/dust/update.wgsl`, `js/objects/dust.js`): a compute shader (TSL storage buffers) moves the dust specks with the same suction formula as the physics (pull + tangent swirl + drag + per-speck speed limit). They glitter in the beam and spiral into the nozzle. The glitter itself is written with **TypeGPU**, an additional WebGPU library: a JavaScript function marked `'use gpu'` (turned into WGSL by `unplugin-typegpu`) that reads Three.js values with `fromTSL`, adds a 3D Perlin-noise twinkle from `@typegpu/noise`, and is plugged in as the dust material's color with `toTSL`.
 
 ### Physics (Rapier)
 
@@ -67,6 +69,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 
 - 2 ported Shadertoy shaders: Ether (ghost aura) and VCR distortion (VHS post FX), both reacting to the player
 - Own shaders: suction cone, flashlight beam, room flashlight lighting, compute dust particles
+- Additional WebGPU library: [TypeGPU](https://docs.swmansion.com/TypeGPU/) (`@typegpu/three` + `@typegpu/noise`): the dust's glitter in the flashlight beam is a TypeGPU function with a Perlin-noise twinkle
 - Physics: Rapier (player controller, props sucked in a spiral, captured, blown out, furniture moved by MAX, books thrown by a ghost)
 - Room and furniture from Poly Pizza, laid out in code
 - Blender animation: ghost model clips driven per game state with `AnimationMixer`
