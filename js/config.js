@@ -401,6 +401,14 @@ export const MUSIC = {
 export const INTRO = {
   clock: '23:58',
   date: 'Friday 13 October',
+  // the opening caption, typed under the date and time
+  place: 'An old villa at the edge of town',
+  // the opening, in seconds from page load (a click skips straight to the phone)
+  opening: { reveal: 2.4, lightning: 4.2, title: 4.8, phone: 7.6 },
+  lightningGlimpse: 0.45, // s the three ghosts are visible in the opening flash
+  lightsOutPause: 0.7,    // s of silence after "Good luck!" before the lightning
+  torchDelay: 1.2,        // s after the message: your flashlight clicks on
+  enterTime: 2.0,         // s of the dive into the door when the shift starts (matches the CSS)
   // voice of the boss: a bit lower and faster, like a hurried boss (1 = normal)
   pitch: 0.8,
   rate: 1.05,

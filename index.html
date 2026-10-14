@@ -28,7 +28,7 @@
     </div>
     <div id="fps" class="hidden"></div>
     <div id="no-webgpu" class="banner hidden">Your browser has no WebGPU: running in fallback mode, some effects are off.</div>
-    <div id="start" class="overlay start">
+    <div id="start" class="overlay start" data-act="black">
       <!-- intro background: outside the villa at night (you're not in the house yet) -->
       <svg class="intro-scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
         <defs>
@@ -48,6 +48,21 @@
           <radialGradient id="window-light">
             <stop offset="0" stop-color="#ffd27a" stop-opacity="0.6"/>
             <stop offset="1" stop-color="#ffd27a" stop-opacity="0"/>
+          </radialGradient>
+          <!-- the little ghost shape (window ghosts) -->
+          <symbol id="ghost-shape" viewBox="0 0 22 30">
+            <path d="M0 28 v-14 a11 11 0 0 1 22 0 v14 l-4 -4 l-4 4 l-3 -4 l-3 4 l-4 -4 z" fill="#e8f0ff"/>
+            <circle cx="7" cy="12" r="2" fill="#04060d"/>
+            <circle cx="15" cy="12" r="2" fill="#04060d"/>
+          </symbol>
+          <!-- the flashlight beam at the end: bright near you, fading toward the house -->
+          <linearGradient id="torch-beam" gradientUnits="userSpaceOnUse" x1="0" y1="1000" x2="0" y2="300">
+            <stop offset="0" stop-color="#fff3cf" stop-opacity="0.4"/>
+            <stop offset="1" stop-color="#fff3cf" stop-opacity="0"/>
+          </linearGradient>
+          <radialGradient id="torch-spot">
+            <stop offset="0" stop-color="#fff3cf" stop-opacity="0.35"/>
+            <stop offset="1" stop-color="#fff3cf" stop-opacity="0"/>
           </radialGradient>
         </defs>
         <rect width="1600" height="900" fill="url(#sky)"/>
@@ -124,10 +139,14 @@
             <circle cx="605" cy="27" r="1.4" class="twinkle" style="animation-delay:-0.5s"/>
         </g>
         <!-- moon -->
-        <circle cx="1280" cy="170" r="190" fill="url(#moon-glow)"/>
-        <circle cx="1280" cy="170" r="62" fill="#f5efd2"/>
-        <circle cx="1262" cy="155" r="10" fill="#e3dbb8"/>
-        <circle cx="1298" cy="190" r="7" fill="#e3dbb8"/>
+        <g class="moon">
+          <circle cx="1280" cy="170" r="190" fill="url(#moon-glow)"/>
+          <circle cx="1280" cy="170" r="62" fill="#f5efd2"/>
+          <circle cx="1262" cy="155" r="10" fill="#e3dbb8"/>
+          <circle cx="1298" cy="190" r="7" fill="#e3dbb8"/>
+        </g>
+        <!-- a cloud that slides over the moon ("dust ghosts") -->
+        <ellipse class="moon-cloud" cx="1280" cy="175" rx="200" ry="40" fill="#0d1330"/>
         <!-- clouds drifting past -->
         <g class="clouds" fill="#0d1330" opacity="0.8">
           <ellipse cx="300" cy="200" rx="180" ry="26"/>
@@ -138,6 +157,7 @@
         <!-- the hill -->
         <path d="M0 720 Q400 610 800 640 T1600 690 V900 H0 Z" fill="#090d1d"/>
         <!-- the villa: main house, tower with a pointy roof, gables, chimney -->
+        <g class="villa">
         <g fill="#04060d">
           <rect x="610" y="420" width="420" height="240"/>
           <polygon points="590,425 820,300 1050,425"/>
@@ -150,15 +170,24 @@
         </g>
         <!-- windows: a few lit (one flickers), the rest dark -->
         <g>
-          <circle cx="580" cy="440" r="60" fill="url(#window-light)"/>
-          <rect class="flicker" x="562" y="420" width="36" height="46" fill="#ffcf6b"/>
-          <rect x="660" y="460" width="40" height="52" fill="#ffcf6b"/>
+          <circle class="lit" cx="580" cy="440" r="60" fill="url(#window-light)"/>
+          <rect class="lit flicker" x="562" y="420" width="36" height="46" fill="#ffcf6b"/>
+          <rect class="lit" x="660" y="460" width="40" height="52" fill="#ffcf6b"/>
           <rect x="740" y="460" width="40" height="52" fill="#141a33"/>
           <rect x="860" y="460" width="40" height="52" fill="#141a33"/>
           <rect x="940" y="460" width="40" height="52" fill="#141a33"/>
           <rect x="805" y="398" width="30" height="26" fill="#141a33"/>
           <rect x="562" y="520" width="36" height="46" fill="#141a33"/>
           <rect x="790" y="560" width="60" height="100" fill="#141a33"/>
+          <!-- the front door, left ajar: a thin glowing gap at the end of the intro -->
+          <rect class="door-light" x="842" y="563" width="6" height="96" fill="#9be35b"/>
+        </g>
+        <!-- the three ghosts of the night, each in a window, in its own color
+             (Dusty blue-grey, the Librarian green, Granny Clock purple) -->
+        <g class="window-ghosts">
+          <g class="wg" style="--d:0s"><rect x="740" y="460" width="40" height="52" fill="#8fa3c8"/><use href="#ghost-shape" x="749" y="476" width="22" height="30"/></g>
+          <g class="wg" style="--d:0.35s"><rect x="860" y="460" width="40" height="52" fill="#5fd17a"/><use href="#ghost-shape" x="869" y="476" width="22" height="30"/></g>
+          <g class="wg" style="--d:0.7s"><rect x="940" y="460" width="40" height="52" fill="#a678ff"/><use href="#ghost-shape" x="949" y="476" width="22" height="30"/></g>
         </g>
         <!-- a little ghost peeking out of the dark right window, now and then -->
         <g transform="translate(151 64)"><g class="peek">
@@ -166,6 +195,7 @@
           <circle cx="816" cy="408" r="2" fill="#04060d"/>
           <circle cx="824" cy="408" r="2" fill="#04060d"/>
         </g></g>
+        </g>
         <!-- bare trees -->
         <g stroke="#04060d" stroke-linecap="round" fill="none">
           <path d="M320 700 L330 520 M327 580 L280 520 M329 560 L380 500 M330 520 L300 470 M330 520 L360 465" stroke-width="10"/>
@@ -190,15 +220,31 @@
           <circle cx="70" cy="112" r="9" fill="#5a6585"/>
           <circle cx="260" cy="112" r="22" fill="#05070f"/>
           <circle cx="260" cy="112" r="9" fill="#5a6585"/>
-          <circle cx="324" cy="92" r="6" fill="#ffe9a8"/>
+          <circle class="headlight" cx="324" cy="92" r="6" fill="#ffe9a8"/>
+        </g>
+        <!-- your flashlight clicks on at the end and points at the door (dust glitters in it) -->
+        <g class="torch">
+          <polygon points="800,1000 610,300 1030,300" fill="url(#torch-beam)"/>
+          <ellipse cx="820" cy="600" rx="150" ry="95" fill="url(#torch-spot)"/>
+          <g class="motes" fill="#fff3cf">
+            <circle cx="790" cy="860" r="2" style="--d:0s"/><circle cx="820" cy="800" r="1.5" style="--d:-1.2s"/>
+            <circle cx="770" cy="740" r="2.2" style="--d:-2.1s"/><circle cx="845" cy="700" r="1.6" style="--d:-0.6s"/>
+            <circle cx="800" cy="650" r="2" style="--d:-3s"/><circle cx="740" cy="610" r="1.4" style="--d:-1.8s"/>
+            <circle cx="880" cy="580" r="2" style="--d:-2.6s"/><circle cx="830" cy="530" r="1.5" style="--d:-0.9s"/>
+            <circle cx="760" cy="500" r="1.8" style="--d:-3.4s"/><circle cx="900" cy="470" r="1.4" style="--d:-1.5s"/>
+          </g>
         </g>
       </svg>
+      <!-- cinematic layers: lightning flash, letterbox bars, the opening caption -->
+      <div class="flash"></div>
+      <div class="letterbox"></div>
+      <p class="intro-caption"></p>
       <div class="intro-title">
-        <h1>Boo-Vac</h1>
+        <h1 aria-label="Boo-Vac"><span style="--i:0">B</span><span style="--i:1">o</span><span style="--i:2">o</span><span style="--i:3">-</span><span style="--i:4">V</span><span style="--i:5">a</span><span style="--i:6">c</span></h1>
         <p class="tagline">Your first night shift at Dust &amp; Ghost Cleaning Co.</p>
       </div>
       <!-- the phone: 1. lock screen with a voicemail notification, 2. the voicemail app -->
-      <div class="phone buzzing">
+      <div class="phone">
         <div class="phone-notch"></div>
         <div class="phone-screen">
           <div class="phone-status"><span class="phone-clock"></span><span>▂▄▆ ▮</span></div>
@@ -226,13 +272,15 @@
             <div class="message-progress"><div class="message-progress-fill"></div></div>
             <div class="message-times"><span class="message-elapsed">0:00</span><span class="message-total"></span></div>
             <button class="play-button" aria-label="Play">▶</button>
-            <p class="message-transcript"></p>
             <button class="skip-button">Skip ›</button>
           </div>
         </div>
       </div>
-      <p class="intro-hint">Your phone buzzes… you have a voicemail.</p>
+      <p class="intro-hint"></p>
+      <!-- subtitles of the voicemail, in the bottom letterbox bar -->
+      <p class="subtitles" aria-live="polite"></p>
       <div class="intro-after">
+        <p class="intro-pitch">Three ghosts. One night.</p>
         <button class="start-button" disabled>Loading…</button>
         <ul class="controls-list">
           <li><b>WASD</b> walk</li>

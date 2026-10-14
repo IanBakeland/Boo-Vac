@@ -297,6 +297,13 @@ export const createAudio = () => {
     // --- the phone in the intro (voicemail) ---
     // the voicemail beep: a clean 1 kHz tone (before and after the message)
     beep: () => sweep({ from: 1000, to: 1000, duration: 0.35, volume: 0.15 }),
+    // lightning: a sharp crack and a long low rumble
+    thunder: () => {
+      burst({ duration: 0.3, frequency: 1500, type: 'highpass', volume: 0.25 })
+      burst({ duration: 1.9, frequency: 160, type: 'lowpass', volume: 0.9 })
+    },
+    // the front door opens: a slow wobbling creak
+    creak: () => sweep({ from: 140, to: 230, duration: 1.1, type: 'sawtooth', volume: 0.06, vibrato: 14 }),
     // tapping the phone: a short dry click
     click: () => burst({ duration: 0.04, frequency: 2500, type: 'highpass', volume: 0.5 }),
     // a soft hiss under the voicemail, like an old recording (on / off)

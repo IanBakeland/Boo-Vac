@@ -1,9 +1,16 @@
-// The intro: a voicemail from the boss on your phone.
+// The intro: a short film outside the villa, with a voicemail from the boss on your phone.
+// It runs in acts: js sets data-act on #start, css/style.css does the animation of each act:
+//   black -> reveal -> title -> buzz -> ready -> listen -> done -> enter
+// While the boss talks, data-line = the line number ("out" after the last one): the scene reacts.
 // The voices are the browser's own speech synthesis (Web Speech API, no recordings):
 // https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
 import { INTRO } from './config.js'
 
-// $start: the start overlay with the phone in it
+// the front door in the SVG drawing (viewBox 1600 x 900): the camera pushes in toward it
+const SCENE_SIZE = [1600, 900]
+const DOOR = [820, 610]
+
+// $start: the start overlay with the scene and the phone in it
 export const createIntro = ({ audio, $start }) => {
   const $phone = $start.querySelector('.phone')
   const $lock = $phone.querySelector('.screen-lock')
@@ -13,13 +20,25 @@ export const createIntro = ({ audio, $start }) => {
   const $progress = $phone.querySelector('.message-progress-fill')
   const $elapsed = $phone.querySelector('.message-elapsed')
   const $total = $phone.querySelector('.message-total')
-  const $transcript = $phone.querySelector('.message-transcript')
+  const $subtitles = $start.querySelector('.subtitles')
   const $hint = $start.querySelector('.intro-hint')
+  const $caption = $start.querySelector('.intro-caption')
+  const $flash = $start.querySelector('.flash')
 
   $phone.querySelectorAll('.phone-clock').forEach(($clock) => { $clock.textContent = INTRO.clock })
   $phone.querySelector('.lock-date').textContent = INTRO.date
   // the notification shows the first words of the message
   $phone.querySelector('.notification-preview').textContent = `"${INTRO.lines[0].split(' ').slice(0, 6).join(' ')}…"`
+
+  // the opening caption, one span per letter (the CSS shows them one by one, like a typewriter)
+  const captionText = `${INTRO.date} · ${INTRO.clock}\n${INTRO.place}`
+  $caption.replaceChildren(...[...captionText].map((char, i) => {
+    if (char === '\n') return document.createElement('br')
+    const $char = document.createElement('span')
+    $char.textContent = char
+    $char.style.setProperty('--i', i)
+    return $char
+  }))
 
   // the length of the message, estimated from the number of words (speech has no "duration")
   const words = [INTRO.systemIntro, ...INTRO.lines, INTRO.systemOutro].join(' ').split(' ').length
@@ -31,16 +50,85 @@ export const createIntro = ({ audio, $start }) => {
   let playStart = 0
   let progressTimer = null
 
+  const setAct = (act) => { $start.dataset.act = act }
+  // the scripted moments, kept so a skip (or the start of the shift) can cancel them
+  let timers = []
+  const at = (seconds, callback) => timers.push(setTimeout(callback, seconds * 1000))
+  const wait = (seconds) => new Promise((resolve) => setTimeout(resolve, seconds * 1000))
+
+  // the camera aims at the door: its position on screen (the SVG covers the screen, anchored at the bottom)
+  const aimAtDoor = () => {
+    const scale = Math.max(window.innerWidth / SCENE_SIZE[0], window.innerHeight / SCENE_SIZE[1])
+    const left = (window.innerWidth - SCENE_SIZE[0] * scale) / 2
+    const top = window.innerHeight - SCENE_SIZE[1] * scale
+    $start.style.setProperty('--door-x', `${left + DOOR[0] * scale}px`)
+    $start.style.setProperty('--door-y', `${top + DOOR[1] * scale}px`)
+  }
+  aimAtDoor()
+  window.addEventListener('resize', aimAtDoor)
+
+  // lightning: a double flash over the scene and thunder (silent before the first click: no sound allowed yet)
+  const lightning = ({ glimpse = false } = {}) => {
+    $flash.animate(
+      [{ opacity: 0 }, { opacity: 0.75, offset: 0.04 }, { opacity: 0.1, offset: 0.12 }, { opacity: 0.55, offset: 0.2 }, { opacity: 0 }],
+      { duration: 1200, easing: 'ease-out' }
+    )
+    audio.thunder()
+    // in the opening, the flash shows the three ghosts in their windows for a moment
+    if (glimpse) {
+      $start.classList.add('glimpse')
+      setTimeout(() => $start.classList.remove('glimpse'), INTRO.lightningGlimpse * 1000)
+    }
+  }
+
+  // 0. the opening: black, the caption, the villa in the night, lightning, the title, then the phone
+  const showPhone = () => {
+    if (state !== 'locked') return
+    timers.forEach(clearTimeout)
+    timers = []
+    setAct('buzz')
+    $phone.classList.add('buzzing')
+    $hint.textContent = 'Your phone buzzes… you have a voicemail.'
+  }
+  setAct('black')
+  at(INTRO.opening.reveal, () => setAct('reveal'))
+  at(INTRO.opening.lightning, () => lightning({ glimpse: true }))
+  at(INTRO.opening.title, () => setAct('title'))
+  at(INTRO.opening.phone, showPhone)
+  // impatient? a click anywhere during the opening jumps to the phone
+  $start.addEventListener('click', () => {
+    if (['black', 'reveal', 'title'].includes($start.dataset.act)) showPhone()
+  })
+
   // pick a voice by name from a list (else the first English voice)
   const pickVoice = (names) => {
     const english = (window.speechSynthesis?.getVoices() ?? []).filter((voice) => voice.lang.startsWith('en'))
     return names.map((name) => english.find((voice) => voice.name.includes(name))).find(Boolean) ?? english[0] ?? null
   }
 
+  // the subtitles: one span per word, so the spoken words can light up
+  const showSubtitles = (text, system) => {
+    let index = 0
+    $subtitles.replaceChildren(...text.split(' ').map((word) => {
+      const $word = document.createElement('span')
+      $word.textContent = `${word} `
+      $word.dataset.start = index
+      index += word.length + 1
+      return $word
+    }))
+    $subtitles.classList.toggle('system', system)
+    $subtitles.classList.remove('karaoke')
+  }
+  // a word is being spoken: it and the words before it light up
+  const speakWord = (charIndex) => {
+    $subtitles.classList.add('karaoke')
+    for (const $word of $subtitles.children) $word.classList.toggle('said', Number($word.dataset.start) <= charIndex)
+  }
+
   // say one line; resolves when it's done (or after a reading time when there's no speech)
-  const say = (text, { voices, pitch = 1, rate = 1, transcript = true }) => new Promise((resolve) => {
+  const say = (text, { voices, pitch = 1, rate = 1, system = false }) => new Promise((resolve) => {
     if (state !== 'playing') return resolve()
-    if (transcript) $transcript.textContent = text
+    showSubtitles(text, system)
     const synth = window.speechSynthesis
     if (!synth) {
       setTimeout(resolve, text.split(' ').length * INTRO.readTime * 1000)
@@ -53,18 +141,21 @@ export const createIntro = ({ audio, $start }) => {
     line.rate = rate
     // the sound wave bounces only while someone talks
     line.onstart = () => $wave.classList.add('talking')
+    // not every voice reports word boundaries: then the whole line simply stays lit
+    line.onboundary = (e) => { if (e.name === 'word') speakWord(e.charIndex) }
     line.onend = line.onerror = () => {
       $wave.classList.remove('talking')
       resolve()
     }
     synth.speak(line)
   })
-  const wait = (seconds) => new Promise((resolve) => setTimeout(resolve, seconds * 1000))
 
-  // 1. tap the notification: the voicemail app opens
+  // 1. tap the notification: the voicemail app opens (this first click also unlocks the sound)
   const open = () => {
     if (state !== 'locked') return
+    showPhone()
     state = 'ready'
+    setAct('ready')
     audio.start()
     audio.click()
     $phone.classList.remove('buzzing')
@@ -73,28 +164,41 @@ export const createIntro = ({ audio, $start }) => {
     $hint.textContent = 'Press ▶ to listen'
   }
 
-  // 2. play: "You have one new message", beep, the boss, "End of message", beep
+  // 2. play: film mode (letterbox, the phone steps aside, slow push toward the house).
+  //    "You have one new message", beep, the boss (the house reacts to every line), lights out, "End of message", beep
   const play = async () => {
     if (state !== 'ready') return
     state = 'playing'
+    setAct('listen')
     $playButton.disabled = true
-    $hint.classList.add('hidden')
     audio.click()
     audio.line(true)
     audio.musicVolume(INTRO.musicDuck)
     playStart = performance.now()
     progressTimer = setInterval(updateProgress, 200)
 
-    const robot = { voices: INTRO.systemVoices, transcript: false }
+    const robot = { voices: INTRO.systemVoices, system: true }
     const boss = { voices: INTRO.preferredVoices, pitch: INTRO.pitch, rate: INTRO.rate }
     await say(INTRO.systemIntro, robot)
-    if (state === 'playing') audio.beep()
+    if (state !== 'playing') return
+    audio.beep()
     await wait(0.6)
-    for (const text of INTRO.lines) {
+    for (const [i, text] of INTRO.lines.entries()) {
+      if (state !== 'playing') return
+      $start.dataset.line = i
       await say(text, boss)
       await wait(INTRO.linePause)
     }
-    if (state === 'playing') audio.beep()
+    if (state !== 'playing') return
+    // "Good luck!" ... every light in the house goes out. A silence. Lightning.
+    $start.dataset.line = 'out'
+    $subtitles.replaceChildren()
+    await wait(INTRO.lightsOutPause)
+    if (state !== 'playing') return
+    lightning()
+    await wait(1.2)
+    if (state !== 'playing') return
+    audio.beep()
     await wait(0.5)
     await say(INTRO.systemOutro, robot)
     finish()
@@ -106,21 +210,28 @@ export const createIntro = ({ audio, $start }) => {
     $progress.style.width = `${Math.min(seconds / estimate, 1) * 100}%`
   }
 
-  // the message is over (or skipped): "Start shift" appears
+  // 3. the message is over (or skipped): the phone goes away, the lights stay out,
+  //    your flashlight clicks on and points at the door, "Start shift" appears
   const finish = () => {
     if (state === 'done') return
     state = 'done'
     stop()
     $progress.style.width = '100%'
     $elapsed.textContent = $total.textContent
-    $transcript.textContent = 'Three ghosts. One night.'
-    $start.classList.add('message-done')
+    $start.dataset.line = 'out'
+    setAct('done')
+    at(INTRO.torchDelay, () => {
+      $start.classList.add('torch-on')
+      audio.click()
+    })
   }
 
   // silence everything from the intro (also when the shift starts, so nothing keeps playing)
   const stop = () => {
     window.speechSynthesis?.cancel()
     clearInterval(progressTimer)
+    timers.forEach(clearTimeout)
+    timers = []
     $wave.classList.remove('talking')
     audio.line(false)
     audio.musicVolume(1)
@@ -133,9 +244,18 @@ export const createIntro = ({ audio, $start }) => {
     finish()
   }
 
+  // 4. the shift really starts (the mouse is locked): dive into the door, black, then the game fades in
+  const enter = () => {
+    if ($start.dataset.act === 'enter' || $start.classList.contains('hidden')) return
+    stop()
+    setAct('enter')
+    audio.creak()
+    setTimeout(() => $start.classList.add('hidden'), INTRO.enterTime * 1000)
+  }
+
   $phone.querySelector('.notification').addEventListener('click', open)
   $playButton.addEventListener('click', play)
   $phone.querySelector('.skip-button').addEventListener('click', skip)
 
-  return { stop }
+  return { stop, enter }
 }

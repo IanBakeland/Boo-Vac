@@ -175,7 +175,8 @@ const game = { state: 'start' }
 const setGameState = (next) => {
   game.state = next
   const playing = next === 'playing'
-  $start.classList.toggle('hidden', next !== 'start')
+  // leaving the start screen: the intro plays its own exit (into the house), then hides itself
+  if (next !== 'start') intro.enter()
   $pause.classList.toggle('hidden', next !== 'paused')
   $invoice.classList.toggle('hidden', next !== 'invoice')
   $hud.classList.toggle('hidden', !playing)
