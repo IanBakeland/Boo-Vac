@@ -69,6 +69,7 @@ export const createAudio = () => {
   let lineSource = null
   let drones = []
   let tension = -1 // tug meter while tugging, -1 when there's no tug (no heartbeat)
+  let resolved = false // the shift is over: no more creepy phrases, the drone stays on A
 
   // reverb: a "big empty house" echo, made from noise that fades out over 3 s
   const createReverb = () => {
@@ -163,14 +164,14 @@ export const createAudio = () => {
     const ahead = now + 0.3
     const beat = 60 / MUSIC.tempo
     // the chords slowly alternate: the drone glides to the next one
-    if (nextChord < ahead) {
+    if (nextChord < ahead && !resolved) {
       nextChord = Math.max(nextChord, now)
       MUSIC.chords[chord].forEach((frequency, i) => drones[i].frequency.setTargetAtTime(frequency, nextChord, 1.5))
       chord = (chord + 1) % MUSIC.chords.length
       nextChord += MUSIC.chordBeats * beat
     }
     // a random phrase on the music box, then a rest
-    if (nextPhrase < ahead) {
+    if (nextPhrase < ahead && !resolved) {
       let time = Math.max(nextPhrase, now)
       const phrase = MUSIC.phrases[Math.floor(Math.random() * MUSIC.phrases.length)]
       phrase.forEach(([note, beats]) => {
@@ -304,6 +305,22 @@ export const createAudio = () => {
     },
     // the front door opens: a slow wobbling creak
     creak: () => sweep({ from: 140, to: 230, duration: 1.1, type: 'sawtooth', volume: 0.06, vibrato: 14 }),
+    // --- the ending ---
+    // the house power comes back on: a deep clunk and a little electric click
+    clunk: () => {
+      burst({ duration: 0.5, frequency: 90, type: 'lowpass', volume: 0.8 })
+      burst({ duration: 0.06, frequency: 2200, volume: 0.25 })
+    },
+    // the music settles on A, and the music box plays the first major chord of the game
+    fanfare: () => {
+      if (!context) return
+      resolved = true
+      MUSIC.chords[0].forEach((frequency, i) => drones[i].frequency.setTargetAtTime(frequency, context.currentTime, 0.8))
+      const start = context.currentTime + 0.05
+      MUSIC.fanfare.forEach((frequency, i) => musicBox(frequency, start + i * MUSIC.fanfareStep))
+    },
+    // a rubber stamp on the invoice: a dull thud
+    stamp: () => burst({ duration: 0.2, frequency: 180, type: 'lowpass', volume: 1 }),
     // tapping the phone: a short dry click
     click: () => burst({ duration: 0.04, frequency: 2500, type: 'highpass', volume: 0.5 }),
     // a soft hiss under the voicemail, like an old recording (on / off)

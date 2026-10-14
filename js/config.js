@@ -358,8 +358,24 @@ export const INVOICE = {
   shiftPay: 20,        // flat pay for the night
   perItem: 12,         // the client's property you sucked up is billed to you
   perEscape: 50,       // "overtime" for every ghost that got away
-  vacuumBag: 4.99,     // joke line
-  delay: 2.5           // s after the last capture before the invoice shows
+  vacuumBag: 4.99      // joke line
+}
+
+// The ending, in seconds after the last ghost is caught (a click skips to the invoice)
+export const OUTRO = {
+  hudFade: 2.4,          // the HUD fades out (the full ghost tally stays a moment first)
+  lightsOnAt: 1.4,       // the house power comes back on...
+  lightsOnTime: 2.6,     // ...and the room fades from moonlight to warm lamp light
+  houseLight: 0xffe2c4,  // warm lamp light
+  houseLightIntensity: 0.55,
+  flashlightOffAt: 3.6,  // you click your flashlight off
+  fov: 58,               // the camera slowly zooms in a little (from CAMERA.fov)...
+  rise: 0.12,            // ...and rises (m): a deep breath
+  outsideAt: 5.6,        // back outside: the camera comes out of the front door
+  fanfareAt: 7.9,        // the ghosts drop into the jar on the van (matches the CSS delays)
+  invoiceAt: 12.5,       // the invoice slides in
+  stampAt: 1.3,          // s after the invoice: the GHOST-FREE stamp
+  replayFade: 0.6        // s of fade to black before the new shift
 }
 
 // --- sound ---
@@ -401,6 +417,9 @@ export const MUSIC = {
   ],
   rest: [2, 6],          // beats of silence between two phrases
   heartbeat: [1.1, 0.5], // s between beats: tug meter empty -> full (it races as you win)
+  // the ending: the first major chord of the game, as a music-box arpeggio (A C# E A C# E A)
+  fanfare: [220, 277.18, 329.63, 440, 554.37, 659.25, 880],
+  fanfareStep: 0.16,     // s between two notes
   heartVolume: 0.5
 }
 
@@ -410,6 +429,7 @@ export const MUSIC = {
 export const INTRO = {
   clock: '23:58',
   date: 'Friday 13 October',
+  nextDate: 'Saturday 14 October', // the ending: you clock out after midnight
   // the opening caption, typed under the date and time
   place: 'An old villa at the edge of town',
   // the opening, in seconds from page load (a click skips straight to the phone)

@@ -2,10 +2,11 @@ import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW, INVOICE, HUD } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW, INVOICE, HUD, OUTRO } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createAudio } from './audio.js'
 import { createIntro } from './intro.js'
+import { createOutro } from './outro.js'
 import { createRoom } from './objects/room.js'
 import { createProps } from './objects/props.js'
 import { createFlashlight } from './objects/flashlight.js'
@@ -40,6 +41,7 @@ const $prompt = document.querySelector('#prompt')
 const $toast = document.querySelector('#toast')
 const $vignette = document.querySelector('#vignette')
 const $fps = document.querySelector('#fps')
+const $curtain = document.querySelector('#curtain')
 
 // sound (starts on the first click, browsers don't allow sound before that)
 const audio = createAudio()
@@ -184,7 +186,7 @@ ghosts.forEach((g) => scene.add(g.mesh))
 // the ghost you're fighting right now (or null)
 const tuggingGhost = () => ghosts.find((g) => g.isTugging()) ?? null
 
-// --- screens: game state machine (start -> playing <-> paused -> invoice) ---
+// --- screens: game state machine (start -> playing <-> paused -> ending -> invoice) ---
 const game = { state: 'start' }
 const setGameState = (next) => {
   game.state = next
@@ -193,7 +195,8 @@ const setGameState = (next) => {
   if (next !== 'start') intro.enter()
   $pause.classList.toggle('hidden', next !== 'paused')
   $invoice.classList.toggle('hidden', next !== 'invoice')
-  $hud.classList.toggle('hidden', !playing)
+  // the ending: the HUD stays a moment (the full ghost tally), the outro fades it out
+  $hud.classList.toggle('hidden', !playing && next !== 'ending')
   $max.classList.toggle('hidden', !playing)
   $crosshair.classList.toggle('hidden', !playing)
   $mode.classList.toggle('hidden', !playing)
@@ -213,13 +216,13 @@ const setGameState = (next) => {
   }
 }
 
-// the last ghost is caught: a moment to enjoy it, then the invoice (and the mouse is free again)
+// the last ghost is caught: the ending plays (js/outro.js), the mouse is free again, then the invoice
+const outro = createOutro({ $start, $hud, $invoice, audio, flashlight, camera, showInvoice: () => setGameState('invoice') })
 const endShift = () => {
   stats.endTime = performance.now()
-  setTimeout(() => {
-    setGameState('invoice')
-    document.exitPointerLock()
-  }, INVOICE.delay * 1000)
+  setGameState('ending')
+  document.exitPointerLock()
+  outro.play({ seconds: (stats.endTime - stats.startTime) / 1000, escapes: stats.escapes })
 }
 
 // the invoice: your pay minus everything the boss bills you for
@@ -249,7 +252,15 @@ const showInvoice = () => {
   $invoice.querySelector('.invoice-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars)
   $invoice.querySelector('.invoice-note').textContent = `"${notes[stars]}" — the boss`
 }
-$invoice.querySelector('.again-button').addEventListener('click', () => window.location.reload())
+// play again: a new shift on a fresh page, so WebGPU, physics, ghosts, props, sound and every timer
+// really start from zero (#again: the intro skips the voicemail you already heard)
+$invoice.querySelector('.again-button').addEventListener('click', () => {
+  $curtain.classList.add('closed')
+  setTimeout(() => {
+    history.replaceState(null, '', '#again')
+    window.location.reload()
+  }, OUTRO.replayFade * 1000)
+})
 
 // --- HUD (only touches the DOM when a value changed) ---
 // a ghost's color for the HUD (its Ether tint)
@@ -446,6 +457,8 @@ window.addEventListener('keydown', (e) => {
   }
   // debug: P drops all props from 1 m higher
   if (DEBUG && e.code === 'KeyP') props.drop()
+  // debug: O plays the ending right away (the same call as catching the last ghost)
+  if (DEBUG && e.code === 'KeyO' && game.state === 'playing') endShift()
 })
 window.addEventListener('keyup', (e) => keys.delete(e.code))
 

@@ -251,12 +251,22 @@ export const createIntro = ({ audio, $start }) => {
   }
 
   // 4. the shift really starts (the mouse is locked): dive into the door, black, then the game fades in
+  // (only once: later the ending shows this scene again)
+  let entered = false
   const enter = () => {
-    if ($start.dataset.act === 'enter' || $start.classList.contains('hidden')) return
+    if (entered) return
+    entered = true
     stop()
     setAct('enter')
     audio.creak()
     setTimeout(() => $start.classList.add('hidden'), INTRO.enterTime * 1000)
+  }
+
+  // "Play again" reloads the page with #again: you heard the voicemail already, so straight to the briefing
+  if (window.location.hash === '#again') {
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+    state = 'playing'
+    finish()
   }
 
   $phone.querySelector('.notification').addEventListener('click', open)

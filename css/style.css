@@ -128,6 +128,22 @@ kbd.key
     --key: 26px;
 }
 
+/* the ending: all ghosts caught, the tally glows green a moment, then the HUD fades out */
+#hud
+{
+    transition: opacity 1.2s;
+}
+
+#hud.complete .tally-label
+{
+    color: #9be35b;
+}
+
+#hud.hud-out
+{
+    opacity: 0;
+}
+
 /* the objective: one little ghost per ghost of the night. Dashed outline = still out there, filled = caught */
 .tally
 {
@@ -2375,7 +2391,8 @@ kbd.key
     .start,
     .start *,
     .start *::before,
-    .start *::after
+    .start *::after,
+    .invoice *
     {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
@@ -2418,16 +2435,38 @@ kbd.key
     text-align: center;
 }
 
-/* --- invoice --- */
+/* --- invoice: the last step of the ending. It slides in over the villa scene (still visible behind) --- */
 .overlay.invoice
 {
     cursor: default;
     overflow-y: auto;
     padding: 24px;
+    background: radial-gradient(ellipse at 72% 50%, rgba(5, 8, 20, 0.7), rgba(5, 8, 20, 0.1) 70%);
+}
+
+/* wide screens: the invoice on the right, the villa, the van and the title stay visible on the left */
+@media (min-width: 1000px)
+{
+    .overlay.invoice
+    {
+        align-items: flex-end;
+        padding-right: 7vw;
+    }
+}
+
+.overlay.invoice:not(.hidden) .paper
+{
+    animation: paper-in 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes paper-in
+{
+    from { transform: translateY(70vh) rotate(7deg); }
 }
 
 .invoice .paper
 {
+    position: relative;
     width: min(460px, 100%);
     padding: 28px;
     border-radius: 6px;
@@ -2510,10 +2549,293 @@ kbd.key
     text-align: center;
 }
 
+/* the boss's rubber stamp, slammed onto the paper (js/outro.js adds .stamped) */
+.invoice-stamp
+{
+    position: absolute;
+    bottom: 128px;
+    left: 22px;
+    padding: 2px 12px;
+    border: 4px double #b8343a;
+    border-radius: 6px;
+    color: #b8343a;
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transform: rotate(-14deg);
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.invoice-stamp.stamped
+{
+    animation: stamp 0.22s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+
+@keyframes stamp
+{
+    from { opacity: 0; transform: rotate(-14deg) scale(2.4); }
+    to { opacity: 0.85; transform: rotate(-14deg) scale(1); }
+}
+
+/* play again: dark ink on the paper, the heading font, a green arrow that turns on hover */
 .invoice .again-button
 {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
     margin: 0 auto;
+    padding: 12px 34px;
+    background: #0b1020;
+    color: #ece4cc;
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: normal;
+    letter-spacing: 0.08em;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s, box-shadow 0.2s;
+    animation: again-in 0.6s ease-out 1.9s both;
+}
+
+@keyframes again-in
+{
+    from { opacity: 0; transform: translateY(8px); }
+}
+
+.invoice .again-button span
+{
+    color: #9be35b;
+    transition: transform 0.4s;
+}
+
+.invoice .again-button:hover
+{
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 3px rgba(155, 227, 91, 0.55), 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.invoice .again-button:hover span
+{
+    transform: rotate(-180deg);
+}
+
+.invoice .again-button:focus-visible
+{
+    outline: 3px solid #9be35b;
+    outline-offset: 3px;
+}
+
+.invoice .again-button:active
+{
+    transform: translateY(1px) scale(0.97);
+}
+
+/* the black curtain before a new shift */
+#curtain
+{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s;
+}
+
+#curtain.closed
+{
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* --- the ending, outside (data-act="outro" on #start, see js/outro.js) --- */
+/* the camera comes back out of the front door: the intro's dive, in reverse */
+.start[data-act="outro"] .intro-scene
+{
+    animation: outro-pull 4.5s cubic-bezier(0.15, 0.6, 0.2, 1) both;
+}
+
+@keyframes outro-pull
+{
+    from { transform: scale(9); }
+    to { transform: scale(1.04); }
+}
+
+/* not one ghost left in the villa, and the mist is lifting */
+.start[data-act="outro"] .peek
+{
+    animation: none;
+    opacity: 0;
+}
+
+.start[data-act="outro"] .mist
+{
+    opacity: 0.35;
+}
+
+.start[data-act="outro"] .note
+{
+    opacity: 0;
+}
+
+/* the jar on the van appears, then the three ghosts drop in, one after the other, and float */
+.van-jar,
+.jar-ghost
+{
+    opacity: 0;
+}
+
+/* a bit bigger than life, so you can see who's inside */
+.van-jar
+{
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    scale: 1.5;
+}
+
+.jar-ghost
+{
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.start[data-act="outro"] .van-jar
+{
+    animation: jar-in 0.8s ease-out 1.5s both;
+}
+
+@keyframes jar-in
+{
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.start[data-act="outro"] .jar-ghost
+{
+    animation:
+        jar-drop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) calc(2.3s + var(--d)) both,
+        jar-bob 2.4s ease-in-out calc(3.1s + var(--d)) infinite alternate;
+}
+
+@keyframes jar-drop
+{
+    from { opacity: 0; transform: translateY(-70px) scale(0.5); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes jar-bob
+{
+    from { opacity: 1; transform: none; }
+    to { opacity: 1; transform: translateY(-3px); }
+}
+
+/* "Shift complete": the date and time you clocked out, the title, how it went */
+.outro-title
+{
+    position: absolute;
+    top: 9vh;
+    left: 50%;
+    width: min(90%, 760px);
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%);
+    transition: left 1s cubic-bezier(0.5, 0, 0.2, 1), width 1s;
+    pointer-events: none;
+}
+
+.start[data-act="outro"] .outro-title
+{
+    visibility: visible;
+    animation: outro-title 1.4s ease-out 2.9s both;
+}
+
+@keyframes outro-title
+{
+    from { opacity: 0; filter: blur(8px); translate: 0 10px; }
+    to { opacity: 1; filter: none; translate: 0 0; }
+}
+
+.outro-caption
+{
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    letter-spacing: 0.2em;
+    opacity: 0.8;
+}
+
+.outro-title h2
+{
+    margin: 0.15em 0 0.2em;
+    color: #ece4cc;
+    font-family: var(--font-heading);
+    font-weight: normal;
+    font-size: clamp(2.6rem, 6.5vw, 5rem);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    text-shadow: 0 3px 0 #05070f, 0 0 40px rgba(155, 227, 91, 0.35);
+}
+
+.outro-sub
+{
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+    opacity: 0.88;
+    text-shadow: 0 1px 2px #000, 0 0 14px rgba(0, 0, 0, 0.85);
+}
+
+/* when the invoice is in: the title moves over to the left side and gets a bit smaller
+   (narrow screens: the invoice is in the middle, so the title steps back) */
+.start.outro-invoice .outro-title
+{
+    transition: left 1s cubic-bezier(0.5, 0, 0.2, 1), width 1s, opacity 0.6s;
+}
+
+.start.outro-invoice .outro-title h2
+{
+    font-size: clamp(2rem, 4.2vw, 4.4rem);
+    transition: font-size 1s;
+}
+
+@media (min-width: 1000px)
+{
+    .start.outro-invoice .outro-title
+    {
+        left: 22%;
+        width: 38vw;
+    }
+}
+
+@media (min-width: 1300px)
+{
+    .start.outro-invoice .outro-title
+    {
+        left: 28%;
+        width: min(46vw, 620px);
+    }
+}
+
+@media (max-width: 999px)
+{
+    .start.outro-invoice .outro-title
+    {
+        opacity: 0 !important;
+    }
+}
+
+/* a click skipped the ending: everything jumps to its end */
+.start.outro-fast .intro-scene,
+.start.outro-fast .van-jar,
+.start.outro-fast .outro-title
+{
+    animation-delay: 0s !important;
+    animation-duration: 0.01ms !important;
+}
+
+.start.outro-fast .jar-ghost
+{
+    animation-delay: 0s, 0.2s !important;
+    animation-duration: 0.01ms, 2.4s !important;
 }
 
 /* SUCK / BLOW label under the crosshair, in the same colors as the suction cone */

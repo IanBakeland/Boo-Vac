@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu'
+import gsap from 'gsap'
 import { wgslFn, uniform, uv, texture, color, positionWorld, normalWorld, normalView, positionView, colorSpaceToWorking } from 'three/tsl'
 
 import { FLASHLIGHT } from '../config.js'
@@ -19,7 +20,8 @@ export const createFlashlight = ({ camera, iTime }) => {
   light.target.position.set(0, 0, -1)
   mesh.add(light, light.target)
   // a little light spilling around the lamp, so the vacuum in your other hand isn't pitch black
-  mesh.add(new THREE.PointLight(FLASHLIGHT.color, FLASHLIGHT.spillIntensity, FLASHLIGHT.spillDistance, FLASHLIGHT.decay))
+  const spill = new THREE.PointLight(FLASHLIGHT.color, FLASHLIGHT.spillIntensity, FLASHLIGHT.spillDistance, FLASHLIGHT.decay)
+  mesh.add(spill)
 
   // dim moonlight so props outside the beam aren't pitch black (same value as the room shader's ambient)
   const ambientLight = new THREE.AmbientLight(FLASHLIGHT.ambientColor, FLASHLIGHT.ambientIntensity)
@@ -67,10 +69,11 @@ export const createFlashlight = ({ camera, iTime }) => {
     depthWrite: false,
     side: THREE.DoubleSide
   })
+  const beamIntensity = uniform(FLASHLIGHT.beamIntensity)
   // how straight we look at the cone wall: 1 = head-on, 0 = edge-on
   const facing = normalView.dot(positionView.normalize().negate()).abs()
   beamMaterial.colorNode = colorSpaceToWorking(
-    wgslFn(beamShader)({ uv: uv(), iTime, intensity: uniform(FLASHLIGHT.beamIntensity), facing }),
+    wgslFn(beamShader)({ uv: uv(), iTime, intensity: beamIntensity, facing }),
     THREE.SRGBColorSpace
   )
   mesh.add(new THREE.Mesh(beamGeometry, beamMaterial))
@@ -81,5 +84,30 @@ export const createFlashlight = ({ camera, iTime }) => {
     camera.getWorldDirection(uniforms.lampDir.value)
   }
 
-  return { ambientLight, uniforms, lightUp, update }
+  // the end of the shift: the house lights come back on (moonlight -> warm lamp light, gsap tween)
+  const lightsOn = ({ color, intensity, duration }) => {
+    const fromColor = new THREE.Color(FLASHLIGHT.ambientColor)
+    const toColor = new THREE.Color(color)
+    const fade = { t: 0 }
+    gsap.to(fade, {
+      t: 1,
+      duration,
+      ease: 'power2.inOut',
+      onUpdate: () => {
+        ambientLight.color.lerpColors(fromColor, toColor, fade.t)
+        ambientLight.intensity = THREE.MathUtils.lerp(FLASHLIGHT.ambientIntensity, intensity, fade.t)
+        // the room shader gets the same light (color x intensity)
+        uniforms.ambient.value.copy(ambientLight.color).multiplyScalar(ambientLight.intensity)
+      }
+    })
+  }
+  // click: the flashlight is off (spotlight, room shader lamp, visible beam, spill light)
+  const off = () => {
+    light.intensity = 0
+    spill.intensity = 0
+    uniforms.lampColor.value.setRGB(0, 0, 0)
+    beamIntensity.value = 0
+  }
+
+  return { ambientLight, uniforms, lightUp, update, lightsOn, off }
 }
