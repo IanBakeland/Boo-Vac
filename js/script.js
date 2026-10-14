@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW, INVOICE } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW, INVOICE, HUD } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createAudio } from './audio.js'
 import { createIntro } from './intro.js'
@@ -27,11 +27,18 @@ const $muteLabel = $hud.querySelector('.mute-label')
 const $crosshair = document.querySelector('#crosshair')
 const $mode = document.querySelector('#mode')
 const $max = document.querySelector('#max')
-const $maxFill = $max.querySelector('.max-fill')
+const $maxState = $max.querySelector('.max-state')
 const $tug = document.querySelector('#tug')
 const $tugName = $tug.querySelector('.tug-name')
 const $tugArrow = $tug.querySelector('.tug-arrow')
 const $tugFill = $tug.querySelector('.tug-fill')
+const $tugRounds = $tug.querySelector('.tug-rounds')
+const $tankBill = $hud.querySelector('.tank-bill')
+const $tallyIcons = $hud.querySelector('.tally-icons')
+const $exposeFill = $crosshair.querySelector('.expose-fill')
+const $prompt = document.querySelector('#prompt')
+const $toast = document.querySelector('#toast')
+const $vignette = document.querySelector('#vignette')
 const $fps = document.querySelector('#fps')
 
 // sound (starts on the first click, browsers don't allow sound before that)
@@ -151,19 +158,26 @@ const ghosts = await Promise.all(GHOSTS.map((config) => createGhost({
   takenSpots: () => ghosts.map((g) => g.getSpot()).filter((spot) => spot !== null),
   // only one tug-of-war at a time
   canStartTug: () => !ghosts.some((g) => g.isTugging()),
-  onCapture: () => {
+  onCapture: (config) => {
     audio.capture()
     stats.caught++
+    tallyCaught(config)
+    const left = GHOSTS.length - stats.caught
+    showToast(`${config.name} caught!`, left > 0 ? `${left} to go` : "That's all of them. Shift over!", config)
     // the last ghost: the shift is over
     if (stats.caught === GHOSTS.length) endShift()
   },
   onEscape: (config) => {
     stats.escapes++
+    showToast(`${config.name} got away`, "It's hiding somewhere else now", config)
     // Dusty giggles at you, the others moan
     if (config.giggle) audio.giggle()
     else audio.moan()
   },
-  onEmerge: () => audio.moan(),
+  onEmerge: (config) => {
+    audio.moan()
+    showToast(`${config.name} is out!`, 'Hold suck and keep it in your flashlight', config)
+  },
   onThrow: (from) => throwBook(from)
 })))
 ghosts.forEach((g) => scene.add(g.mesh))
@@ -238,21 +252,67 @@ const showInvoice = () => {
 $invoice.querySelector('.again-button').addEventListener('click', () => window.location.reload())
 
 // --- HUD (only touches the DOM when a value changed) ---
+// a ghost's color for the HUD (its Ether tint)
+const ghostColor = (config) => `rgb(${config.tint.map((c) => Math.round(c * 255)).join(', ')})`
+
+// the tally: one little ghost per ghost of the night, hollow until it's caught
+const GHOST_PATH = 'M1 28 V14 A10 10 0 0 1 21 14 V28 L17 24 L13 28 L11 24 L9 28 L5 24 Z'
+GHOSTS.forEach((config) => {
+  const $icon = document.createElement('span')
+  $icon.className = 'tally-ghost'
+  $icon.title = config.name
+  $icon.style.setProperty('--ghost', ghostColor(config))
+  $icon.innerHTML = `<svg viewBox="0 0 22 30"><path d="${GHOST_PATH}"/><circle cx="7.5" cy="13" r="1.8"/><circle cx="14.5" cy="13" r="1.8"/></svg>`
+  $tallyIcons.append($icon)
+})
+const tallyCaught = (config) => {
+  const $icon = $tallyIcons.children[GHOSTS.indexOf(config)]
+  $icon.classList.add('caught')
+  $icon.animate([{ transform: 'scale(2.2)', filter: 'brightness(3)' }, { transform: 'scale(1)', filter: 'brightness(1)' }], { duration: 600, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' })
+}
+
+// event titles: "Dusty is out!", "... caught!", "... got away", in the ghost's color
+const showToast = (title, sub, config) => {
+  $toast.querySelector('.toast-title').textContent = title
+  $toast.querySelector('.toast-sub').textContent = sub
+  $toast.style.setProperty('--ghost', config ? ghostColor(config) : '#ece4cc')
+  $toast.getAnimations().forEach((animation) => animation.cancel())
+  $toast.animate([
+    { opacity: 0, transform: 'translateY(-8px) scale(1.06)', filter: 'blur(6px)' },
+    { opacity: 1, transform: 'none', filter: 'blur(0)', offset: 0.1 },
+    { opacity: 1, transform: 'none', filter: 'blur(0)', offset: 0.82 },
+    { opacity: 0, transform: 'translateY(4px)', filter: 'blur(4px)' }
+  ], { duration: HUD.toastTime * 1000, easing: 'ease-out' })
+}
+
+// a number that just changed gives a little jump
+const bump = ($element) => $element.animate([{ transform: 'scale(1.5)' }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' })
+
 let shownCaught = -1
 let shownTank = -1
 let shownMode = ''
 let shownTug = ''
+let shownRound = 0
+let shownVignette = ''
 let shownMax = ''
-const updateHud = () => {
+let shownPrompt = ''
+let shownExpose = ''
+// exposure: the ring shows while a hidden ghost's exposure is rising (you're sucking at its spot)
+let lastExposures = GHOSTS.map(() => 0)
+let exposeShownFor = 0
+const updateHud = (dt) => {
   if (stats.caught !== shownCaught) {
     shownCaught = stats.caught
     $ghostCount.textContent = shownCaught
   }
   if (props.tank.length !== shownTank) {
+    if (shownTank >= 0) bump($tankCount)
     shownTank = props.tank.length
     $tankCount.textContent = shownTank
+    $tankBill.textContent = `billed to you: €${shownTank * INVOICE.perItem}`
+    $hud.style.setProperty('--tank', Math.min(shownTank / HUD.tankIconFull, 1))
   }
-  // SUCK / BLOW under the crosshair (and the crosshair in that color) while the motor runs
+  // SUCK / BLOW under the reticle (and the reticle in that color) while the motor runs
   const running = vacuum.state.power > 0.05
   const modeState = running ? vacuum.state.mode : ''
   if (modeState !== shownMode) {
@@ -265,6 +325,21 @@ const updateHud = () => {
       $crosshair.classList.add(modeState)
     }
   }
+  // exposure ring: the highest exposure that rose this frame (or less than a moment ago)
+  let rising = -1
+  ghosts.forEach((ghost, i) => {
+    const exposure = ghost.isHidden() ? ghost.getExposure() : 0
+    if (exposure > lastExposures[i]) rising = Math.max(rising, exposure)
+    lastExposures[i] = exposure
+  })
+  exposeShownFor = rising >= 0 ? HUD.exposeLinger : Math.max(0, exposeShownFor - dt)
+  if (rising >= 0) $crosshair.dataset.expose = rising
+  const exposeState = exposeShownFor > 0 ? Math.round(Number($crosshair.dataset.expose) * 50) : 'off'
+  if (exposeState !== shownExpose) {
+    shownExpose = exposeState
+    $crosshair.classList.toggle('exposing', exposeShownFor > 0)
+    $exposeFill.style.strokeDashoffset = 100 - Number($crosshair.dataset.expose ?? 0) * 100
+  }
   // tug meter: the arrow shows which way YOU must move the mouse (against the ghost)
   const fighting = tuggingGhost()
   const tugging = fighting !== null
@@ -273,18 +348,45 @@ const updateHud = () => {
   if (tugState !== shownTug) {
     shownTug = tugState
     $tug.classList.toggle('hidden', !tugging)
-    $tug.classList.toggle('correct', correct)
-    $tugArrow.textContent = pullDir > 0 ? '◀ PULL' : 'PULL ▶'
-    $tugFill.style.width = `${(meter ?? 0) * 100}%`
-    if (tugging) $tugName.textContent = rounds > 1 ? `${fighting.name} · round ${round}/${rounds}` : fighting.name
+    $crosshair.classList.toggle('tugging', tugging)
+    if (tugging) {
+      const config = GHOSTS.find((c) => c.name === fighting.name)
+      $tug.style.setProperty('--ghost', ghostColor(config))
+      $tug.classList.toggle('correct', correct)
+      $tug.classList.toggle('danger', !correct && meter < HUD.dangerMeter)
+      $tug.dataset.dir = pullDir > 0 ? 'left' : 'right'
+      $tugFill.style.width = `${meter * 100}%`
+      $tugName.textContent = fighting.name
+      $tugRounds.textContent = rounds > 1 ? '●'.repeat(round) + '○'.repeat(rounds - round) : ''
+      // Granny Clock: the next round starts
+      if (round > shownRound && shownRound > 0) showToast(`Round ${round}`, "She's not done with you yet", config)
+    }
+    shownRound = tugging ? round : 0
   }
-  // MAX button: charge bar in 5% steps, so the DOM only changes ~20 times per charge
-  const maxState = `${maxActive}-${Math.round(maxCharge * 20)}`
+  // tension: the screen edges close in as the meter runs low
+  const vignette = tugging ? (1 - meter).toFixed(1) : '0'
+  if (vignette !== shownVignette) {
+    shownVignette = vignette
+    $vignette.style.opacity = vignette
+  }
+  // a hint when it matters: a ghost is out and in view, but you're not pulling it yet
+  const promptState = !tugging && ghosts.some((g) => g.isOut() && g.getVisibility() > HUD.promptVisibility) ? 'out' : ''
+  if (promptState !== shownPrompt) {
+    shownPrompt = promptState
+    $prompt.classList.toggle('hidden', !promptState)
+    $prompt.innerHTML = promptState ? '<span class="suck-text">hold left mouse</span> · keep it in your beam' : ''
+  }
+  // MAX gauge: a ring that drains while MAX runs and fills up again (in 5% steps)
+  const maxState = `${maxActive}-${Math.round(maxCharge * 20)}-${maxCharge >= 1}`
   if (maxState !== shownMax) {
+    const wasReady = $max.classList.contains('ready')
     shownMax = maxState
-    $maxFill.style.width = `${maxCharge * 100}%`
+    $max.style.setProperty('--charge', maxCharge)
     $max.classList.toggle('active', maxActive)
     $max.classList.toggle('ready', !maxActive && maxCharge >= 1)
+    $maxState.textContent = maxActive ? 'active!' : maxCharge >= 1 ? 'ready' : 'charging'
+    // charged again: one short flash
+    if (!wasReady && $max.classList.contains('ready')) $max.animate([{ filter: 'brightness(2.2)' }, { filter: 'brightness(1)' }], { duration: 500 })
   }
 }
 
@@ -461,7 +563,8 @@ const viewDirection = new THREE.Vector3()
 
 const draw = (timestamp) => {
   timer.update(timestamp)
-  const dt = Math.min(timer.getDelta(), MAX_DT)
+  // (never negative: the very first frame can report a tiny negative delta)
+  const dt = THREE.MathUtils.clamp(timer.getDelta(), 0, MAX_DT)
 
   iTime.value = timer.getElapsed()
 
@@ -507,7 +610,7 @@ const draw = (timestamp) => {
   audio.update({ power, mode, boost, tug: fighting?.tug.meter ?? 0, tugging: fighting !== null })
   // dust: same suction as the props (MAX makes it stronger too)
   dust?.update(renderer, dt, power * boost, mode)
-  updateHud()
+  updateHud(dt)
   if (DEBUG) updateFps(dt)
   renderer.render(scene, camera)
 }

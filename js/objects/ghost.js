@@ -434,6 +434,8 @@ export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSp
     name: config.name,
     isTugging: () => phase === 'tug',
     isHidden: () => phase === 'hidden',
+    isOut: () => phase === 'emerged',
+    getVisibility: () => shown,
     // the spot this ghost occupies (or is flying to); null once caught
     getSpot: () => (phase === 'done' || phase === 'captured' ? null : targetSpot ?? spot.name),
     getExposure: () => Math.min(exposure, 1),
