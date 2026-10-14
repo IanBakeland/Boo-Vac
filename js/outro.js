@@ -35,10 +35,14 @@ export const createOutro = ({ $start, $hud, $invoice, audio, flashlight, camera,
   // 2. back outside: the scene fades in, the camera pulls back out of the front door
   const goOutside = () => {
     phase = 'outside'
+    // first one frame at normal size ('outside' has no CSS of its own): the browser draws the villa layer
+    // (will-change in the CSS) at screen size. Shown straight at the 9x zoom of 'enter'/'outro', it would
+    // try to draw it 9x bigger than the screen and the villa doesn't render
+    $start.dataset.act = 'outside'
     $start.classList.remove('hidden', 'torch-on')
     delete $start.dataset.line
-    $start.dataset.act = 'outro'
     $start.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 800, easing: 'ease-out' })
+    requestAnimationFrame(() => requestAnimationFrame(() => { $start.dataset.act = 'outro' }))
   }
 
   // 3. the invoice: slides in (css), gets stamped, then "Play again" gets the focus (Enter works too)
