@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import gsap from 'gsap'
 
-import { MODELS, LAYOUT, TANK, PHYSICS } from '../config.js'
+import { MODELS, LAYOUT, TANK, PHYSICS, CLOG } from '../config.js'
 import { placeModel } from './room.js'
 import { suctionForce, suctionStrength } from '../physics.js'
 
@@ -33,17 +33,20 @@ export const createProps = async ({ physics }) => {
     mesh.add(prop)
 
     const size = new THREE.Box3().setFromObject(prop, true).getSize(new THREE.Vector3())
+    const halfExtents = size.clone().multiplyScalar(0.5)
+    const density = MODELS.props[item.model].density
     const body = physics.addProp({
       position: new THREE.Vector3().fromArray(item.position),
       rotationY: item.rotationY ?? 0,
-      halfExtents: size.clone().multiplyScalar(0.5),
-      density: MODELS.props[item.model].density
+      halfExtents,
+      density
     })
     // small enough to fit in the vacuum?
     const suckable = Math.max(size.x, size.y, size.z) < TANK.captureMaxSize
     // body = null once the prop is in the tank
     // home: where it stood at the start (the ghost checks if it was near its hiding spot)
-    props.push({ mesh: prop, body, suckable, heavy: false, home: new THREE.Vector3().fromArray(item.position) })
+    // halfExtents + density: to make its body again when it's blown back out of a clogged vacuum
+    props.push({ mesh: prop, body, suckable, heavy: false, home: new THREE.Vector3().fromArray(item.position), halfExtents, density })
   })
 
   // copy every body's position and rotation onto its model (after the physics step)
@@ -89,12 +92,14 @@ export const createProps = async ({ physics }) => {
     })
   }
 
-  // small props close to the nozzle disappear into the tank; returns the props sucked in this frame
+  // small props close to the nozzle disappear into the vacuum (at most `max`, the room left in the hose);
+  // returns the props sucked in this frame
+  // tank: every item you ever sucked up (billed once, even when it was blown out and sucked up again)
   const tank = []
-  const capture = (nozzle) => {
+  const capture = (nozzle, max) => {
     const caught = []
     props.forEach((prop) => {
-      if (!prop.body || !prop.suckable) return
+      if (caught.length >= max || !prop.body || !prop.suckable) return
       const com = prop.body.worldCom()
       const dist = Math.hypot(com.x - nozzle.position.x, com.y - nozzle.position.y, com.z - nozzle.position.z)
       if (dist > TANK.captureDistance) return
@@ -107,10 +112,22 @@ export const createProps = async ({ physics }) => {
         ease: 'power2.in',
         onComplete: () => { prop.mesh.visible = false }
       })
-      tank.push(prop)
+      if (!tank.includes(prop)) tank.push(prop)
       caught.push(prop)
     })
     return caught
+  }
+
+  // a clogged vacuum shoots a prop back out: a new body at `position`, flying with `velocity`
+  const eject = (prop, position, velocity) => {
+    prop.body = physics.addProp({ position, rotationY: Math.random() * 360, halfExtents: prop.halfExtents, density: prop.density })
+    prop.body.setLinvel(velocity, true)
+    prop.body.setAngvel({ x: Math.random() * 8 - 4, y: Math.random() * 8 - 4, z: Math.random() * 8 - 4 }, true)
+    // it pops back to full size (stop the shrink animation if it's still running)
+    gsap.killTweensOf(prop.mesh.scale)
+    prop.mesh.visible = true
+    prop.mesh.scale.setScalar(0.01)
+    gsap.to(prop.mesh.scale, { x: 1, y: 1, z: 1, duration: CLOG.growDuration, ease: 'back.out' })
   }
 
   // debug: lift every prop 1 m and let it drop
@@ -135,5 +152,5 @@ export const createProps = async ({ physics }) => {
     props.push({ mesh: piece, body, suckable: false, heavy: true })
   }
 
-  return { mesh, props, tank, update, applySuction, capture, addMovable, drop }
+  return { mesh, props, tank, update, applySuction, capture, eject, addMovable, drop }
 }

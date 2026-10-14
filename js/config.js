@@ -181,7 +181,8 @@ export const VACUUM = {
   // diagonally from the bottom-right corner (rotation in degrees, XYZ order)
   model: { position: [0.359, -0.382, -0.504], rotation: [163.3, 62.2, -112.1] },
   spinUp: { duration: 0.4, ease: 'power2.out' },
-  spinDown: { duration: 0.3, ease: 'power2.out' }
+  spinDown: { duration: 0.3, ease: 'power2.out' },
+  rattle: 0.006           // m: the vacuum shakes in your hand while it's clogged and you try to suck
 }
 
 // The visible swirl cone in front of the nozzle
@@ -210,6 +211,20 @@ export const TANK = {
   shrinkDuration: 0.15,  // s: shrink animation when a prop disappears into the nozzle
   maxPropSpeed: 8,       // m/s: speed limit for sucked props (like the course's per-particle limit)
   drag: 4                // per second, at full suction: slows props near the nozzle so they don't overshoot
+}
+
+// Clogging: the hose holds a few items, then it jams. Sucking stops working until you
+// blow (right mouse) and shoot everything back out into the room
+export const CLOG = {
+  capacity: 5,          // items: the 5th one you suck up clogs the vacuum
+  ejectInterval: 0.3,   // s between two items shooting out while you blow
+  ejectMinPower: 0.5,   // the motor must be at least half spun up to blow them out
+  ejectSpeed: 6,        // m/s out of the nozzle
+  ejectLift: 1.5,       // m/s upward, so they fly in a little arc
+  // where an item appears: at the nozzle, or closer to you when a wall is right in front of you
+  // (this fraction of the way from your eyes to the nozzle at least)
+  ejectMinFraction: 0.5,
+  growDuration: 0.15    // s: an item pops back to full size
 }
 
 // MAX mode (F): a short, very strong burst that also moves heavy furniture
@@ -404,6 +419,7 @@ export const AUDIO = {
   blowPitch: 0.8,         // blowing: the motor sounds a bit lower
   maxPitch: 1.3,          // MAX: the motor screams higher
   tugPitch: 0.4,          // tug meter full: +40% pitch (the motor strains)
+  clogPitch: 1.5,         // clogged and sucking: the motor whines higher (and no air flows)
   suckAir: [1200, 2800],  // Hz: sucking hiss (high, "shhhh")
   suckVolume: 0.18,
   blowAir: [250, 600],    // Hz: blowing rumble (low, "whooo")

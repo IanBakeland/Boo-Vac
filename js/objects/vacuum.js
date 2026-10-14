@@ -8,8 +8,8 @@ import suctionShader from '../shaders/suction/fragment.wgsl?raw'
 
 export const createVacuum = ({ camera, iTime }) => {
   // gsap animates object properties, so power lives in an object
-  // mode: 'suck' or 'blow', boost: MAX multiplier (1 = off)
-  const state = { power: 0, mode: 'suck', boost: 1 }
+  // mode: 'suck' or 'blow', boost: MAX multiplier (1 = off), clogged: the hose is jammed (only blowing works)
+  const state = { power: 0, mode: 'suck', boost: 1, clogged: false }
   const power = uniform(0)
   const flowDir = uniform(1)
 
@@ -66,8 +66,16 @@ export const createVacuum = ({ camera, iTime }) => {
   // call after the camera moved (needs its world matrix)
   // aimDistance: how far the thing in the middle of the screen is (from a ray, see physics.castAim)
   const update = (aimDistance) => {
+    // clogged and sucking: no air flows, so no swirl, and the vacuum rattles in your hand
+    const choked = state.clogged && state.mode === 'suck'
     // the swirl looks stronger in MAX mode
-    power.value = state.power * (state.boost > 1 ? 1.6 : 1)
+    power.value = choked ? 0 : state.power * (state.boost > 1 ? 1.6 : 1)
+    model.position.fromArray(VACUUM.model.position)
+    if (choked) {
+      const rattle = VACUUM.rattle * state.power
+      model.position.x += (Math.random() - 0.5) * 2 * rattle
+      model.position.y += (Math.random() - 0.5) * 2 * rattle
+    }
     mesh.getWorldPosition(nozzle.position)
     // aim point: what you look at (the crosshair). The nozzle sits next to your eyes, so pointing it
     // parallel to your view would miss close things: point it at the aim point instead

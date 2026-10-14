@@ -541,6 +541,151 @@ kbd.key
     from { opacity: 0; transform: translate(-50%, 6px); }
 }
 
+/* clogged: under the reticle, in blow-orange. The title shudders like a jammed motor,
+   the right mouse button glows, one pip per item still stuck in the hose (each pops away as it flies out) */
+#clog
+{
+    --clog: #ffa040;
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 48px);
+    transform: translateX(-50%);
+    color: var(--bone);
+    font-family: system-ui, sans-serif;
+    text-align: center;
+    white-space: nowrap;
+    text-shadow: var(--hud-shadow);
+    animation: prompt-in 0.3s ease-out;
+}
+
+#clog.hidden
+{
+    display: none;
+}
+
+.clog-title
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--clog);
+    font-family: var(--font-heading);
+    font-size: 1.7rem;
+    letter-spacing: 0.06em;
+    text-shadow: 0 2px 4px #000, 0 0 24px rgba(255, 160, 64, 0.5);
+    animation: clog-shudder 1.6s infinite;
+}
+
+/* a thin line on each side, like the event titles */
+.clog-title::before,
+.clog-title::after
+{
+    content: '';
+    width: 36px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--clog));
+}
+
+.clog-title::after
+{
+    background: linear-gradient(270deg, transparent, var(--clog));
+}
+
+/* blowing it out: the title calms down */
+#clog.blowing .clog-title
+{
+    animation: none;
+}
+
+@keyframes clog-shudder
+{
+    0%, 70%, 100% { transform: none; }
+    74% { transform: translateX(-3px) rotate(-1.5deg); }
+    78% { transform: translateX(3px) rotate(1.5deg); }
+    82% { transform: translateX(-2px); }
+    86% { transform: translateX(2px); }
+}
+
+.clog-hint
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+}
+
+.clog-mouse
+{
+    width: 15px;
+    filter: drop-shadow(0 1px 2px #000);
+}
+
+.clog-button
+{
+    fill: var(--clog);
+    animation: clog-button 0.8s ease-in-out infinite alternate;
+}
+
+#clog.blowing .clog-button
+{
+    animation: none;
+}
+
+@keyframes clog-button
+{
+    from { opacity: 0.35; }
+}
+
+.clog-pips
+{
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* an item stuck in the hose: a little lump of junk */
+.clog-pip
+{
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    background: var(--clog);
+    box-shadow: 0 0 8px rgba(255, 160, 64, 0.6), 0 1px 2px #000;
+    transform: rotate(45deg) scale(0);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+}
+
+.clog-pip.stuck
+{
+    transform: rotate(45deg);
+    opacity: 1;
+}
+
+/* shot out: it flies up and pops away */
+.clog-pip:not(.stuck)
+{
+    transform: translateY(-14px) rotate(225deg) scale(1.6);
+}
+
+/* clogged and still trying to suck: the label under the reticle says so */
+#mode.clogged
+{
+    color: #d0484e;
+}
+
+/* the tank in the corner: orange and shaking while clogged */
+#hud.clogged .tank
+{
+    color: var(--clog, #ffa040);
+    animation: clog-shudder 1.6s infinite;
+}
+
 /* event titles: "Dusty is out!" in the ghost's own color, a thin line on each side */
 #toast
 {

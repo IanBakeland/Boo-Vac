@@ -128,7 +128,7 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 | W A S D | Walk (Rapier character controller: solid walls and furniture) |
 | Space | Jump |
 | Left mouse (hold) | **Suck** |
-| Right mouse (hold) | **Blow** (pushes props away) |
+| Right mouse (hold) | **Blow** (pushes props away; when clogged, shoots the stuck items back out) |
 | F | **MAX** (student's idea): 3 s of ×4 force that also pulls the heavy dynamic furniture (table, chair, vase), then 8 s recharge. HUD button bottom-right. |
 | Esc | Pause (pointer lock released → pause overlay → click to resume) |
 | M | Mute |
@@ -163,7 +163,8 @@ There is **no stun/flash mechanic** (removed on purpose). The flashlight is alwa
 - **Suction cone:** range `3.0 m`, inner half-angle `15°`, outer half-angle `35°`.
 - **Capture of props:** a `Prop_*` closer than `0.35 m` to the nozzle and with a bounding-box max dimension `< 0.5 m` is sucked in: tween scale to 0 (0.15 s), remove its Rapier body, push it onto `tank` (store the mesh + body description), play "plop".
 - Heavy or large props are pulled but never captured (they slide and rattle).
-- **Tank:** no limit (student's decision: blowing items back out had no purpose, so the tank-full mechanic was removed too). It only counts what you sucked up: HUD *"Sucked up: N"*, and the invoice bills it.
+- **Tank:** no limit. It counts every item you ever sucked up (each billed once, even if it was blown out and sucked up again): HUD *"Sucked up: N"*, and the invoice bills it.
+- **Clogging (student's request):** the hose holds `CLOG.capacity` (5) items; the 5th jams it. While clogged, sucking moves no air (no pull, no capture, no dust, no ghost exposure or tug; motor whines, vacuum rattles, label CLOGGED). Holding RMB shoots the stuck items back out of the nozzle every `CLOG.ejectInterval` s (`props.eject()`: a new Rapier body), and the last one unclogs it. HUD: the `#clog` panel under the reticle (title, right-mouse hint, one pip per stuck item). Code: clog section in `script.js`, numbers in `CLOG` (`config.js`).
 - **Blow (RMB):** force direction reversed (`push` only, no swirl): pushes props (and with MAX, furniture) away.
 
 ### 4.6 HUD and screens (HTML/CSS overlay, no canvas UI)

@@ -20,7 +20,7 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 | W A S D | Walk |
 | Space | Jump |
 | Left mouse (hold) | Suck |
-| Right mouse (hold) | Blow |
+| Right mouse (hold) | Blow (also unclogs the vacuum: suck up 5 things and it jams) |
 | F | MAX: 3 s of extra strong suction/blowing that also moves furniture (recharges) |
 | Esc | Pause |
 | M | Mute |
@@ -53,6 +53,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 
 - **Player:** a kinematic character controller with a capsule, colliding with a trimesh of the apartment, so walls and furniture are solid and you can jump.
 - **Props** (books, cups, candles, pillows, ...): dynamic bodies. Each step the vacuum applies an impulse from one shared formula, `suctionForce()` (pull toward the nozzle + a swirl around its axis, inside a cone, fading with distance). The GPU dust uses the exact same formula in WGSL. Small props that reach the nozzle are removed from the world and counted in the tank; blowing pushes them away.
+- **Clogging:** the 5th item in the hose jams the vacuum: sucking moves no air until you blow. Blowing shoots the stuck items back out of the nozzle one by one, each as a new Rapier body with a velocity along the nozzle direction. A HUD panel shows how many are still stuck.
 - **MAX** (F): ×4 force for 3 s that also moves the heavy furniture (table, chair, vase).
 - **The Librarian** throws books at you with a Rapier impulse.
 

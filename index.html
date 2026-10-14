@@ -29,6 +29,20 @@
     </div>
     <div id="mode" class="hidden"></div>
     <div id="prompt" class="hidden"></div>
+    <!-- clogged: sucking stops working until you blow everything back out (one pip per item stuck in the hose) -->
+    <div id="clog" class="hidden" role="status">
+      <p class="clog-title">Clogged!</p>
+      <p class="clog-hint">
+        hold
+        <svg class="clog-mouse" viewBox="0 0 60 90" aria-hidden="true">
+          <path d="M30 3 C14 3 5 15 5 33 V60 C5 76 16 87 30 87 C44 87 55 76 55 60 V33 C55 15 46 3 30 3 Z" fill="#141a36" stroke="#4a5690" stroke-width="4"/>
+          <path class="clog-button" d="M31.5 4.5 C45 5 53.5 16 53.5 33 V37 H31.5 Z"/>
+          <path d="M30 4 V37" stroke="#4a5690" stroke-width="3"/>
+        </svg>
+        <span class="blow-text">right mouse</span> to blow it out
+      </p>
+      <div class="clog-pips"></div>
+    </div>
     <div id="toast" aria-live="polite"><p class="toast-title"></p><p class="toast-sub"></p></div>
     <div id="tug" class="hidden">
       <div class="tug-head"><span class="tug-name"></span><span class="tug-rounds"></span></div>

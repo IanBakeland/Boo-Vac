@@ -193,11 +193,14 @@ export const createAudio = () => {
   // smooth change of an audio parameter (no clicks)
   const glide = (param, value, time = 0.05) => param.setTargetAtTime(value, context.currentTime, time)
 
-  // every frame: power 0-1, mode 'suck' / 'blow', boost (MAX > 1), tug meter 0-1, tugging: a tug is on
-  const update = ({ power, mode, boost, tug, tugging }) => {
+  // every frame: power 0-1, mode 'suck' / 'blow', boost (MAX > 1), tug meter 0-1, tugging: a tug is on,
+  // clogged: the hose is jammed
+  const update = ({ power, mode, boost, tug, tugging, clogged }) => {
     if (!context) return
     tension = tugging ? tug : -1
-    const boosted = boost > 1 ? AUDIO.maxPitch : 1
+    // clogged and sucking: the motor whines higher and no air hisses through
+    const choked = clogged && mode === 'suck'
+    const boosted = (boost > 1 ? AUDIO.maxPitch : 1) * (choked ? AUDIO.clogPitch : 1)
     // the tug-of-war makes the motor strain: higher pitch as the meter fills
     const strain = 1 + tug * AUDIO.tugPitch
     const pitch = AUDIO.motorPitch[0] + (AUDIO.motorPitch[1] - AUDIO.motorPitch[0]) * power
@@ -213,7 +216,7 @@ export const createAudio = () => {
       // sucking: a high, narrow hiss that rises with the power ("shhhh", breathing in)
       glide(air.frequency, AUDIO.suckAir[0] + (AUDIO.suckAir[1] - AUDIO.suckAir[0]) * power * strain)
       glide(air.Q, 2.5)
-      glide(airGain.gain, power * AUDIO.suckVolume)
+      glide(airGain.gain, choked ? 0 : power * AUDIO.suckVolume)
     }
   }
 
@@ -292,6 +295,21 @@ export const createAudio = () => {
       for (let i = 0; i < 5; i++) {
         setTimeout(() => sweep({ from: 900 - i * 40, to: 650 - i * 40, duration: 0.09, type: 'triangle', volume: 0.18 }), i * 110)
       }
+    },
+    // the hose jams: a dull thunk and the motor choking down
+    clog: () => {
+      burst({ duration: 0.25, frequency: 220, type: 'lowpass', volume: 0.7 })
+      sweep({ from: 500, to: 90, duration: 0.35, type: 'sawtooth', volume: 0.12 })
+    },
+    // a jammed item shoots out of the nozzle: "thwup"
+    eject: () => {
+      burst({ duration: 0.12, frequency: 900, sweepTo: 300, volume: 0.45 })
+      sweep({ from: 150, to: 500, duration: 0.1, volume: 0.2 })
+    },
+    // the last item is out: the air flows again, a rising whoosh
+    unclog: () => {
+      sweep({ from: 300, to: 1200, duration: 0.25, type: 'triangle', volume: 0.15 })
+      burst({ duration: 0.4, frequency: 600, sweepTo: 2500, volume: 0.25 })
     },
     // the Librarian throws a book
     whoosh: () => burst({ duration: 0.35, frequency: 400, sweepTo: 2000, volume: 0.3 }),

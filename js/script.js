@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import { uniform } from 'three/tsl'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
 
-import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, MAX, DUST, SUCTION, TUG, GHOSTS, THROW, INVOICE, HUD, OUTRO } from './config.js'
+import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, CLOG, MAX, DUST, SUCTION, TUG, GHOSTS, THROW, INVOICE, HUD, OUTRO } from './config.js'
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createAudio } from './audio.js'
 import { createIntro } from './intro.js'
@@ -46,6 +46,8 @@ const $toast = document.querySelector('#toast')
 const $vignette = document.querySelector('#vignette')
 const $fps = document.querySelector('#fps')
 const $curtain = document.querySelector('#curtain')
+const $clog = document.querySelector('#clog')
+const $clogPips = $clog.querySelector('.clog-pips')
 
 // sound (starts on the first click, browsers don't allow sound before that)
 const audio = createAudio()
@@ -219,6 +221,9 @@ const setGameState = (next) => {
   $max.classList.toggle('hidden', !playing)
   $crosshair.classList.toggle('hidden', !playing)
   $mode.classList.toggle('hidden', !playing)
+  // the clog panel: hidden outside play, updateHud shows it again (if still clogged) when you resume
+  if (!playing) $clog.classList.add('hidden')
+  shownClog = ''
   switch (next) {
     case 'playing':
       // the clock starts with the first click on "Start shift"
@@ -347,6 +352,7 @@ let shownVignette = ''
 let shownMax = ''
 let shownPrompt = ''
 let shownExpose = ''
+let shownClog = ''
 // exposure: the ring shows while a hidden ghost's exposure is rising (you're sucking at its spot)
 let lastExposures = GHOSTS.map(() => 0)
 let exposeShownFor = 0
@@ -363,17 +369,28 @@ const updateHud = (dt) => {
     $hud.style.setProperty('--tank', Math.min(shownTank / HUD.tankIconFull, 1))
   }
   // SUCK / BLOW under the reticle (and the reticle in that color) while the motor runs
+  // (clogged and trying to suck: CLOGGED instead)
   const running = vacuum.state.power > 0.05
-  const modeState = running ? vacuum.state.mode : ''
+  const choked = clog.jammed && vacuum.state.mode === 'suck'
+  const modeState = running ? (choked ? 'clogged' : vacuum.state.mode) : ''
   if (modeState !== shownMode) {
     shownMode = modeState
     $mode.textContent = modeState.toUpperCase()
-    $mode.classList.remove('suck', 'blow')
+    $mode.classList.remove('suck', 'blow', 'clogged')
     $crosshair.classList.remove('suck', 'blow')
     if (modeState) {
       $mode.classList.add(modeState)
-      $crosshair.classList.add(modeState)
+      if (!choked) $crosshair.classList.add(modeState)
     }
+  }
+  // clogged: the panel under the reticle, one pip per item still stuck in the hose (they pop away as they fly out)
+  const clogState = clog.jammed ? `${clog.items.length}-${vacuum.state.mode === 'blow'}` : 'off'
+  if (clogState !== shownClog) {
+    shownClog = clogState
+    $clog.classList.toggle('hidden', !clog.jammed)
+    $clog.classList.toggle('blowing', clog.jammed && vacuum.state.mode === 'blow')
+    $hud.classList.toggle('clogged', clog.jammed)
+    ;[...$clogPips.children].forEach(($pip, i) => $pip.classList.toggle('stuck', i < clog.items.length))
   }
   // exposure ring: the highest exposure that rose this frame (or less than a moment ago)
   let rising = -1
@@ -420,7 +437,7 @@ const updateHud = (dt) => {
     $vignette.style.opacity = vignette
   }
   // a hint when it matters: a ghost is out and in view, but you're not pulling it yet
-  const promptState = !tugging && ghosts.some((g) => g.isOut() && g.getVisibility() > HUD.promptVisibility) ? 'out' : ''
+  const promptState = !tugging && !clog.jammed && ghosts.some((g) => g.isOut() && g.getVisibility() > HUD.promptVisibility) ? 'out' : ''
   if (promptState !== shownPrompt) {
     shownPrompt = promptState
     $prompt.classList.toggle('hidden', !promptState)
@@ -468,6 +485,57 @@ const updateMax = (dt) => {
     maxCharge = Math.min(1, maxCharge + dt / MAX.recharge)
   }
   vacuum.state.boost = maxActive ? MAX.multiplier : 1
+}
+
+// --- clogging: CLOG.capacity items in the hose and the vacuum jams ---
+// Sucking does nothing then (no air flows); blowing shoots the items back out one by one
+const clog = { items: [], jammed: false, timer: 0 }
+// one pip per place in the hose, for the clog panel
+for (let i = 0; i < CLOG.capacity; i++) {
+  const $pip = document.createElement('span')
+  $pip.className = 'clog-pip'
+  $clogPips.append($pip)
+}
+const addToHose = (caught) => {
+  clog.items.push(...caught)
+  if (!clog.jammed && clog.items.length >= CLOG.capacity) {
+    clog.jammed = true
+    vacuum.state.clogged = true
+    audio.clog()
+    $clog.animate([{ transform: 'translateX(-50%) scale(1.25)', filter: 'brightness(2)' }, { transform: 'translateX(-50%) scale(1)', filter: 'brightness(1)' }], { duration: 400, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' })
+  }
+}
+const ejectSpawn = new THREE.Vector3()
+const ejectVelocity = new THREE.Vector3()
+// one item flies out of the nozzle (a bit closer to you when a wall is in front of the nozzle)
+const ejectOne = (aimDistance) => {
+  const prop = clog.items.pop()
+  const toNozzle = camera.position.distanceTo(vacuum.nozzle.position)
+  const fraction = THREE.MathUtils.clamp((aimDistance - 0.3) / toNozzle, CLOG.ejectMinFraction, 1)
+  ejectSpawn.lerpVectors(camera.position, vacuum.nozzle.position, fraction)
+  ejectVelocity.copy(vacuum.nozzle.direction).multiplyScalar(CLOG.ejectSpeed)
+  ejectVelocity.y += CLOG.ejectLift
+  props.eject(prop, ejectSpawn, ejectVelocity)
+  audio.eject()
+  // the last one: the air flows again
+  if (clog.items.length === 0) {
+    clog.jammed = false
+    vacuum.state.clogged = false
+    audio.unclog()
+    showToast('Unclogged!', 'Mind what you suck up')
+  }
+}
+const updateClog = (dt, aimDistance) => {
+  const { power, mode } = vacuum.state
+  if (!clog.jammed || mode !== 'blow' || power < CLOG.ejectMinPower) {
+    clog.timer = 0
+    return
+  }
+  clog.timer -= dt
+  if (clog.timer <= 0) {
+    clog.timer = CLOG.ejectInterval
+    ejectOne(aimDistance)
+  }
 }
 
 // --- input ---
@@ -642,11 +710,15 @@ const draw = (timestamp) => {
   camera.updateMatrixWorld()
   // what's in the middle of the screen? the suction aims there
   camera.getWorldDirection(viewDirection)
-  vacuum.update(physics.castAim(camera.position, viewDirection, SUCTION.range))
+  const aimDistance = physics.castAim(camera.position, viewDirection, SUCTION.range)
+  vacuum.update(aimDistance)
   flashlight.update()
 
   updateMax(dt)
   const { power, mode, boost } = vacuum.state
+  // clogged: sucking moves no air (nothing gets pulled), only blowing works
+  const airPower = clog.jammed && mode === 'suck' ? 0 : power
+  updateClog(dt, aimDistance)
   // the ghosts: animation, visibility in the beam, smoke stretched toward the nozzle while sucking
   const mouseDX = recentMouseDX()
   ghosts.forEach((ghost) => ghost.update(dt, {
@@ -655,15 +727,16 @@ const draw = (timestamp) => {
     lampDir: flashlight.uniforms.lampDir.value,
     nozzle: vacuum.nozzle,
     aimPoint: vacuum.aimPoint,
-    power: mode === 'suck' ? power : 0,
+    power: mode === 'suck' ? airPower : 0,
     mouseDX
   }))
 
   // physics, with the suction force applied before every step
-  physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, power, mode, stepDt, boost))
-  // sucking at (almost) full power: small props at the nozzle go into the tank
-  if (mode === 'suck' && power >= TANK.captureMinPower) {
-    const caught = props.capture(vacuum.nozzle)
+  physics.step(dt, (stepDt) => props.applySuction(vacuum.nozzle, airPower, mode, stepDt, boost))
+  // sucking at (almost) full power: small props at the nozzle go into the hose (until it's full: clogged)
+  if (mode === 'suck' && airPower >= TANK.captureMinPower) {
+    const caught = props.capture(vacuum.nozzle, CLOG.capacity - clog.items.length)
+    addToHose(caught)
     // clutter near the hiding spot exposes the ghost
     caught.forEach((prop) => ghosts.forEach((ghost) => ghost.onPropCaptured(prop)))
     if (caught.length > 0) audio.plop()
@@ -672,9 +745,9 @@ const draw = (timestamp) => {
   if (DEBUG) physics.updateDebugLines()
   // the vacuum sound follows the power, the mode, MAX and the tug meter (the tug may have just ended)
   fighting = tuggingGhost()
-  audio.update({ power, mode, boost, tug: fighting?.tug.meter ?? 0, tugging: fighting !== null })
+  audio.update({ power, mode, boost, tug: fighting?.tug.meter ?? 0, tugging: fighting !== null, clogged: clog.jammed })
   // dust: same suction as the props (MAX makes it stronger too)
-  dust?.update(renderer, dt, power * boost, mode)
+  dust?.update(renderer, dt, airPower * boost, mode)
   postfx?.update(fighting !== null, fighting?.tug.meter ?? 0)
   updateHud(dt)
   if (DEBUG) updateFps(dt)
