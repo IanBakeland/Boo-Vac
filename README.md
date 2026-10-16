@@ -70,7 +70,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 
 ### The level (own Blender model + baking)
 
-`public/models/house.glb`, modelled in Blender (`blender/house.blend`, built with the script `blender/build_house.py`; renders in `blender/preview-*.png`). An old house of 12 × 10 m with seven rooms: the hall where you start, a pantry, a study, the living room, the library, a corridor between them and a long gallery at the back. Each room has its own wallpaper, wainscoting, floor, fake boarded-up windows and wall decoration; the hall has a portrait of the "Employee of the month", Ian Bakeland.
+`public/models/house.glb`, modelled in Blender (`blender/house.blend`; a render in `blender/preview-hall.png`). An old house of 12 × 10 m with seven rooms: the hall where you start, a pantry, a study, the living room, the library, a corridor between them and a long gallery at the back. Each room has its own wallpaper, wainscoting, floor, fake boarded-up windows and wall decoration; the hall has a portrait of the "Employee of the month", Ian Bakeland.
 
 - **Baking:** the whole house is lit evenly in Blender and baked (Cycles, Combined) into one 4096 × 4096 texture, `public/textures/baked.jpg`, on one shared UV map.
 - **In the game** (`js/objects/room.js`): loaded like the course's bake project (`TextureLoader`, `flipY = false`, `colorSpace = SRGBColorSpace`), and the bake is the albedo of the room flashlight shader: the house is dark blue moonlight until your flashlight hits it.
@@ -102,7 +102,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - Own shaders: suction cone, flashlight beam, room flashlight lighting, compute dust particles
 - Additional WebGPU library: [TypeGPU](https://docs.swmansion.com/TypeGPU/) (`@typegpu/three` + `@typegpu/noise`): the dust's glitter in the flashlight beam is a TypeGPU function with a Perlin-noise twinkle
 - Physics: Rapier (player controller, props sucked in a spiral, captured, blown out, furniture moved by MAX, books thrown by a ghost)
-- Own Blender model + baking: the level, a house with seven rooms and corridors (`public/models/house.glb`), modelled in Blender (`blender/house.blend`, built with the script `blender/build_house.py`) and baked into one texture (`public/textures/baked.jpg`, Cycles, Combined). Loaded like the course's bake project (`flipY = false`, sRGB) and used as the albedo of the room flashlight shader, so it stays dark until your beam hits it. A portrait in the hall says who made it.
+- Own Blender model + baking: the level, a house with seven rooms and corridors (`public/models/house.glb`), modelled in Blender (`blender/house.blend`) and baked into one texture (`public/textures/baked.jpg`, Cycles, Combined). Loaded like the course's bake project (`flipY = false`, sRGB) and used as the albedo of the room flashlight shader, so it stays dark until your beam hits it. A portrait in the hall says who made it.
 - Furniture and props from Poly Pizza, laid out in code
 - Blender animation: three animated ghost models (Ghost, Hywirl, Alien), each with its own game-state → clip mapping (`MODELS.ghosts` in `js/config.js`), played with an `AnimationMixer`
 - Intro: a voicemail from the boss on your phone; his voice is the browser's speech synthesis (Web Speech API) with a transcript
