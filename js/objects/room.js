@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
-import { ROOM, MODELS, LAYOUT } from '../config.js'
+import { MODELS, LAYOUT } from '../config.js'
 
 const loader = new GLTFLoader()
 
@@ -24,23 +24,21 @@ export const placeModel = (model, { scale, position, rotationY = 0 }) => {
 export const createRoom = async () => {
   const mesh = new THREE.Group()
 
-  // the downloaded apartment: scaled to real size, floor at y = 0 (numbers in MODELS.apartment)
-  const apartmentGltf = await loader.loadAsync(MODELS.apartment.file)
-  const shell = apartmentGltf.scene
-  shell.scale.fromArray(MODELS.apartment.scale)
-  shell.position.fromArray(MODELS.apartment.position)
+  // the house (Blender, real size, centered): walls, floors, ceilings and the signature,
+  // all lit by ONE baked texture (same steps as the course's bake project)
+  const bakedTexture = new THREE.TextureLoader().load(MODELS.house.baked)
+  bakedTexture.flipY = false
+  bakedTexture.colorSpace = THREE.SRGBColorSpace
+  // one material for every mesh of the house: the bake is its color
+  // (flashlight.lightUp turns it into the flashlight shader, with the baked texture as albedo)
+  const bakedMaterial = new THREE.MeshStandardMaterial({ map: bakedTexture })
+  const houseGltf = await loader.loadAsync(MODELS.house.file)
+  const shell = houseGltf.scene
+  shell.traverse((child) => {
+    if (child.isMesh) child.material = bakedMaterial
+  })
   shell.name = 'Room_Shell'
   mesh.add(shell)
-
-  // the apartment has no ceiling: one big plane facing down over all of it
-  const ceiling = new THREE.Mesh(
-    new THREE.PlaneGeometry(ROOM.width, ROOM.depth),
-    new THREE.MeshStandardMaterial({ color: LAYOUT.ceilingColor })
-  )
-  ceiling.rotation.x = Math.PI / 2
-  ceiling.position.y = ROOM.height
-  ceiling.name = 'Room_Ceiling'
-  mesh.add(ceiling)
 
   // furniture: load all files at the same time, then place each one
   const gltfs = await Promise.all(
@@ -62,5 +60,5 @@ export const createRoom = async () => {
     if (item.name.startsWith('Hide_')) hidingSpots.push(piece)
   })
 
-  return { mesh, shell, ceiling, furniture, hidingSpots }
+  return { mesh, shell, furniture, hidingSpots }
 }

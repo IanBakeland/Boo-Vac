@@ -90,10 +90,9 @@ await renderer.init()
 // --- the world ---
 const room = await createRoom()
 scene.add(room.mesh)
-// physics: the apartment as triangle meshes, our furniture as boxes
+// physics: the house (walls, floors, ceilings) as triangle meshes, our furniture as boxes
 const physics = await createPhysics()
 physics.addTrimesh(room.shell)
-physics.addTrimesh(room.ceiling)
 // static furniture gets a fixed box; dynamic furniture (table, chair, vase) is added with the props
 room.furniture.forEach((piece) => { if (!piece.userData.layout.dynamic) physics.addBox(piece) })
 

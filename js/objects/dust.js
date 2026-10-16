@@ -29,14 +29,14 @@ export const createDust = ({ iTime, nozzle, lamp }) => {
   const nozzlePos = uniform(nozzle.position)
   const nozzleDir = uniform(nozzle.direction)
 
-  // a random spot in the apartment; `s` = seed (every speck and frame gets other random numbers)
+  // a random spot in the house; `s` = seed (every speck and frame gets other random numbers)
   const randomSpot = (s) => vec3(
     mix(-ROOM.width / 2, ROOM.width / 2, hash(s)),
     mix(DUST.minY, ROOM.height - 0.05, hash(s.add(2e6))),
     mix(-ROOM.depth / 2, ROOM.depth / 2, hash(s.add(4e6)))
   )
 
-  // run once: spread the dust through the apartment
+  // run once: spread the dust through the house
   const init = Fn(() => {
     positions.element(instanceIndex).assign(randomSpot(float(instanceIndex)))
   })().compute(count)
@@ -64,7 +64,7 @@ export const createDust = ({ iTime, nozzle, lamp }) => {
     velocity.assign(newVelocity)
     position.addAssign(newVelocity.mul(dt))
 
-    // sucked into the nozzle, or out of the apartment: respawn somewhere random
+    // sucked into the nozzle, or out of the house: respawn somewhere random
     const sucked = position.distance(nozzlePos).lessThan(DUST.respawnDistance).and(flowDir.greaterThan(0)).and(power.greaterThan(0.1))
     const outside = position.y.lessThan(0).or(position.y.greaterThan(ROOM.height))
       .or(position.x.abs().greaterThan(ROOM.width / 2)).or(position.z.abs().greaterThan(ROOM.depth / 2))

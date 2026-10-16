@@ -29,7 +29,7 @@ Best on desktop Chrome / Edge / Safari 26.
 
 ## The game
 
-You are the night-shift cleaner of Dust & Ghost Cleaning Co. Three ghosts hide in the clutter of a dark apartment. Search with your flashlight (ghosts are only visible in its beam), vacuum the clutter around a trembling hiding spot until the ghost pops out, then win a tug-of-war by moving the mouse against the ghost's pull. Catch all three (in any order) and you get the invoice.
+You are the night-shift cleaner of Dust & Ghost Cleaning Co. Three ghosts hide in the clutter of a dark old house. Search with your flashlight (ghosts are only visible in its beam), vacuum the clutter around a trembling hiding spot until the ghost pops out, then win a tug-of-war by moving the mouse against the ghost's pull. Catch all three (in any order) and you get the invoice.
 
 ## How it works
 
@@ -44,14 +44,14 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 
 - **Suction cone** (`js/shaders/suction/`): swirling air in front of the nozzle, procedural noise scrolled and twisted along a cone; blue-white inward when sucking, orange outward when blowing. Everything is multiplied by the vacuum's `power`.
 - **Flashlight beam** (`js/shaders/beam/`): a faint "volumetric" cone so the light is visible in the dusty air.
-- **Room flashlight lighting** (`js/shaders/flashlight/`): the apartment and furniture are lit by our own spotlight math (`albedo × (moonlight ambient + lamp × cone × facing × distance falloff)`), so the room is dark blue and the flashlight reveals the colors.
+- **Room flashlight lighting** (`js/shaders/flashlight/`): the house and furniture are lit by our own spotlight math (`albedo × (moonlight ambient + lamp × cone × facing × distance falloff)`), so the room is dark blue and the flashlight reveals the colors.
 - **Dust particles** (`js/shaders/dust/update.wgsl`, `js/objects/dust.js`): a compute shader (TSL storage buffers) moves the dust specks with the same suction formula as the physics (pull + tangent swirl + drag + per-speck speed limit). They glitter in the beam and spiral into the nozzle. The glitter itself is written with **TypeGPU**, an additional WebGPU library: a JavaScript function marked `'use gpu'` (turned into WGSL by `unplugin-typegpu`) that reads Three.js values with `fromTSL`, adds a 3D Perlin-noise twinkle from `@typegpu/noise`, and is plugged in as the dust material's color with `toTSL`.
 
 ### Physics (Rapier)
 
 `js/physics.js`, a [Rapier](https://rapier.rs) world (WebAssembly) stepped at a fixed 60 Hz.
 
-- **Player:** a kinematic character controller with a capsule, colliding with a trimesh of the apartment, so walls and furniture are solid and you can jump.
+- **Player:** a kinematic character controller with a capsule, colliding with a trimesh of the house, so walls and furniture are solid and you can jump.
 - **Props** (books, cups, candles, pillows, ...): dynamic bodies. Each step the vacuum applies an impulse from one shared formula, `suctionForce()` (pull toward the nozzle + a swirl around its axis, inside a cone, fading with distance). The GPU dust uses the exact same formula in WGSL. Small props that reach the nozzle are removed from the world and counted in the tank; blowing pushes them away.
 - **Clogging:** the 5th item in the hose jams the vacuum: sucking moves no air until you blow. Blowing shoots the stuck items back out of the nozzle one by one, each as a new Rapier body with a velocity along the nozzle direction. A HUD panel shows how many are still stuck.
 - **MAX** (F): ×4 force for 3 s that also moves the heavy furniture (table, chair, vase).
@@ -72,7 +72,8 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - Own shaders: suction cone, flashlight beam, room flashlight lighting, compute dust particles
 - Additional WebGPU library: [TypeGPU](https://docs.swmansion.com/TypeGPU/) (`@typegpu/three` + `@typegpu/noise`): the dust's glitter in the flashlight beam is a TypeGPU function with a Perlin-noise twinkle
 - Physics: Rapier (player controller, props sucked in a spiral, captured, blown out, furniture moved by MAX, books thrown by a ghost)
-- Room and furniture from Poly Pizza, laid out in code
+- Own Blender model + baking: the level, a house with seven rooms and corridors (`public/models/house.glb`), modelled in Blender (`blender/house.blend`, built with the script `blender/build_house.py`) and baked into one texture (`public/textures/baked.jpg`, Cycles, Combined). Loaded like the course's bake project (`flipY = false`, sRGB) and used as the albedo of the room flashlight shader, so it stays dark until your beam hits it. A portrait in the hall says who made it.
+- Furniture and props from Poly Pizza, laid out in code
 - Blender animation: ghost model clips driven per game state with `AnimationMixer`
 - Intro: a voicemail from the boss on your phone; his voice is the browser's speech synthesis (Web Speech API) with a transcript
 - Sound and music: generated live with the Web Audio API (motor, air, plop, ghost moans, a creepy music box with a drone and a heartbeat in the tug), no sound files
@@ -95,7 +96,7 @@ npm run dev
 | IM Fell English SC (heading font) | Igino Marini | SIL OFL 1.1 | https://fonts.google.com/specimen/IM+Fell+English+SC |
 | Ghost (animated) | Quaternius | CC0 | https://poly.pizza/m/Iip30bDHmu |
 | Vacuum Cleaner | Zoe XR | CC BY | https://poly.pizza/m/1_kdZRnuCo8 |
-| Apartment 2 (the level) | Gabriele Romagnoli | CC BY 3.0 | https://poly.pizza/m/dtgO5dwwtkk |
+| House (the level, baked) | Ian Bakeland (Blender) | own work | `blender/house.blend` |
 | Bookcase with Books | Quaternius | CC0 | https://poly.pizza/m/tACDGJ4CGW |
 | Grandfathers Clock | CreativeTrio | CC0 | https://poly.pizza/m/09YKIkFZnA |
 | Chair | Quaternius | CC0 | https://poly.pizza/m/zMmKNm8w4a |
