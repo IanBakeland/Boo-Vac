@@ -74,7 +74,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - Physics: Rapier (player controller, props sucked in a spiral, captured, blown out, furniture moved by MAX, books thrown by a ghost)
 - Own Blender model + baking: the level, a house with seven rooms and corridors (`public/models/house.glb`), modelled in Blender (`blender/house.blend`, built with the script `blender/build_house.py`) and baked into one texture (`public/textures/baked.jpg`, Cycles, Combined). Loaded like the course's bake project (`flipY = false`, sRGB) and used as the albedo of the room flashlight shader, so it stays dark until your beam hits it. A portrait in the hall says who made it.
 - Furniture and props from Poly Pizza, laid out in code
-- Blender animation: ghost model clips driven per game state with `AnimationMixer`
+- Blender animation: three animated ghost models (Ghost, Hywirl, Alien), each with its own game-state → clip mapping (`MODELS.ghosts` in `js/config.js`), played with an `AnimationMixer`
 - Intro: a voicemail from the boss on your phone; his voice is the browser's speech synthesis (Web Speech API) with a transcript
 - Sound and music: generated live with the Web Audio API (motor, air, plop, ghost moans, a creepy music box with a drone and a heartbeat in the tug), no sound files
 - Mechanic inspired by Luigi's Mansion. No Nintendo assets are used.
@@ -94,7 +94,9 @@ npm run dev
 | VCR distortion (shader) | ryk | CC BY-NC-SA 4.0 | https://www.shadertoy.com/view/ldjGzV |
 | Grenze Gotisch (title font) | Omnibus-Type | SIL OFL 1.1 | https://fonts.google.com/specimen/Grenze+Gotisch |
 | IM Fell English SC (heading font) | Igino Marini | SIL OFL 1.1 | https://fonts.google.com/specimen/IM+Fell+English+SC |
-| Ghost (animated) | Quaternius | CC0 | https://poly.pizza/m/Iip30bDHmu |
+| Ghost (animated, Dusty) | Quaternius | CC0 | https://poly.pizza/m/Iip30bDHmu |
+| Hywirl (animated, The Librarian) | Quaternius | CC0 | https://poly.pizza/m/zjr7CmWGER |
+| Alien (animated, Granny Clock) | Quaternius | CC0 | https://poly.pizza/m/sUTLXji0aL |
 | Vacuum Cleaner | Zoe XR | CC BY | https://poly.pizza/m/1_kdZRnuCo8 |
 | House (the level, baked) | Ian Bakeland (Blender) | own work | `blender/house.blend` |
 | Bookcase with Books | Quaternius | CC0 | https://poly.pizza/m/tACDGJ4CGW |

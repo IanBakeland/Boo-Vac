@@ -25,7 +25,24 @@ export const MODELS = {
   // the level: an empty house modelled in Blender at real size (blender/house.blend), already centered,
   // lit by one baked texture (the course's bake workflow)
   house: { file: 'models/house.glb', baked: 'textures/baked.jpg' },
-  ghost: { file: 'models/ghost.glb', scale: 0.8 / 3.13 },   // 3.13 m tall in the file -> 0.8 m
+  // the ghost models (all Quaternius, animated in Blender), all 0.8 m tall.
+  // clips: game state -> animation clip in that file. lift: m up, so the body's middle sits at ETHER.centerHeight
+  ghosts: {
+    ghost: {
+      file: 'models/ghost.glb', scale: 0.8 / 3.13, lift: 0, // 3.13 m tall in the file
+      clips: { emerged: 'CharacterArmature|Flying_Idle', tug: 'CharacterArmature|HitReact', escape: 'CharacterArmature|Fast_Flying', giggle: 'CharacterArmature|Yes', captured: 'CharacterArmature|Death' }
+    },
+    hywirl: {
+      file: 'models/hywirl.glb', scale: 0.8 / 2.83, lift: 0.06, // 2.83 m tall, its feet at the origin
+      // same clip names as the ghost (same rig)
+      clips: { emerged: 'CharacterArmature|Flying_Idle', tug: 'CharacterArmature|HitReact', escape: 'CharacterArmature|Fast_Flying', giggle: 'CharacterArmature|Yes', captured: 'CharacterArmature|Death' }
+    },
+    alien: {
+      file: 'models/alien.glb', scale: 0.8 / 3.28, lift: 0.05, // 3.28 m tall, its feet at the origin
+      // its own clips (Quaternius spells it "HitRecieve")
+      clips: { emerged: 'CharacterArmature|Idle', tug: 'CharacterArmature|HitRecieve', escape: 'CharacterArmature|Walk', giggle: 'CharacterArmature|Yes', captured: 'CharacterArmature|Death' }
+    }
+  },
   vacuum: { file: 'models/vacuum.glb', scale: 0.75 / 2.33 }, // 2.33 m -> 0.75 m
   furniture: {
     bookcase: { file: 'models/furniture/bookcase.glb', scale: 2.0 / 3.37 },     // 2 m high
@@ -314,11 +331,12 @@ export const GHOST = {
 }
 
 // The three ghosts. They all hide at the same time; catch them in any order.
-// tint: Ether color (sRGB), hideSpot: where it hides first,
+// model: which ghost model (MODELS.ghosts), tint: Ether color (sRGB), hideSpot: where it hides first,
 // tug: its own tug-of-war numbers (they override TUG: its personality)
 export const GHOSTS = [
   {
     name: 'Dusty', // the tutorial: slow and weak, giggles when it gets away
+    model: 'ghost',
     hideSpot: 'Hide_Vase',
     tint: [0.8, 0.88, 1.0],
     giggle: true,
@@ -326,6 +344,7 @@ export const GHOSTS = [
   },
   {
     name: 'The Librarian', // throws books at you during the tug
+    model: 'hywirl',
     hideSpot: 'Hide_Bookshelf',
     tint: [0.55, 1.0, 0.6],
     throwInterval: 2,
@@ -333,6 +352,7 @@ export const GHOSTS = [
   },
   {
     name: 'Granny Clock', // the boss: fast, strong, and you have to win twice
+    model: 'alien',
     hideSpot: 'Hide_Clock',
     tint: [0.85, 0.6, 1.0],
     rounds: 2,

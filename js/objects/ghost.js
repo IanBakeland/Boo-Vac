@@ -7,14 +7,6 @@ import { MODELS, GHOST, ETHER, FLASHLIGHT, TUG } from '../config.js'
 import { suctionStrength } from '../physics.js'
 import etherShader from '../shaders/ether/fragment.wgsl?raw'
 
-// game state -> animation clip in ghost.glb (made in Blender by Quaternius)
-const CLIPS = {
-  emerged: 'CharacterArmature|Flying_Idle',
-  tug: 'CharacterArmature|HitReact',
-  escape: 'CharacterArmature|Fast_Flying',
-  giggle: 'CharacterArmature|Yes',
-  captured: 'CharacterArmature|Death'
-}
 // these play once and then hold their last pose
 const PLAY_ONCE = ['captured', 'giggle']
 
@@ -24,14 +16,17 @@ const PLAY_ONCE = ['captured', 'giggle']
 // onCapture / onEscape: called when this ghost is sucked up / gets away
 // onThrow(center): the Librarian throws a book from near `center`, onEmerge: it pops out of its spot
 export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSpots, canStartTug, onCapture, onEscape, onThrow, onEmerge }) => {
-  const gltf = await new GLTFLoader().loadAsync(MODELS.ghost.file)
+  // this ghost's model, its size and which animation clip plays in which game state (MODELS.ghosts in config.js)
+  const modelConfig = MODELS.ghosts[config.model]
+  const gltf = await new GLTFLoader().loadAsync(modelConfig.file)
   // its tug-of-war numbers: TUG + its own personality overrides
   const tugConfig = { ...TUG, ...config.tug }
 
   // root: position + rotation of the ghost; the model inside is scaled to real size
   const mesh = new THREE.Group()
   const model = gltf.scene
-  model.scale.setScalar(MODELS.ghost.scale)
+  model.scale.setScalar(modelConfig.scale)
+  model.position.y = modelConfig.lift
   mesh.add(model)
   // the model fades with the visibility: its materials must be transparent
   const modelMaterials = []
@@ -78,7 +73,7 @@ export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSp
   // the mixer plays the Blender animation clips on this model
   const mixer = new THREE.AnimationMixer(model)
   const actions = {}
-  Object.entries(CLIPS).forEach(([state, clipName]) => {
+  Object.entries(modelConfig.clips).forEach(([state, clipName]) => {
     const clip = THREE.AnimationClip.findByName(gltf.animations, clipName)
     const action = mixer.clipAction(clip)
     if (PLAY_ONCE.includes(state)) {
@@ -368,7 +363,7 @@ export const createGhost = async ({ iTime, config, hidingSpots, castAim, takenSp
       aura.scale.setScalar(1)
       mixer.update(dt)
       // gentle floating up and down (on the model, so it doesn't fight the emerge tween on the root)
-      model.position.y = Math.sin(time * GHOST.hoverSpeed) * GHOST.hoverAmount
+      model.position.y = modelConfig.lift + Math.sin(time * GHOST.hoverSpeed) * GHOST.hoverAmount
     }
     if (phase === 'captured') {
       // spiral into the nozzle: from where the tug ended to the nozzle (it moves with you),
