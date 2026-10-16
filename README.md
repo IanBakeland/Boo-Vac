@@ -11,6 +11,21 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 
 **Additional WebGPU library:** [TypeGPU](https://docs.swmansion.com/TypeGPU/) by Software Mansion (dust glitter, see below)
 
+**Level:** own Blender model, baked into one texture (`blender/house.blend`, see below)
+
+## Assignment checklist
+
+| Asked | Where |
+|---|---|
+| Shadertoy fragment shader ported to WebGPU (WGSL) in Three.js `WebGPURenderer` | Ether → the ghost aura (`js/shaders/ether/`), plus VCR distortion → the VHS filter (`js/shaders/vhs/`) |
+| Shader responds to user interaction | The aura only shows in your flashlight beam, smears toward the nozzle while you suck, and stretches with the tug-of-war; the VHS filter gets worse the harder you pull |
+| Interaction beyond looking around | Walk, jump, suck, blow, MAX, unclog the vacuum, tug-of-war against the ghost with the mouse |
+| Physics | Rapier: player controller, props sucked in a spiral, captured, blown back out, furniture moved by MAX, books thrown by a ghost |
+| Multiple shaders | 2 Shadertoy ports + suction cone, flashlight beam, room flashlight lighting, compute dust |
+| Additional WebGPU library | TypeGPU: the dust's glitter |
+| Own Blender model + baking | The house (the whole level), baked in Cycles into `public/textures/baked.jpg` |
+| Controlling Blender animations | Three animated ghost models, their clips driven per game state with an `AnimationMixer` |
+
 ## How to play
 
 | Input | Action |
@@ -31,6 +46,12 @@ Best on desktop Chrome / Edge / Safari 26.
 
 You are the night-shift cleaner of Dust & Ghost Cleaning Co. Three ghosts hide in the clutter of a dark old house. Search with your flashlight (ghosts are only visible in its beam), vacuum the clutter around a trembling hiding spot until the ghost pops out, then win a tug-of-war by moving the mouse against the ghost's pull. Catch all three (in any order) and you get the invoice.
 
+| Ghost | Model | Hides in | Personality |
+|---|---|---|---|
+| Dusty | Ghost | the vase on the living room table | slow and weak, giggles when it gets away |
+| The Librarian | Hywirl | the bookcase in the library | throws books at you during the tug |
+| Granny Clock | Alien | the grandfather clock at the end of the gallery | the boss: fast, and you have to win twice |
+
 ## How it works
 
 ### Shadertoy ports
@@ -47,6 +68,15 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - **Room flashlight lighting** (`js/shaders/flashlight/`): the house and furniture are lit by our own spotlight math (`albedo × (moonlight ambient + lamp × cone × facing × distance falloff)`), so the room is dark blue and the flashlight reveals the colors.
 - **Dust particles** (`js/shaders/dust/update.wgsl`, `js/objects/dust.js`): a compute shader (TSL storage buffers) moves the dust specks with the same suction formula as the physics (pull + tangent swirl + drag + per-speck speed limit). They glitter in the beam and spiral into the nozzle. The glitter itself is written with **TypeGPU**, an additional WebGPU library: a JavaScript function marked `'use gpu'` (turned into WGSL by `unplugin-typegpu`) that reads Three.js values with `fromTSL`, adds a 3D Perlin-noise twinkle from `@typegpu/noise`, and is plugged in as the dust material's color with `toTSL`.
 
+### The level (own Blender model + baking)
+
+`public/models/house.glb`, modelled in Blender (`blender/house.blend`, built with the script `blender/build_house.py`; renders in `blender/preview-*.png`). An old house of 12 × 10 m with seven rooms: the hall where you start, a pantry, a study, the living room, the library, a corridor between them and a long gallery at the back. Each room has its own wallpaper, wainscoting, floor, fake boarded-up windows and wall decoration; the hall has a portrait of the "Employee of the month", Ian Bakeland.
+
+- **Baking:** the whole house is lit evenly in Blender and baked (Cycles, Combined) into one 4096 × 4096 texture, `public/textures/baked.jpg`, on one shared UV map.
+- **In the game** (`js/objects/room.js`): loaded like the course's bake project (`TextureLoader`, `flipY = false`, `colorSpace = SRGBColorSpace`), and the bake is the albedo of the room flashlight shader: the house is dark blue moonlight until your flashlight hits it.
+- **The house is empty on purpose:** all furniture and props are placed in code (`LAYOUT` in `js/config.js`), so they can be physics bodies and hiding spots.
+- **Collisions:** the house meshes are one Rapier trimesh collider, so the walls, floors and ceilings are solid.
+
 ### Physics (Rapier)
 
 `js/physics.js`, a [Rapier](https://rapier.rs) world (WebAssembly) stepped at a fixed 60 Hz.
@@ -59,8 +89,8 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 
 ### Game logic
 
-- `js/script.js`: `init()` + `draw()` (with `renderer.setAnimationLoop`), input, and a plain state machine: start → playing ⇄ paused → ending. Per ghost: hidden (trembling) → emerged → tug → escaped or captured.
-- `js/objects/ghost.js`: the Quaternius ghost model, its animation clips driven per state with an `AnimationMixer` (idle, hit, fast flying, giggle, death), the Ether aura and the tug-of-war.
+- `js/script.js`: `init()` + `draw()` (with `renderer.setAnimationLoop`), input, and a plain state machine: start → playing ⇄ paused, playing → ending → invoice. Per ghost: hidden (trembling) → emerged → tug → escaped or captured.
+- `js/objects/ghost.js`: one ghost: its model (one of three, `MODELS.ghosts` in `js/config.js`), its animation clips driven per state with an `AnimationMixer` (out, tug, escape, giggle, caught), the Ether aura and the tug-of-war.
 - `js/objects/vacuum.js`: the vacuum model on the camera, the nozzle aimed at what's under the crosshair, `power` spun up and down with gsap.
 - `js/intro.js` / `js/outro.js`: the voicemail intro on your phone (Web Speech API voice + transcript) and the ending (lights on, back out of the front door, the invoice).
 - `js/audio.js`: all sound and music generated live with the Web Audio API (no sound files).
