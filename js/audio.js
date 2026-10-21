@@ -327,9 +327,38 @@ export const createAudio = () => {
     creak: () => sweep({ from: 140, to: 230, duration: 1.1, type: 'sawtooth', volume: 0.06, vibrato: 14 }),
     // --- the villa outside, clicked (js/outside.js) ---
     // the van's horn: two square waves a third apart, slightly flat at the end
+    // a real car horn: two notes a major third apart (like the two horns in a car), buzzy sawtooths,
+    // clipped hard (a WaveShaper with a tanh curve, like an overdriven horn speaker) and boxy (bandpass).
+    // Unlike a beep the volume doesn't fade: it's flat while you "press", then cuts off. Honk-hooonk.
     honk: () => {
-      sweep({ from: 400, to: 385, duration: 0.35, type: 'square', volume: 0.07 })
-      sweep({ from: 500, to: 482, duration: 0.35, type: 'square', volume: 0.07 })
+      if (!context) return
+      const now = context.currentTime
+      const clip = context.createWaveShaper()
+      clip.curve = Float32Array.from({ length: 1024 }, (_, i) => Math.tanh(4 * (i / 511.5 - 1)))
+      const box = context.createBiquadFilter()
+      box.type = 'bandpass'
+      box.frequency.value = 1600
+      box.Q.value = 0.7
+      const out = context.createGain()
+      out.gain.value = 0.2
+      // the "press": up in 10 ms, flat, down in 30 ms
+      const press = context.createGain()
+      press.gain.setValueAtTime(0, now)
+      for (const [start, length] of [[0, 0.16], [0.24, 0.42]]) {
+        press.gain.setValueAtTime(0, now + start)
+        press.gain.linearRampToValueAtTime(1, now + start + 0.01)
+        press.gain.setValueAtTime(1, now + start + length)
+        press.gain.linearRampToValueAtTime(0, now + start + length + 0.03)
+      }
+      press.connect(clip).connect(box).connect(out).connect(master)
+      for (const frequency of [420, 525]) {
+        const horn = context.createOscillator()
+        horn.type = 'sawtooth'
+        horn.frequency.value = frequency
+        horn.connect(press)
+        horn.start(now)
+        horn.stop(now + 0.75)
+      }
     },
     // a wolf at the moon: up, then a long wobbling fall
     howl: () => {

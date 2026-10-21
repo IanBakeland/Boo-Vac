@@ -52,9 +52,9 @@ export const createOutside = ({ $start, audio, lightning }) => {
     [{ translate: '0 0' }, { translate: `0 ${-height}px`, offset: 0.4 }, { translate: '0 0' }],
     { duration: 380, delay, easing: 'ease-out' }
   )
-  const blink = ($el, times) => $el.animate(
+  const blink = ($el, times, duration = times * 160) => $el.animate(
     Array.from({ length: times * 2 + 1 }, (_, i) => ({ opacity: i % 2 ? 0 : 1 })),
-    { duration: times * 160 }
+    { duration }
   )
 
   // name -> reaction; returns which lines to say (the name itself when nothing is returned)
@@ -65,8 +65,9 @@ export const createOutside = ({ $start, audio, lightning }) => {
         [{ translate: '0 0' }, { translate: '0 4px', scale: '1 0.97', offset: 0.3 }, { translate: '0 -6px', offset: 0.6 }, { translate: '0 0' }],
         { duration: 420, easing: 'ease-out' }
       )
-      blink($van.querySelector('.headbeam'), 2)
-      blink($van.querySelector('.headlight'), 2)
+      // in time with the honk-hooonk
+      blink($van.querySelector('.headbeam'), 2, 700)
+      blink($van.querySelector('.headlight'), 2, 700)
       if (!outro()) return
       // in the ending the ghosts in the jar jump with fright
       $jarGhosts.forEach(($ghost, i) => hop($ghost, 14, 60 + i * 70))
