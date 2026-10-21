@@ -93,6 +93,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - `js/objects/ghost.js`: one ghost: its model (one of three, `MODELS.ghosts` in `js/config.js`), its animation clips driven per state with an `AnimationMixer` (out, tug, escape, giggle, caught), the Ether aura and the tug-of-war.
 - `js/objects/vacuum.js`: the vacuum model on the camera, the nozzle aimed at what's under the crosshair, `power` spun up and down with gsap.
 - `js/intro.js` / `js/outro.js`: the voicemail intro on your phone (the boss: Kokoro voice from `js/voice.js`, the voicemail system: Web Speech API; with a transcript) and the ending (lights on, back out of the front door, the invoice).
+- `js/outside.js`: the clickable villa outside (intro and ending).
 - `js/audio.js`: all sound and music generated live with the Web Audio API (no sound files).
 - `js/config.js`: every tunable number and the level layout.
 
@@ -106,6 +107,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - Furniture and props from Poly Pizza, laid out in code
 - Blender animation: three animated ghost models (Ghost, Hywirl, Alien), each with its own game-state → clip mapping (`MODELS.ghosts` in `js/config.js`), played with an `AnimationMixer`
 - Intro: a voicemail from the boss on your phone, with a transcript
+- The villa outside is a toy (intro and ending, `js/outside.js`): click the van (it honks), the dark windows (a ghost shows itself), the moon (a howl and lightning), the tire swing, the mailbox, the chimney, the front door, the lit windows and the weathervane. Each reacts with a sound, an animation (Web Animations API) and a line in a speech bubble, and a counter shows how many of the 11 secrets you found. In the ending the ghosts are in the jar on the van, so the van and the windows say other things
 - Voice of the boss: Kokoro-82M text-to-speech running on WebGPU (kokoro-js / Transformers.js, `js/voice.js`). The model (fp32, 326 MB) downloads from Hugging Face while the opening film plays, once: after that it's in the browser cache. Every line of the boss is generated live, in the browser, on the GPU; then the model is freed so the GPU is all for the game. While the model is still loading, the hint under the phone shows "Loading the voicemail…" (at most 15 s). The voicemail system ("You have one new message") stays the browser's speech synthesis on purpose. Without WebGPU the boss falls back to speech synthesis too
 - Tip: on a first visit (or in incognito), give the voice a minute to download before you press play
 - Sound and music: generated live with the Web Audio API (motor, air, plop, ghost moans, a creepy music box with a drone and a heartbeat in the tug), no sound files

@@ -3071,6 +3071,99 @@ kbd.key
     pointer-events: auto;
 }
 
+/* --- the villa is a toy, in the intro and the ending (js/outside.js): click things in the scene --- */
+/* what lies over the clickable things lets the clicks through */
+.intro-scene :is(.torch, .mist, .headbeam, .clouds, .clouds-far, .moon-cloud, .stars, .bats, .peek)
+{
+    pointer-events: none;
+}
+
+/* the briefing and the invoice cover the whole screen: only their panels catch clicks.
+   The texts over the scene (also the invisible opening caption) don't catch any */
+.intro-after,
+.overlay.invoice,
+.intro-caption,
+.intro-title,
+.subtitles,
+.intro-hint,
+.note
+{
+    pointer-events: none;
+}
+
+.intro-after .panel,
+.briefing-start,
+.invoice .paper
+{
+    pointer-events: auto;
+}
+
+/* the things that spin or squash: around their own center (not on the mailbox: its transform
+   attribute would move with the origin) */
+.intro-scene :is([data-poke="moon"], [data-poke="vane"])
+{
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.intro-scene [data-poke="van"]
+{
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+}
+
+/* the mailbox flag turns around the bottom of its pole */
+.intro-scene .mail-flag
+{
+    transform-box: fill-box;
+    transform-origin: 0 100%;
+}
+
+/* hover: it lights up a little, so you notice you can click it (not during the opening film) */
+.intro-scene [data-poke]
+{
+    transition: filter 0.2s;
+}
+
+.start:not([data-act="black"], [data-act="reveal"], [data-act="title"]) .intro-scene [data-poke]:hover
+{
+    filter: brightness(1.6);
+}
+
+/* what a clicked thing says: a bubble where you clicked (js/outside.js animates it up and out) */
+.poke-bubble
+{
+    position: absolute;
+    z-index: 5;
+    max-width: 280px;
+    width: max-content;
+    padding: 6px 12px;
+    border-radius: 12px;
+    background: #e9e0c4;
+    color: #0b1020;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 0 #05070f, 0 0 20px rgba(155, 227, 91, 0.25);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* how many secrets you found, top left (appears with the first one) */
+.poke-count
+{
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    z-index: 5;
+    padding: 4px 12px;
+    border: 1px solid rgba(223, 230, 255, 0.35);
+    border-radius: 999px;
+    background: rgba(5, 8, 20, 0.6);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+}
+
 /* --- the ending, outside (data-act="outro" on #start, see js/outro.js) --- */
 /* the camera comes back out of the front door: the intro's dive, in reverse */
 .start[data-act="outro"] .intro-scene

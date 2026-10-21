@@ -325,6 +325,22 @@ export const createAudio = () => {
     },
     // the front door opens: a slow wobbling creak
     creak: () => sweep({ from: 140, to: 230, duration: 1.1, type: 'sawtooth', volume: 0.06, vibrato: 14 }),
+    // --- the villa outside, clicked (js/outside.js) ---
+    // the van's horn: two square waves a third apart, slightly flat at the end
+    honk: () => {
+      sweep({ from: 400, to: 385, duration: 0.35, type: 'square', volume: 0.07 })
+      sweep({ from: 500, to: 482, duration: 0.35, type: 'square', volume: 0.07 })
+    },
+    // a wolf at the moon: up, then a long wobbling fall
+    howl: () => {
+      sweep({ from: 320, to: 640, duration: 0.6, volume: 0.15, vibrato: 6 })
+      setTimeout(() => sweep({ from: 640, to: 330, duration: 1.4, volume: 0.15, vibrato: 10 }), 550)
+    },
+    // knuckles on a wooden door: two dull thuds
+    knock: () => {
+      burst({ duration: 0.08, frequency: 260, type: 'lowpass', volume: 0.9 })
+      setTimeout(() => burst({ duration: 0.08, frequency: 260, type: 'lowpass', volume: 0.9 }), 180)
+    },
     // --- the ending ---
     // the house power comes back on: a deep clunk and a little electric click
     clunk: () => {

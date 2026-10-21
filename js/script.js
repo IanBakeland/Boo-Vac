@@ -8,6 +8,7 @@ import { createPhysics, checkSuctionForce } from './physics.js'
 import { createAudio } from './audio.js'
 import { createIntro } from './intro.js'
 import { createVoice } from './voice.js'
+import { createOutside } from './outside.js'
 import { createOutro } from './outro.js'
 import { createPostfx } from './postfx.js'
 import { createRoom } from './objects/room.js'
@@ -56,6 +57,8 @@ const audio = createAudio()
 const voice = createVoice()
 // the intro starts right away (a voicemail on your phone, while the models load)
 const intro = createIntro({ audio, voice, $start })
+// the villa outside is a toy: click the van, the windows, the moon… (intro and ending)
+createOutside({ $start, audio, lightning: intro.lightning })
 
 // ?debug in the URL: collider lines, FPS, suction self-check, debug keys
 const DEBUG = new URLSearchParams(window.location.search).has('debug')

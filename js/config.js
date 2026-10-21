@@ -411,6 +411,28 @@ export const INVOICE = {
   vacuumBag: 4.99      // joke line
 }
 
+// The villa outside is a toy (intro and ending, js/outside.js): click things and they react with a line.
+// Each thing's lines take turns. In the ending the ghosts are in the jar: the van and the windows say other things.
+export const OUTSIDE = {
+  bubbleTime: 2.2, // s a speech bubble stays
+  lines: {
+    van: ['HONK!', 'Beep beep!', "The van is not a toy.", "That's company property. We'll bill you."],
+    vanOutro: ['Careful! Three ghosts on the roof.', 'HONK! The ghosts jump.', 'Fragile: contains ghosts.'],
+    dusty: ['Hee hee!', 'Boo! …did that work?', 'Not in here!'],
+    librarian: ['Shhh! This is a library.', 'Overdue! Since 1887.', 'Do you mind? I am reading.'],
+    granny: ['Tick… tock…', "It's past your bedtime.", 'Wipe your feet, young one.'],
+    emptyWindow: ['Empty. They are all in the jar now.', 'Nobody home anymore.', 'Ghost-free. Finally.'],
+    moon: ['Awoooooo!', 'Of course it is a full moon.', 'Something howls back…'],
+    swing: ['Wheee…', '*creak*', 'Was someone just sitting here?'],
+    mailbox: ['Final notice: 1 vacuum bag (used).', "A postcard: 'Wish you were here(after).'", 'Junk mail. Literally haunted.', 'An invoice. Of course.'],
+    chimney: ['*cough cough*', "Someone's burning old invoices.", 'Smells like… ectoplasm.'],
+    door: ['Knock knock…', '…nobody is home.', 'Come back at midnight.', 'Go AWAY!'],
+    lamp: ['Who turned off the lights?', 'Hey! I was reading!', 'Click. Click.'],
+    vane: ['Wheeeee!', 'Which way is the wind? Yes.']
+  },
+  allFound: 'You found every secret! The boss is mildly impressed.'
+}
+
 // The ending, in seconds after the last ghost is caught (a click skips to the invoice)
 export const OUTRO = {
   hudFade: 2.4,          // the HUD fades out (the full ghost tally stays a moment first)

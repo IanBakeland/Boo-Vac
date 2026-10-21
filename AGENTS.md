@@ -115,6 +115,8 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 
 **Ending** (`js/outro.js`, CSS on `#start[data-act="outro"]`): the house lights come on, the flashlight clicks off, the camera pulls back out of the front door (the intro's dive in reverse), the ghosts drop into a jar on the van, then an **invoice screen** (pure HTML/CSS) with funny line items (time, items sucked × €12, escapes × €50 overtime, a joke line like "1 cat, returned, €0") and a star rating.
 
+**The villa outside is a toy (student's request):** in the intro (after the opening film) and in the ending, things in the SVG scene react to clicks (`js/outside.js`, lines in `OUTSIDE` in `config.js`): van (honk, bounce, headlights; in the ending the jar ghosts jump), the three dark windows (that ghost shows itself; in the ending: empty), moon (howl + lightning), tire swing, mailbox, chimney, front door, lit windows, weathervane. Each clickable element has `data-poke="<name>"` in `index.html`; reactions use `element.animate()` on `translate` / `rotate` / `scale` so they add on top of the scene's CSS animations. A "Secrets found x/11" counter top left. Texts and invisible layers over the scene have `pointer-events: none`.
+
 **IP note:** the mechanic is *inspired by* Luigi's Mansion. Do **not** use any Nintendo names, characters, logos, sounds or assets in the game. The README may say "Mechanic inspired by Luigi's Mansion".
 
 **UI language:** English (change only if the student asks).
@@ -202,6 +204,7 @@ js/script.js                init(), draw(), game state machine, input
 js/config.js                every tunable number (sections 4–7) + LAYOUT (room, furniture, props, spawn)
 js/intro.js                 villa intro + voicemail (sets data-act on #start; the animation of each act is in CSS)
 js/outro.js                 the ending (lights on, back out of the door, jar, invoice)
+js/outside.js               the villa outside is a toy: data-poke things in the SVG react to clicks (texts: OUTSIDE)
 js/objects/room.js          loads room + furniture GLBs at LAYOUT positions, names them, hiding spots
 js/objects/props.js         loads prop GLBs at LAYOUT positions, creates dynamic bodies, suction, capture, tank
 js/objects/vacuum.js        viewmodel attached to camera, nozzle + aim point, suction cone (S2), power tween

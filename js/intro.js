@@ -305,5 +305,5 @@ export const createIntro = ({ audio, voice, $start }) => {
   $playButton.addEventListener('click', play)
   $phone.querySelector('.skip-button').addEventListener('click', skip)
 
-  return { stop, enter }
+  return { stop, enter, lightning }
 }
