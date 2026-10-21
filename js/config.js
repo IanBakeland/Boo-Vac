@@ -493,7 +493,7 @@ export const INTRO = {
   kokoro: {
     model: 'onnx-community/Kokoro-82M-v1.0-ONNX',
     dtype: 'fp32',      // 326 MB (fp16 is half the size but sounds like a broken microphone)
-    voice: 'bm_george', // British male; others: am_fenrir, am_michael, am_puck, bm_fable, bm_lewis
+    voice: 'am_liam',   // American male (all voices: Object.keys(tts.voices) in kokoro-js)
     speed: 1.05,        // a hurried boss (1 = normal)
     maxWait: 15         // s the play button waits for Kokoro, then the boss falls back to speechSynthesis
     // (the invoice at the end is read by Kokoro only: without it, the invoice stays silent)

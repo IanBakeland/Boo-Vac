@@ -63,7 +63,7 @@ Nieuw bestand, zelfde stijl als de andere modules (`createVoice()` die een objec
   kokoro: {
     model: 'onnx-community/Kokoro-82M-v1.0-ONNX',
     dtype: 'fp32',      // uit K.2 (fp16 getest: klinkt als een kapotte microfoon)
-    voice: 'bm_george', // uit K.2
+    voice: 'am_liam',   // uit K.2 (gekozen na luisteren)
     speed: 1.05,        // uit K.2 (vervangt pitch/rate voor de baas)
     maxWait: 15         // s dat de play-knop wacht op Kokoro, daarna speechSynthesis
   }
