@@ -2,7 +2,7 @@
 
 A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and WGSL.
 
-**Live:** https://ianbakeland.github.io/Boo-Vac/
+**Live:** https://ianbakeland.com/Boo-Vac/ (also https://ianbakeland.github.io/Boo-Vac/, which redirects there)
 **Original Shadertoy shaders** (both ported to WGSL):
 - [Ether by nimitz](https://www.shadertoy.com/view/MsjSW3) (CC BY-NC-SA 3.0): the ghost aura
 - [VCR distortion by ryk](https://www.shadertoy.com/view/ldjGzV) (CC BY-NC-SA 4.0): the VHS filter during a tug-of-war
@@ -19,10 +19,10 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 |---|---|
 | Shadertoy fragment shader ported to WebGPU (WGSL) in Three.js `WebGPURenderer` | Ether → the ghost aura (`js/shaders/ether/`), plus VCR distortion → the VHS filter (`js/shaders/vhs/`) |
 | Shader responds to user interaction | The aura only shows in your flashlight beam, smears toward the nozzle while you suck, and stretches with the tug-of-war; the VHS filter gets worse the harder you pull |
-| Interaction beyond looking around | Walk, jump, suck, blow, MAX, unclog the vacuum, tug-of-war against the ghost with the mouse |
+| Interaction beyond looking around | Walk, jump, suck, blow, MAX, unclog the vacuum, tug-of-war against the ghost with the mouse; before and after the shift: a voicemail on your phone and a clickable villa outside (11 secrets) |
 | Physics | Rapier: player controller, props sucked in a spiral, captured, blown back out, furniture moved by MAX, books thrown by a ghost |
 | Multiple shaders | 2 Shadertoy ports + suction cone, flashlight beam, room flashlight lighting, compute dust |
-| Additional WebGPU library | TypeGPU: the dust's glitter. Kokoro (kokoro-js / Transformers.js): the boss's voice |
+| Additional WebGPU libraries | TypeGPU: the dust's glitter. Kokoro (kokoro-js / Transformers.js): the boss's voice, generated live on the GPU |
 | Own Blender model + baking | The house (the whole level), baked in Cycles into `public/textures/baked.jpg` |
 | Controlling Blender animations | Three animated ghost models, their clips driven per game state with an `AnimationMixer` |
 
@@ -40,7 +40,9 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 | Esc | Pause |
 | M | Mute |
 
-Best on desktop Chrome / Edge / Safari 26.
+**Before the shift:** tap the notification on your phone, press ▶ to hear the boss's voicemail (or Skip), then *Start shift*. Meanwhile, and again in the ending: click things around the villa (the van, the windows, the moon, the mailbox…). There are 11 secrets to find.
+
+Best on desktop Chrome / Edge / Safari 26, with sound on. On a first visit (or in incognito) the boss's voice still has to download: give it a minute before you press ▶, otherwise he talks with the browser's robot voice.
 
 ## The game
 
@@ -92,25 +94,31 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - `js/script.js`: `init()` + `draw()` (with `renderer.setAnimationLoop`), input, and a plain state machine: start → playing ⇄ paused, playing → ending → invoice. Per ghost: hidden (trembling) → emerged → tug → escaped or captured.
 - `js/objects/ghost.js`: one ghost: its model (one of three, `MODELS.ghosts` in `js/config.js`), its animation clips driven per state with an `AnimationMixer` (out, tug, escape, giggle, caught), the Ether aura and the tug-of-war.
 - `js/objects/vacuum.js`: the vacuum model on the camera, the nozzle aimed at what's under the crosshair, `power` spun up and down with gsap.
-- `js/intro.js` / `js/outro.js`: the voicemail intro on your phone (the boss: Kokoro voice from `js/voice.js`, the voicemail system: Web Speech API; with a transcript) and the ending (lights on, back out of the front door, the invoice).
-- `js/outside.js`: the clickable villa outside (intro and ending).
+- `js/intro.js` / `js/outro.js` / `js/outside.js` / `js/voice.js`: the intro and the ending (see below).
 - `js/audio.js`: all sound and music generated live with the Web Audio API (no sound files).
 - `js/config.js`: every tunable number and the level layout.
+
+### The intro and the ending
+
+The villa outside is one SVG drawing in `index.html`, animated with CSS; `js/intro.js` and `js/outro.js` set an "act" on it (`data-act`) and the CSS plays that part.
+
+- **The opening:** the camera tilts down from the sky to the villa, lightning shows the three ghosts in their windows for a split second, the title drops in, and your phone buzzes.
+- **The voicemail** (`js/intro.js`): a lock screen and a voicemail app in HTML/CSS. The voicemail system ("You have one new message") is the browser's speech synthesis on purpose: a flat robot voice. The boss's lines come with a transcript in which every word lights up as he says it, and the villa reacts to each line (mist, a cloud over the moon, the headlights, the lights going out at "Good luck!").
+- **The boss's voice: Kokoro on WebGPU** (`js/voice.js`): Kokoro-82M, a small text-to-speech AI model, run in the browser on the GPU by `kokoro-js` (built on Transformers.js). It starts downloading (326 MB, once: then it's in the browser cache) while the opening film plays, generates every line of the boss, then frees the GPU for the game. The audio plays through the Web Audio master, so mute works. Not ready yet? The hint says "Loading the voicemail…" for at most 15 s; after that, and without WebGPU, the boss falls back to the browser's speech synthesis.
+- **The villa is a toy** (`js/outside.js`): click things in the scene, in the intro and in the ending. Each clickable thing has `data-poke="<name>"` in the SVG and reacts with a sound, an animation (Web Animations API, `element.animate()`) and a line in a speech bubble (`OUTSIDE` in `js/config.js`): the van honks (a real car horn, two clipped sawtooth notes), the dark windows show their ghost, the moon howls and calls lightning, the tire swing swings, the mailbox has funny mail, the chimney puffs, the door knocks back, the lights go out, the weathervane spins. A counter shows how many of the 11 secrets you found. In the ending the ghosts are in the jar on the van, so the van and the windows say other things.
+- **The ending** (`js/outro.js`): the house lights come on, your flashlight clicks off, the camera pulls back out of the front door, the three ghosts drop into a jar on the van, and the invoice slides in: your pay minus everything you sucked up (€12 each) and every ghost that got away, with a star rating.
 
 ## What's inside
 
 - 2 ported Shadertoy shaders: Ether (ghost aura) and VCR distortion (VHS post FX), both reacting to the player
 - Own shaders: suction cone, flashlight beam, room flashlight lighting, compute dust particles
-- Additional WebGPU library: [TypeGPU](https://docs.swmansion.com/TypeGPU/) (`@typegpu/three` + `@typegpu/noise`): the dust's glitter in the flashlight beam is a TypeGPU function with a Perlin-noise twinkle
+- Additional WebGPU libraries: [TypeGPU](https://docs.swmansion.com/TypeGPU/) (`@typegpu/three` + `@typegpu/noise`): the dust's glitter in the flashlight beam is a TypeGPU function with a Perlin-noise twinkle; [kokoro-js](https://github.com/hexgrad/kokoro) (Transformers.js): the boss's voice, Kokoro-82M text-to-speech on WebGPU
 - Physics: Rapier (player controller, props sucked in a spiral, captured, blown out, furniture moved by MAX, books thrown by a ghost)
 - Own Blender model + baking: the level, a house with seven rooms and corridors (`public/models/house.glb`), modelled in Blender (`blender/house.blend`) and baked into one texture (`public/textures/baked.jpg`, Cycles, Combined). Loaded like the course's bake project (`flipY = false`, sRGB) and used as the albedo of the room flashlight shader, so it stays dark until your beam hits it. A portrait in the hall says who made it.
 - Furniture and props from Poly Pizza, laid out in code
 - Blender animation: three animated ghost models (Ghost, Hywirl, Alien), each with its own game-state → clip mapping (`MODELS.ghosts` in `js/config.js`), played with an `AnimationMixer`
-- Intro: a voicemail from the boss on your phone, with a transcript
-- The villa outside is a toy (intro and ending, `js/outside.js`): click the van (it honks), the dark windows (a ghost shows itself), the moon (a howl and lightning), the tire swing, the mailbox, the chimney, the front door, the lit windows and the weathervane. Each reacts with a sound, an animation (Web Animations API) and a line in a speech bubble, and a counter shows how many of the 11 secrets you found. In the ending the ghosts are in the jar on the van, so the van and the windows say other things
-- Voice of the boss: Kokoro-82M text-to-speech running on WebGPU (kokoro-js / Transformers.js, `js/voice.js`). The model (fp32, 326 MB) downloads from Hugging Face while the opening film plays, once: after that it's in the browser cache. Every line of the boss is generated live, in the browser, on the GPU; then the model is freed so the GPU is all for the game. While the model is still loading, the hint under the phone shows "Loading the voicemail…" (at most 15 s). The voicemail system ("You have one new message") stays the browser's speech synthesis on purpose. Without WebGPU the boss falls back to speech synthesis too
-- Tip: on a first visit (or in incognito), give the voice a minute to download before you press play
-- Sound and music: generated live with the Web Audio API (motor, air, plop, ghost moans, a creepy music box with a drone and a heartbeat in the tug), no sound files
+- Intro: an animated villa at night, a voicemail from the boss on your phone (Kokoro voice, transcript) and a clickable scene with 11 secrets; the ending comes back to the same villa, then the invoice
+- Sound and music: generated live with the Web Audio API (motor, air, plop, ghost moans, thunder, a car horn, a creepy music box with a drone and a heartbeat in the tug), no sound files
 - Mechanic inspired by Luigi's Mansion. No Nintendo assets are used.
 
 ## Run locally
@@ -119,6 +127,8 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 npm install
 npm run dev
 ```
+
+`npm run build` makes the site in `dist/` (`npm run preview` serves it). Add `?debug` to the URL for an FPS counter, collider lines and debug keys (G: a ghost emerges, P: drop the props, O: play the ending).
 
 ## Credits
 
