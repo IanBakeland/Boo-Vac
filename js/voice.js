@@ -14,9 +14,18 @@ export const createVoice = () => {
     if (!navigator.gpu) return
     try {
       // imported only here: browsers without WebGPU never download Transformers.js
-      const { KokoroTTS } = await import('kokoro-js')
+      const [{ KokoroTTS }, { StyleTextToSpeech2Model, AutoTokenizer }] = await Promise.all([
+        import('kokoro-js'),
+        import('@huggingface/transformers') // installed with kokoro-js
+      ])
       const { model, dtype, voice, speed } = INTRO.kokoro
-      const tts = await KokoroTTS.from_pretrained(model, { dtype, device: 'webgpu' })
+      // what KokoroTTS.from_pretrained() does, plus ONNX Runtime's log level at 3 (errors only):
+      // its default (2) prints harmless warnings as console errors
+      const [ttsModel, tokenizer] = await Promise.all([
+        StyleTextToSpeech2Model.from_pretrained(model, { dtype, device: 'webgpu', session_options: { logSeverityLevel: 3 } }),
+        AutoTokenizer.from_pretrained(model)
+      ])
+      const tts = new KokoroTTS(ttsModel, tokenizer)
       // one by one, so the first lines are ready as soon as possible
       for (const [i, text] of INTRO.lines.entries()) {
         const audio = await tts.generate(text, { voice, speed })

@@ -2,16 +2,17 @@
 // It runs in acts: js sets data-act on #start, css/style.css does the animation of each act:
 //   black -> reveal -> title -> buzz -> ready -> listen -> done -> enter
 // While the boss talks, data-line = the line number ("out" after the last one): the scene reacts.
-// The voices are the browser's own speech synthesis (Web Speech API, no recordings):
+// The voicemail system talks with the browser's own speech synthesis (Web Speech API, no recordings):
 // https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
+// The boss talks with Kokoro (js/voice.js, WebGPU), or with speech synthesis too when Kokoro isn't ready.
 import { INTRO } from './config.js'
 
 // the front door in the SVG drawing (viewBox 1600 x 900): the camera pushes in toward it
 const SCENE_SIZE = [1600, 900]
 const DOOR = [820, 610]
 
-// $start: the start overlay with the scene and the phone in it
-export const createIntro = ({ audio, $start }) => {
+// $start: the start overlay with the scene and the phone in it; voice: the boss's Kokoro lines
+export const createIntro = ({ audio, voice, $start }) => {
   const $phone = $start.querySelector('.phone')
   const $lock = $phone.querySelector('.screen-lock')
   const $voicemail = $phone.querySelector('.screen-voicemail')
@@ -40,11 +41,18 @@ export const createIntro = ({ audio, $start }) => {
     return $char
   }))
 
-  // the length of the message, estimated from the number of words (speech has no "duration")
-  const words = [INTRO.systemIntro, ...INTRO.lines, INTRO.systemOutro].join(' ').split(' ').length
-  const estimate = words * INTRO.readTime + INTRO.lines.length * INTRO.linePause
+  // the length of the message: the real duration of the Kokoro lines,
+  // estimated from the number of words for the rest (speechSynthesis has no "duration")
+  const wordTime = (text) => text.split(' ').length * INTRO.readTime
+  const lineTime = (text, i) => voice.has(i) ? voice.get(i).samples.length / voice.get(i).sampleRate : wordTime(text)
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
-  $total.textContent = formatTime(estimate)
+  let estimate = 0
+  const updateEstimate = () => {
+    estimate = wordTime(INTRO.systemIntro) + wordTime(INTRO.systemOutro) +
+      INTRO.lines.reduce((sum, text, i) => sum + lineTime(text, i) + INTRO.linePause, 0)
+    $total.textContent = formatTime(estimate)
+  }
+  updateEstimate()
 
   let state = 'locked' // 'locked' -> 'ready' -> 'playing' -> 'done'
   let playStart = 0
@@ -131,10 +139,28 @@ export const createIntro = ({ audio, $start }) => {
     for (const $word of $subtitles.children) $word.classList.toggle('said', Number($word.dataset.start) <= charIndex)
   }
 
+  // the boss says line i with Kokoro: Kokoro has no word timings, so every word lights up
+  // when the audio reaches its share of the characters (characters before it / all characters)
+  const sayKokoro = async (text, { samples, sampleRate }) => {
+    const duration = samples.length / sampleRate
+    for (const $word of $subtitles.children) {
+      const start = Number($word.dataset.start)
+      at(start / text.length * duration, () => speakWord(start))
+    }
+    $wave.classList.add('talking')
+    await audio.speech(samples, sampleRate)
+    $wave.classList.remove('talking')
+  }
+
   // say one line; resolves when it's done (or after a reading time when there's no speech)
-  const say = (text, { voices, pitch = 1, rate = 1, system = false }) => new Promise((resolve) => {
+  // kokoro: the line's Kokoro audio, if it's ready
+  const say = (text, { voices, pitch = 1, rate = 1, system = false, kokoro = null }) => new Promise((resolve) => {
     if (state !== 'playing') return resolve()
     showSubtitles(text, system)
+    if (kokoro) {
+      sayKokoro(text, kokoro).then(resolve)
+      return
+    }
     const synth = window.speechSynthesis
     if (!synth) {
       setTimeout(resolve, text.split(' ').length * INTRO.readTime * 1000)
@@ -174,10 +200,15 @@ export const createIntro = ({ audio, $start }) => {
   //    "You have one new message", beep, the boss (the house reacts to every line), lights out, "End of message", beep
   const play = async () => {
     if (state !== 'ready') return
-    state = 'playing'
-    setAct('listen')
     $playButton.disabled = true
     audio.click()
+    // Kokoro still busy? wait for it (at most maxWait s), then the lines that aren't ready use speechSynthesis
+    $hint.textContent = 'Loading voice…'
+    await Promise.race([voice.ready, wait(INTRO.kokoro.maxWait)])
+    if (state !== 'ready') return
+    updateEstimate()
+    state = 'playing'
+    setAct('listen')
     audio.line(true)
     audio.musicVolume(INTRO.musicDuck)
     playStart = performance.now()
@@ -192,7 +223,7 @@ export const createIntro = ({ audio, $start }) => {
     for (const [i, text] of INTRO.lines.entries()) {
       if (state !== 'playing') return
       $start.dataset.line = i
-      await say(text, boss)
+      await say(text, { ...boss, kokoro: voice.get(i) })
       await wait(INTRO.linePause)
     }
     if (state !== 'playing') return
@@ -235,6 +266,7 @@ export const createIntro = ({ audio, $start }) => {
   // silence everything from the intro (also when the shift starts, so nothing keeps playing)
   const stop = () => {
     window.speechSynthesis?.cancel()
+    audio.stopSpeech()
     clearInterval(progressTimer)
     timers.forEach(clearTimeout)
     timers = []

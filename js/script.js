@@ -7,6 +7,7 @@ import { CAMERA, MAX_DT, LAYOUT, PLAYER, PHYSICS, TANK, CLOG, MAX, DUST, SUCTION
 import { createPhysics, checkSuctionForce } from './physics.js'
 import { createAudio } from './audio.js'
 import { createIntro } from './intro.js'
+import { createVoice } from './voice.js'
 import { createOutro } from './outro.js'
 import { createPostfx } from './postfx.js'
 import { createRoom } from './objects/room.js'
@@ -51,8 +52,10 @@ const $clogPips = $clog.querySelector('.clog-pips')
 
 // sound (starts on the first click, browsers don't allow sound before that)
 const audio = createAudio()
+// the boss's voice (Kokoro, WebGPU) starts loading right away, during the opening film
+const voice = createVoice()
 // the intro starts right away (a voicemail on your phone, while the models load)
-const intro = createIntro({ audio, $start })
+const intro = createIntro({ audio, voice, $start })
 
 // ?debug in the URL: collider lines, FPS, suction self-check, debug keys
 const DEBUG = new URLSearchParams(window.location.search).has('debug')
