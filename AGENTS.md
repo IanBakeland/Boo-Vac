@@ -12,7 +12,7 @@
 - **Why:** a school assignment (DEVINE, Creative Development). Port a Shadertoy fragment shader to WebGPU inside Three.js `WebGPURenderer`, make it interactive, deploy it online.
 - **Main ported shader:** *Ether* by nimitz: https://www.shadertoy.com/view/MsjSW3. It becomes the ghost.
 - **Second ported shader:** *VCR distortion* by ryk: https://www.shadertoy.com/view/ldjGzV. A VHS post-FX filter, only during a tug-of-war (`js/postfx.js`).
-- **Stack:** Vite + `three@^0.186` (`three/webgpu`, `three/tsl`, `three/addons`) + `@dimforge/rapier3d-compat` + `gsap` + TypeGPU (`typegpu`, `@typegpu/three`, `@typegpu/noise`, dev `unplugin-typegpu`). Nothing else without asking.
+- **Stack:** Vite + `three@^0.186` (`three/webgpu`, `three/tsl`, `three/addons`) + `@dimforge/rapier3d-compat` + `gsap` + TypeGPU (`typegpu`, `@typegpu/three`, `@typegpu/noise`, dev `unplugin-typegpu`) + `kokoro-js` (the boss's voice, see `KOKORO.md`). Nothing else without asking.
 - **Golden rule:** use the techniques from the student's course whenever possible (section 3). The teacher gives more marks for that.
 - **Second rule:** online or it does not count. Deploy from day 1 and after every finished step.
 - **Third rule:** the student must be able to explain every line. Explain what you write in plain language, especially shader code.
@@ -40,7 +40,7 @@
 | Interaction beyond looking around | Search, suck, blow, tug-of-war (mouse direction against the ghost), tank management | **Core** |
 | Physics | Rapier rigid bodies: props are sucked in a spiral, captured, blown away; the Librarian throws books | **Core** |
 | Multiple shaders | Ether ghost (port) + suction cone + flashlight beam + room flashlight lighting + compute dust + VHS post FX (second Shadertoy port) | **Core** |
-| Additional WebGPU libraries | **TypeGPU** (Software Mansion): the dust's beam glitter + Perlin-noise twinkle is a `'use gpu'` function plugged into Three.js with `@typegpu/three` (`js/objects/dust.js`). Rapier (physics, WASM) and gsap (animation) are **not** WebGPU libraries: never claim them for this category. | Claimed (ask the teacher if TypeGPU counts) |
+| Additional WebGPU libraries | **TypeGPU** (Software Mansion): the dust's beam glitter + Perlin-noise twinkle is a `'use gpu'` function plugged into Three.js with `@typegpu/three` (`js/objects/dust.js`). **Kokoro** (`kokoro-js`, on Transformers.js): the boss's voicemail is Kokoro-82M text-to-speech on WebGPU (`js/voice.js`). Rapier (physics, WASM) and gsap (animation) are **not** WebGPU libraries: never claim them for this category. | Claimed (ask the teacher if TypeGPU counts) |
 | Own Blender models + baking | **Done (student's request):** the level is `public/models/house.glb`, an empty house modelled in Blender (`blender/house.blend`) and baked into one texture `public/textures/baked.jpg` (4096², Cycles Combined). Loaded like the course's bake project in `js/objects/room.js`. The hall has a portrait with an "IAN BAKELAND" plaque. | Claimed |
 | Controlling Blender animations | Three Quaternius models (CC0, tagged *Animated* on Poly Pizza): Ghost (Dusty), Hywirl (The Librarian), Alien (Granny Clock), their clips driven by an `AnimationMixer` per game state | **Core** (check the clips exist) |
 
@@ -108,7 +108,7 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 
 **The twist:** ghosts live in dust and clutter. Cleaning and ghost hunting are the same thing.
 
-**Intro (student's request): a voicemail, not a call.** Your phone's lock screen (HTML/CSS) at 23:58 on Friday 13 October shows "1 new voicemail · The Boss". Tap it → a voicemail app (play button, progress bar, sound wave, transcript). Play → a robot voice "You have one new message", a beep, the boss (Web Speech API `speechSynthesis`, with transcript), "End of message", a beep. Skip possible. Then Start shift. `intro.stop()` silences everything when the shift starts. Code: `js/intro.js`, text in `INTRO.lines`. Original card texts:
+**Intro (student's request): a voicemail, not a call.** Your phone's lock screen (HTML/CSS) at 23:58 on Friday 13 October shows "1 new voicemail · The Boss". Tap it → a voicemail app (play button, progress bar, sound wave, transcript). Play → a robot voice "You have one new message", a beep, the boss (Kokoro-82M on WebGPU, `js/voice.js`, settings in `INTRO.kokoro`; without WebGPU or when it isn't ready within `maxWait`: `speechSynthesis`; with transcript), "End of message", a beep. The robot voice of the voicemail system stays `speechSynthesis` on purpose. Skip possible. Then Start shift. `intro.stop()` silences everything when the shift starts. Code: `js/intro.js`, text in `INTRO.lines`. Original card texts:
 1. "Welcome to the crew! Small thing: old houses have *dust ghosts*. The more dust, the more ghosts."
 2. "Find stuff that shakes, vacuum the clutter around it, and the ghost pops out. Then just... pull. Don't let go, or it hides again."
 3. "Oh, and anything you suck up is the client's property. We'll bill you. Good luck!"
@@ -185,6 +185,7 @@ There is **no stun/flash mechanic** (removed on purpose). The flashlight is alwa
 - **Background music** (student's request), generated too: a breathing drone (A minor ↔ F), a random eerie music-box phrase in A harmonic minor with reverb, and a heartbeat during the tug that speeds up with the meter (`MUSIC` in `config.js`).
 - **Suck vs blow must be unmistakable:** suck = high narrow hiss + rising start chirp, blow = low wide rumble + falling start chirp. Visually: blue-white inward swirl vs orange outward streaks, and a SUCK / BLOW label under the crosshair.
 - **MAX** (F): motor pitch and gain up while MAX is active.
+- **Voice of the boss:** Kokoro audio (Float32Array samples from `js/voice.js`) played with `audio.speech()` through `master`, so mute works.
 - Create the `AudioContext` on the Start click. Respect the mute toggle.
 
 ---
@@ -209,6 +210,7 @@ js/objects/ghost.js         ghost model + AnimationMixer + Ether aura (S1) + gho
 js/objects/dust.js          compute dust (S4), WebGPU only (no CPU fallback)
 js/physics.js               Rapier world, step, sync, suctionForce()
 js/audio.js
+js/voice.js                 the boss's voice: Kokoro TTS on WebGPU (kokoro-js), lines generated during the intro
 js/postfx.js                RenderPipeline + VHS shader (only during a tug-of-war)
 js/shaders/ether/fragment.wgsl       S1 (Shadertoy port)
 js/shaders/suction/fragment.wgsl     S2
@@ -500,7 +502,7 @@ npm run dev
 2. **Run it.** After each step: `npm run dev` and check the browser console has 0 errors. For build-affecting changes, run `npm run build && npm run preview` too. There is no linter or test suite: `npm run build` plus a browser check (with and without `?debug`) is the verification.
 3. **Commit + push** after each finished step with a clear message (`step 2.4: room and furniture layout`). Then check the deploy.
 4. **Never** commit `node_modules`, `dist`, `.env`, or `*.blend1`.
-5. **Ask before adding any dependency.** Allowed by default: `three`, `vite`, `@dimforge/rapier3d-compat`, `gsap`, `typegpu`, `@typegpu/three`, `@typegpu/noise`, `unplugin-typegpu` (dev, in `vite.config.js`: it turns `'use gpu'` functions into WGSL). `lil-gui` (dev) and `@types/three` (dev) on request.
+5. **Ask before adding any dependency.** Allowed by default: `three`, `vite`, `@dimforge/rapier3d-compat`, `gsap`, `typegpu`, `@typegpu/three`, `@typegpu/noise`, `unplugin-typegpu` (dev, in `vite.config.js`: it turns `'use gpu'` functions into WGSL), `kokoro-js`. `lil-gui` (dev) and `@types/three` (dev) on request.
 6. **Course first** (section 3). If you deviate, say why in one sentence.
 7. **Explain shader code** line by line when you write or port it. The student must be able to defend it (the course explicitly says LLM-ported code must be understood).
 8. Keep every tunable number in `js/config.js`. No magic numbers scattered around.

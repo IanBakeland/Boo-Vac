@@ -9,7 +9,7 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 
 **Physics engine:** [Rapier](https://rapier.rs) (`@dimforge/rapier3d-compat`, WebAssembly)
 
-**Additional WebGPU library:** [TypeGPU](https://docs.swmansion.com/TypeGPU/) by Software Mansion (dust glitter, see below)
+**Additional WebGPU libraries:** [TypeGPU](https://docs.swmansion.com/TypeGPU/) by Software Mansion (dust glitter, see below) and [kokoro-js](https://github.com/hexgrad/kokoro) (Transformers.js): the boss's voice, an AI text-to-speech model running on WebGPU
 
 **Level:** own Blender model, baked into one texture (`blender/house.blend`, see below)
 
@@ -22,7 +22,7 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 | Interaction beyond looking around | Walk, jump, suck, blow, MAX, unclog the vacuum, tug-of-war against the ghost with the mouse |
 | Physics | Rapier: player controller, props sucked in a spiral, captured, blown back out, furniture moved by MAX, books thrown by a ghost |
 | Multiple shaders | 2 Shadertoy ports + suction cone, flashlight beam, room flashlight lighting, compute dust |
-| Additional WebGPU library | TypeGPU: the dust's glitter |
+| Additional WebGPU library | TypeGPU: the dust's glitter. Kokoro (kokoro-js / Transformers.js): the boss's voice |
 | Own Blender model + baking | The house (the whole level), baked in Cycles into `public/textures/baked.jpg` |
 | Controlling Blender animations | Three animated ghost models, their clips driven per game state with an `AnimationMixer` |
 
@@ -92,7 +92,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - `js/script.js`: `init()` + `draw()` (with `renderer.setAnimationLoop`), input, and a plain state machine: start → playing ⇄ paused, playing → ending → invoice. Per ghost: hidden (trembling) → emerged → tug → escaped or captured.
 - `js/objects/ghost.js`: one ghost: its model (one of three, `MODELS.ghosts` in `js/config.js`), its animation clips driven per state with an `AnimationMixer` (out, tug, escape, giggle, caught), the Ether aura and the tug-of-war.
 - `js/objects/vacuum.js`: the vacuum model on the camera, the nozzle aimed at what's under the crosshair, `power` spun up and down with gsap.
-- `js/intro.js` / `js/outro.js`: the voicemail intro on your phone (Web Speech API voice + transcript) and the ending (lights on, back out of the front door, the invoice).
+- `js/intro.js` / `js/outro.js`: the voicemail intro on your phone (the boss: Kokoro voice from `js/voice.js`, the voicemail system: Web Speech API; with a transcript) and the ending (lights on, back out of the front door, the invoice).
 - `js/audio.js`: all sound and music generated live with the Web Audio API (no sound files).
 - `js/config.js`: every tunable number and the level layout.
 
@@ -105,7 +105,8 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - Own Blender model + baking: the level, a house with seven rooms and corridors (`public/models/house.glb`), modelled in Blender (`blender/house.blend`) and baked into one texture (`public/textures/baked.jpg`, Cycles, Combined). Loaded like the course's bake project (`flipY = false`, sRGB) and used as the albedo of the room flashlight shader, so it stays dark until your beam hits it. A portrait in the hall says who made it.
 - Furniture and props from Poly Pizza, laid out in code
 - Blender animation: three animated ghost models (Ghost, Hywirl, Alien), each with its own game-state → clip mapping (`MODELS.ghosts` in `js/config.js`), played with an `AnimationMixer`
-- Intro: a voicemail from the boss on your phone; his voice is the browser's speech synthesis (Web Speech API) with a transcript
+- Intro: a voicemail from the boss on your phone, with a transcript
+- Voice of the boss: Kokoro-82M text-to-speech running on WebGPU (kokoro-js / Transformers.js), generated during the opening film. The voicemail system ("You have one new message") stays the browser's speech synthesis on purpose. Without WebGPU the boss falls back to speech synthesis too
 - Sound and music: generated live with the Web Audio API (motor, air, plop, ghost moans, a creepy music box with a drone and a heartbeat in the tug), no sound files
 - Mechanic inspired by Luigi's Mansion. No Nintendo assets are used.
 
@@ -122,6 +123,8 @@ npm run dev
 |---|---|---|---|
 | Ether (shader) | nimitz | CC BY-NC-SA 3.0 | https://www.shadertoy.com/view/MsjSW3 |
 | VCR distortion (shader) | ryk | CC BY-NC-SA 4.0 | https://www.shadertoy.com/view/ldjGzV |
+| Kokoro-82M (voice model) | hexgrad | Apache-2.0 | https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX |
+| kokoro-js (library) | hexgrad, Xenova | Apache-2.0 | https://github.com/hexgrad/kokoro |
 | Grenze Gotisch (title font) | Omnibus-Type | SIL OFL 1.1 | https://fonts.google.com/specimen/Grenze+Gotisch |
 | IM Fell English SC (heading font) | Igino Marini | SIL OFL 1.1 | https://fonts.google.com/specimen/IM+Fell+English+SC |
 | Ghost (animated, Dusty) | Quaternius | CC0 | https://poly.pizza/m/Iip30bDHmu |
