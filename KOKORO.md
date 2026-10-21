@@ -62,7 +62,7 @@ Nieuw bestand, zelfde stijl als de andere modules (`createVoice()` die een objec
   ```js
   kokoro: {
     model: 'onnx-community/Kokoro-82M-v1.0-ONNX',
-    dtype: 'fp16',      // uit K.2 (gekozen: fp16, 163 MB)
+    dtype: 'fp32',      // uit K.2 (fp16 getest: klinkt als een kapotte microfoon)
     voice: 'bm_george', // uit K.2
     speed: 1.05,        // uit K.2 (vervangt pitch/rate voor de baas)
     maxWait: 15         // s dat de play-knop wacht op Kokoro, daarna speechSynthesis
