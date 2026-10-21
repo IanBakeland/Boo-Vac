@@ -1,6 +1,6 @@
 <div align="center">
 
-# 👻 Boo-Vac
+# Boo-Vac
 
 **A first-person ghost-cleaning game in the browser, built with Three.js `WebGPURenderer` and WGSL.**
 
@@ -13,7 +13,7 @@ Search a dark house with your flashlight, vacuum the clutter, and pull three gho
 [![Kokoro](https://img.shields.io/badge/voice-Kokoro%20TTS-ffcc4d?logo=huggingface&logoColor=black)](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 
-**[▶ Play it live](https://ianbakeland.com/Boo-Vac/)** · Original shader: [Ether by nimitz](https://www.shadertoy.com/view/MsjSW3)
+**[▶ Play it live](https://ianbakeland.com/Boo-Vac/)**
 
 <br>
 
@@ -34,11 +34,7 @@ You're the new night-shift cleaner at **Dust & Ghost Cleaning Co.**, a dodgy com
 
 The twist: ghosts live in dust and clutter, so cleaning and ghost hunting are the same thing. Find a hiding spot that trembles, vacuum the clutter around it until the ghost pops out, then win a tug-of-war by moving the mouse against the ghost's pull. Catch all three and you get… an invoice for everything you sucked up.
 
-The ghost itself is a **Shadertoy shader ported to WGSL**: [*Ether* by nimitz](https://www.shadertoy.com/view/MsjSW3). It only shows in your flashlight beam, and it smears toward the vacuum as you pull.
-
-## 🎓 The assignment
-
-A school project for Creative Development (DEVINE): port a Shadertoy fragment shader to WebGPU, run it in Three.js with `WebGPURenderer`, make it respond to the player, and put it online.
+## The assignment
 
 | Asked | Where |
 |---|---|
@@ -51,17 +47,17 @@ A school project for Creative Development (DEVINE): port a Shadertoy fragment sh
 | Own Blender model + baking | The house (the whole level), baked in Cycles into `public/textures/baked.jpg` |
 | Controlling Blender animations | Three animated ghost models, their clips driven per game state with an `AnimationMixer` |
 
-## ✨ Features
+## Features
 
-- **🔦 A flashlight is all you have.** The house is dark blue moonlight. Your beam reveals the colors, makes the dust glitter, and is the only way to see a ghost.
-- **🌀 Suck and blow.** Hold left to suck (props spiral into the nozzle), right to blow them away. Suck up 5 things and the hose jams: blow to shoot them back out.
-- **💥 MAX power.** Press F for 3 seconds of ×4 force that even drags the furniture around.
-- **👻 Three ghosts, three personalities.** Dusty giggles when it gets away, the Librarian throws books at you, and Granny Clock is fast and has to be beaten twice. Catch them in any order.
-- **🪢 Tug-of-war.** Move the mouse against the ghost's pull to fill the meter. The screen turns into a worn VHS tape the harder you pull.
-- **📞 A voicemail from the boss.** The intro is a lock screen and a voicemail app, with subtitles that light up word by word. The boss's voice is an AI model running on your GPU.
-- **🏚️ A villa you can poke.** Before and after the shift, click the van, the windows, the moon, the mailbox… 11 secrets, each with its own sound and line.
-- **🧾 An invoice at the end.** Your pay, minus €12 for every item of the client's you sucked up and €50 for every ghost that got away, with a star rating.
-- **🔊 No sound files.** Every sound and the music (a drone, a creepy music box, a heartbeat during the tug) is generated live with the Web Audio API.
+- **A flashlight is all you have.** The house is dark blue moonlight. Your beam reveals the colors, makes the dust glitter, and is the only way to see a ghost.
+- **Suck and blow.** Hold left to suck (props spiral into the nozzle), right to blow them away. Suck up 5 things and the hose jams: blow to shoot them back out.
+- **MAX power.** Press F for 3 seconds of ×4 force that even drags the furniture around.
+- **Three ghosts, three personalities.** Dusty giggles when it gets away, the Librarian throws books at you, and Granny Clock is fast and has to be beaten twice. Catch them in any order.
+- **Tug-of-war.** Move the mouse against the ghost's pull to fill the meter. The screen turns into a worn VHS tape the harder you pull.
+- **A voicemail from the boss.** The intro is a lock screen and a voicemail app, with subtitles that light up word by word. The boss's voice is an AI model running on your GPU.
+- **A villa you can poke.** Before and after the shift, click the van, the windows, the moon, the mailbox… 11 secrets, each with its own sound and line.
+- **An invoice at the end.** Your pay, minus €12 for every item of the client's you sucked up and €50 for every ghost that got away, with a star rating.
+- **No sound files.** Every sound and the music (a drone, a creepy music box, a heartbeat during the tug) is generated live with the Web Audio API.
 
 ## 🎮 How to play
 
@@ -128,7 +124,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - **The boss's voice: Kokoro on WebGPU** (`js/voice.js`): Kokoro-82M, a small text-to-speech AI model, runs in the browser on the GPU with `kokoro-js` (built on Transformers.js). It downloads (326 MB, once, then it's cached) while the opening film plays, generates every line of the boss, then frees the GPU for the game. Not ready yet? The hint says "Loading the voicemail…" for at most 15 s; after that, and without WebGPU, the boss uses the browser's speech synthesis.
 - **The clickable villa** (`js/outside.js`): every clickable thing has `data-poke="<name>"` in the SVG and reacts with a sound, an animation (Web Animations API) and a line in a speech bubble (`OUTSIDE` in `js/config.js`). The van honks (a real car horn: two clipped sawtooth notes), the dark windows show their ghost, the moon howls and calls lightning… In the ending the ghosts are in the jar, so the van and the windows say other things.
 
-## 🛠️ Tech stack
+## Tech stack
 
 | | |
 |---|---|
@@ -139,7 +135,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 | **Sound** | Web Audio API (everything generated), Web Speech API (the voicemail system) |
 | **Build & deploy** | [Vite](https://vite.dev), GitHub Actions → GitHub Pages |
 
-## 🚀 Getting started
+## Getting started
 
 ### Prerequisites
 
@@ -183,7 +179,7 @@ blender/                house.blend (the level) and a render of the hall
 docs/screenshots/       the screenshots in this README
 ```
 
-## 🙏 Credits
+## Credits
 
 | Asset | Author | License | Link |
 |---|---|---|---|
@@ -213,6 +209,6 @@ docs/screenshots/       the screenshots in this README
 | Pillow | Poly by Google | CC BY | https://poly.pizza/m/f60emm1Xkas |
 | House plant | Poly by Google | CC BY | https://poly.pizza/m/3qh9saogdJd |
 
-## 🎓 About
+## About
 
 Boo-Vac is a solo student project for Creative Development at DEVINE. The ghost-vacuuming mechanic is inspired by Luigi's Mansion; no Nintendo names, characters or assets are used. The ported shaders keep their CC BY-NC-SA licenses, and every asset keeps the license in the table above.
