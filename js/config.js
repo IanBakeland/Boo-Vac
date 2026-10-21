@@ -489,7 +489,15 @@ export const INTRO = {
   lightsOutPause: 0.7,    // s of silence after "Good luck!" before the lightning
   torchDelay: 1.2,        // s after the message: your flashlight clicks on
   enterTime: 2.0,         // s of the dive into the door when the shift starts (matches the CSS)
-  // voice of the boss: a bit lower and faster, like a hurried boss (1 = normal)
+  // voice of the boss: Kokoro-82M on WebGPU (js/voice.js), downloaded from huggingface.co
+  kokoro: {
+    model: 'onnx-community/Kokoro-82M-v1.0-ONNX',
+    dtype: 'fp32',      // fp32 326 MB (best on WebGPU), fp16 163 MB, q8 92 MB
+    voice: 'bm_george', // British male; others: am_fenrir, am_michael, am_puck, bm_fable, bm_lewis
+    speed: 1.05,        // a hurried boss (1 = normal)
+    maxWait: 15         // s the play button waits for Kokoro, then the boss falls back to speechSynthesis
+  },
+  // the fallback voice of the boss (speechSynthesis): a bit lower and faster (1 = normal)
   pitch: 0.8,
   rate: 1.05,
   // the first voice found (by name) is used; otherwise any English voice
