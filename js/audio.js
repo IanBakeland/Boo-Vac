@@ -67,6 +67,8 @@ export const createAudio = () => {
   let musicGain = null
   let reverb = null
   let lineSource = null
+  // the boss's voicemail line that is playing now (Kokoro audio)
+  let speechSource = null
   let drones = []
   let tension = -1 // tug meter while tugging, -1 when there's no tug (no heartbeat)
   let resolved = false // the shift is over: no more creepy phrases, the drone stays on A
@@ -360,6 +362,22 @@ export const createAudio = () => {
         lineSource.stop()
         lineSource = null
       }
+    },
+    // the boss talks: raw samples from Kokoro (js/voice.js) -> AudioBuffer -> master (so mute works too)
+    // resolves when the line is over (or stopped)
+    speech: (samples, sampleRate) => new Promise((resolve) => {
+      if (!context) return resolve()
+      const buffer = context.createBuffer(1, samples.length, sampleRate)
+      buffer.copyToChannel(samples, 0)
+      speechSource = context.createBufferSource()
+      speechSource.buffer = buffer
+      speechSource.connect(master)
+      speechSource.onended = resolve
+      speechSource.start()
+    }),
+    stopSpeech: () => {
+      speechSource?.stop()
+      speechSource = null
     },
     // the music gets quieter while the boss talks
     musicVolume: (level) => {
