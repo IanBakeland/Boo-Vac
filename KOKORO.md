@@ -57,7 +57,7 @@ Nieuw bestand, zelfde stijl als de andere modules (`createVoice()` die een objec
 - Is het model klaar, dan genereert het **alle zinnen van de baas één voor één** (`INTRO.lines`) en bewaart de ruwe audio (Float32Array + sample rate). Daarvoor is nog geen AudioContext nodig.
 - `voice.ready`: een Promise die resolvet als alle zinnen klaar zijn. Bij een fout: `console.warn` (geen error) en de terugvaloptie.
 - `voice.has(i)`: is zin `i` klaar?
-- ~~Na de laatste zin: het model vrijgeven (dispose).~~ **Gewijzigd:** het model blijft geladen, want op het einde leest de baas de factuur voor (`voice.speak(text)`, live gegenereerd met de cijfers van de speler). Een model dat niets doet, rekent niet; het neemt alleen GPU-geheugen in.
+- Na de laatste zin: het model vrijgeven (`tts.model.dispose()`) zodat de GPU weer volledig voor de game is.
 - Instellingen in `config.js`, in `INTRO`:
   ```js
   kokoro: {

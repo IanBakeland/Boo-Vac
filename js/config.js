@@ -496,7 +496,6 @@ export const INTRO = {
     voice: 'am_liam',   // American male (all voices: Object.keys(tts.voices) in kokoro-js)
     speed: 1.05,        // a hurried boss (1 = normal)
     maxWait: 15         // s the play button waits for Kokoro, then the boss falls back to speechSynthesis
-    // (the invoice at the end is read by Kokoro only: without it, the invoice stays silent)
   },
   // the fallback voice of the boss (speechSynthesis): a bit lower and faster (1 = normal)
   pitch: 0.8,

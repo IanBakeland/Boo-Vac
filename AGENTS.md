@@ -113,7 +113,7 @@ The teacher rewards using what was taught. Prefer these patterns over alternativ
 2. "Find stuff that shakes, vacuum the clutter around it, and the ghost pops out. Then just... pull. Don't let go, or it hides again."
 3. "Oh, and anything you suck up is the client's property. We'll bill you. Good luck!"
 
-**Ending** (`js/outro.js`, CSS on `#start[data-act="outro"]`): the house lights come on, the flashlight clicks off, the camera pulls back out of the front door (the intro's dive in reverse), the ghosts drop into a jar on the van, then an **invoice screen** (pure HTML/CSS) with funny line items (time, items sucked × €12, escapes × €50 overtime, a joke line like "1 cat, returned, €0") and a star rating. The boss reads the invoice out loud: a text with the player's numbers, generated live by Kokoro (`voice.speak()`, started in `endShift()` in `script.js` so it is ready when the invoice shows; silent without Kokoro).
+**Ending** (`js/outro.js`, CSS on `#start[data-act="outro"]`): the house lights come on, the flashlight clicks off, the camera pulls back out of the front door (the intro's dive in reverse), the ghosts drop into a jar on the van, then an **invoice screen** (pure HTML/CSS) with funny line items (time, items sucked × €12, escapes × €50 overtime, a joke line like "1 cat, returned, €0") and a star rating.
 
 **IP note:** the mechanic is *inspired by* Luigi's Mansion. Do **not** use any Nintendo names, characters, logos, sounds or assets in the game. The README may say "Mechanic inspired by Luigi's Mansion".
 
@@ -210,7 +210,7 @@ js/objects/ghost.js         ghost model + AnimationMixer + Ether aura (S1) + gho
 js/objects/dust.js          compute dust (S4), WebGPU only (no CPU fallback)
 js/physics.js               Rapier world, step, sync, suctionForce()
 js/audio.js
-js/voice.js                 the boss's voice: Kokoro TTS on WebGPU (kokoro-js), voicemail lines generated during the intro, the invoice at the end
+js/voice.js                 the boss's voice: Kokoro TTS on WebGPU (kokoro-js), lines generated during the intro
 js/postfx.js                RenderPipeline + VHS shader (only during a tug-of-war)
 js/shaders/ether/fragment.wgsl       S1 (Shadertoy port)
 js/shaders/suction/fragment.wgsl     S2
