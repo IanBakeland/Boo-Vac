@@ -57,12 +57,12 @@ Nieuw bestand, zelfde stijl als de andere modules (`createVoice()` die een objec
 - Is het model klaar, dan genereert het **alle zinnen van de baas één voor één** (`INTRO.lines`) en bewaart de ruwe audio (Float32Array + sample rate). Daarvoor is nog geen AudioContext nodig.
 - `voice.ready`: een Promise die resolvet als alle zinnen klaar zijn. Bij een fout: `console.warn` (geen error) en de terugvaloptie.
 - `voice.has(i)`: is zin `i` klaar?
-- Na de laatste zin: het model vrijgeven (dispose) zodat de GPU weer volledig voor de game is. **Eerst de juiste API in `kokoro-js` / Transformers.js nakijken, niets verzinnen.**
+- ~~Na de laatste zin: het model vrijgeven (dispose).~~ **Gewijzigd:** het model blijft geladen, want op het einde leest de baas de factuur voor (`voice.speak(text)`, live gegenereerd met de cijfers van de speler). Een model dat niets doet, rekent niet; het neemt alleen GPU-geheugen in.
 - Instellingen in `config.js`, in `INTRO`:
   ```js
   kokoro: {
     model: 'onnx-community/Kokoro-82M-v1.0-ONNX',
-    dtype: 'fp32',      // uit K.2
+    dtype: 'fp16',      // uit K.2 (gekozen: fp16, 163 MB)
     voice: 'bm_george', // uit K.2
     speed: 1.05,        // uit K.2 (vervangt pitch/rate voor de baas)
     maxWait: 15         // s dat de play-knop wacht op Kokoro, daarna speechSynthesis
@@ -79,7 +79,7 @@ Nieuw bestand, zelfde stijl als de andere modules (`createVoice()` die een objec
 In `js/intro.js`, functie `say()`:
 - **Systeemregels** (`system: true`): ongewijzigd, `speechSynthesis`.
 - **Regels van de baas:** is `voice.has(i)` waar, dan speel je de Kokoro-audio af via `audio.speech(...)`. Anders `speechSynthesis` zoals nu.
-- **Wachten:** de play-knop toont *"Loading voice…"* zolang Kokoro bezig is, tot maximaal `INTRO.kokoro.maxWait` seconden. Daarna speelt het bericht af met wat er klaar is (zinnen die nog niet klaar zijn: `speechSynthesis`). Geen WebGPU: de knop werkt meteen, zoals nu.
+- **Wachten:** de hint onder de telefoon toont *"Loading the voicemail…"* zolang Kokoro bezig is, tot maximaal `INTRO.kokoro.maxWait` seconden. Daarna speelt het bericht af met wat er klaar is (zinnen die nog niet klaar zijn: `speechSynthesis`). Geen WebGPU: de knop werkt meteen, zoals nu.
 - **Golf:** `$wave` krijgt `talking` tijdens het afspelen, zoals nu.
 - **Karaoke-ondertitels:** Kokoro geeft geen woordtijden. Schat ze: elk woord licht op na *(tekens tot dat woord / totaal aantal tekens) × duur van de audio*, en zet dat via `speakWord()` (bestaat al).
 - **Voortgangsbalk:** gebruik voor Kokoro-zinnen de echte duur (`samples.length / sampleRate`) in plaats van de schatting op basis van het aantal woorden.

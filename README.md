@@ -9,7 +9,7 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 
 **Physics engine:** [Rapier](https://rapier.rs) (`@dimforge/rapier3d-compat`, WebAssembly)
 
-**Additional WebGPU libraries:** [TypeGPU](https://docs.swmansion.com/TypeGPU/) by Software Mansion (dust glitter, see below) and [kokoro-js](https://github.com/hexgrad/kokoro) (Transformers.js): the boss's voice, an AI text-to-speech model running on WebGPU
+**Additional WebGPU libraries:** [TypeGPU](https://docs.swmansion.com/TypeGPU/) by Software Mansion (dust glitter, see below) and [kokoro-js](https://github.com/hexgrad/kokoro) (Transformers.js): the boss's voice, an AI text-to-speech model running on WebGPU (the voicemail, and your final invoice read out loud with your own numbers)
 
 **Level:** own Blender model, baked into one texture (`blender/house.blend`, see below)
 
@@ -22,7 +22,7 @@ A tiny first-person ghost-cleaning game built with Three.js `WebGPURenderer` and
 | Interaction beyond looking around | Walk, jump, suck, blow, MAX, unclog the vacuum, tug-of-war against the ghost with the mouse |
 | Physics | Rapier: player controller, props sucked in a spiral, captured, blown back out, furniture moved by MAX, books thrown by a ghost |
 | Multiple shaders | 2 Shadertoy ports + suction cone, flashlight beam, room flashlight lighting, compute dust |
-| Additional WebGPU library | TypeGPU: the dust's glitter. Kokoro (kokoro-js / Transformers.js): the boss's voice |
+| Additional WebGPU library | TypeGPU: the dust's glitter. Kokoro (kokoro-js / Transformers.js): the boss's voice, in the voicemail and reading your invoice live |
 | Own Blender model + baking | The house (the whole level), baked in Cycles into `public/textures/baked.jpg` |
 | Controlling Blender animations | Three animated ghost models, their clips driven per game state with an `AnimationMixer` |
 
@@ -92,7 +92,7 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - `js/script.js`: `init()` + `draw()` (with `renderer.setAnimationLoop`), input, and a plain state machine: start → playing ⇄ paused, playing → ending → invoice. Per ghost: hidden (trembling) → emerged → tug → escaped or captured.
 - `js/objects/ghost.js`: one ghost: its model (one of three, `MODELS.ghosts` in `js/config.js`), its animation clips driven per state with an `AnimationMixer` (out, tug, escape, giggle, caught), the Ether aura and the tug-of-war.
 - `js/objects/vacuum.js`: the vacuum model on the camera, the nozzle aimed at what's under the crosshair, `power` spun up and down with gsap.
-- `js/intro.js` / `js/outro.js`: the voicemail intro on your phone (the boss: Kokoro voice from `js/voice.js`, the voicemail system: Web Speech API; with a transcript) and the ending (lights on, back out of the front door, the invoice).
+- `js/intro.js` / `js/outro.js`: the voicemail intro on your phone (the boss: Kokoro voice from `js/voice.js`, the voicemail system: Web Speech API; with a transcript) and the ending (lights on, back out of the front door, the invoice, read out loud by the boss in `js/script.js`).
 - `js/audio.js`: all sound and music generated live with the Web Audio API (no sound files).
 - `js/config.js`: every tunable number and the level layout.
 
@@ -106,7 +106,8 @@ Both are WGSL files (`js/shaders/<name>/fragment.wgsl`), imported with `?raw` an
 - Furniture and props from Poly Pizza, laid out in code
 - Blender animation: three animated ghost models (Ghost, Hywirl, Alien), each with its own game-state → clip mapping (`MODELS.ghosts` in `js/config.js`), played with an `AnimationMixer`
 - Intro: a voicemail from the boss on your phone, with a transcript
-- Voice of the boss: Kokoro-82M text-to-speech running on WebGPU (kokoro-js / Transformers.js), generated during the opening film. The voicemail system ("You have one new message") stays the browser's speech synthesis on purpose. Without WebGPU the boss falls back to speech synthesis too
+- Voice of the boss: Kokoro-82M text-to-speech running on WebGPU (kokoro-js / Transformers.js, `js/voice.js`). The model (fp16, 163 MB) downloads from Hugging Face while the opening film plays, once: after that it's in the browser cache. It speaks the voicemail, and at the end it reads your invoice out loud: that text has your own numbers (ghosts, items sucked up, escapes, total, star rating), so it really is generated live, in the browser, on the GPU. While the model is still loading, the play button shows "Loading the voicemail…" (at most 15 s). The voicemail system ("You have one new message") stays the browser's speech synthesis on purpose. Without WebGPU the boss falls back to speech synthesis in the voicemail, and the invoice stays silent
+- Tip: on a first visit (or in incognito), give the voice a minute to download before you press play
 - Sound and music: generated live with the Web Audio API (motor, air, plop, ghost moans, a creepy music box with a drone and a heartbeat in the tug), no sound files
 - Mechanic inspired by Luigi's Mansion. No Nintendo assets are used.
 

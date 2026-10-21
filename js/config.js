@@ -492,10 +492,11 @@ export const INTRO = {
   // voice of the boss: Kokoro-82M on WebGPU (js/voice.js), downloaded from huggingface.co
   kokoro: {
     model: 'onnx-community/Kokoro-82M-v1.0-ONNX',
-    dtype: 'fp32',      // fp32 326 MB (best on WebGPU), fp16 163 MB, q8 92 MB
+    dtype: 'fp16',      // 163 MB (fp32 326 MB, q8 92 MB)
     voice: 'bm_george', // British male; others: am_fenrir, am_michael, am_puck, bm_fable, bm_lewis
     speed: 1.05,        // a hurried boss (1 = normal)
     maxWait: 15         // s the play button waits for Kokoro, then the boss falls back to speechSynthesis
+    // (the invoice at the end is read by Kokoro only: without it, the invoice stays silent)
   },
   // the fallback voice of the boss (speechSynthesis): a bit lower and faster (1 = normal)
   pitch: 0.8,

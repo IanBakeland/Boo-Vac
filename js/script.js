@@ -248,16 +248,19 @@ const setGameState = (next) => {
 
 // the last ghost is caught: the ending plays (js/outro.js), the mouse is free again, then the invoice
 const outro = createOutro({ $start, $hud, $invoice, audio, flashlight, camera, showInvoice: () => setGameState('invoice') })
+// the boss's reading of the invoice (Kokoro audio), generated during the ending so it's ready in time
+let invoiceSpeech = null
 const endShift = () => {
   stats.endTime = performance.now()
   setGameState('ending')
   document.exitPointerLock()
   outro.play({ seconds: (stats.endTime - stats.startTime) / 1000, escapes: stats.escapes })
+  invoiceSpeech = voice.speak(invoiceText(bill()))
 }
 
 // the invoice: your pay minus everything the boss bills you for
-const euro = (amount) => `${amount < 0 ? '−' : ''}€${Math.abs(amount).toFixed(2)}`
-const showInvoice = () => {
+const notes = { 5: 'Employee of the month!', 4: 'Solid work. Mind the furniture.', 3: 'Not bad for a first night.', 2: 'We need to talk about your technique.', 1: "Don't call us, we'll call you." }
+const bill = () => {
   const seconds = Math.round((stats.endTime - stats.startTime) / 1000)
   const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
   const items = props.tank.length
@@ -272,7 +275,23 @@ const showInvoice = () => {
   const total = lines.reduce((sum, line) => sum + line[2], 0)
   // stars: start at 5, lose one per escape and one per 8 items of the client's stuff
   const stars = THREE.MathUtils.clamp(5 - stats.escapes - Math.floor(items / 8), 1, 5)
-  const notes = { 5: 'Employee of the month!', 4: 'Solid work. Mind the furniture.', 3: 'Not bad for a first night.', 2: 'We need to talk about your technique.', 1: "Don't call us, we'll call you." }
+  return { items, lines, total, stars }
+}
+
+// what the boss says about your invoice: your own numbers, so Kokoro really generates it live (js/voice.js).
+// Amounts in words ("euros"): Kokoro doesn't know how to say "€"
+const invoiceText = ({ items, total, stars }) => [
+  `Right, your invoice. ${stats.caught} ghosts removed, that's ${stats.caught * INVOICE.perGhost} euros.`,
+  items ? `Minus ${items * INVOICE.perItem} for the client's stuff you sucked up.` : "You didn't suck up any of the client's stuff. Impressive.",
+  stats.escapes ? `Minus ${stats.escapes * INVOICE.perEscape} overtime for the ghosts that got away.` : '',
+  'And the vacuum bag, obviously.',
+  total < 0 ? `You owe us ${Math.round(-total)} euros.` : `We owe you ${Math.round(total)} euros.`,
+  notes[stars]
+].join(' ')
+
+const euro = (amount) => `${amount < 0 ? '−' : ''}€${Math.abs(amount).toFixed(2)}`
+const showInvoice = () => {
+  const { lines, total, stars } = bill()
   $invoice.querySelector('.invoice-meta').textContent = `Invoice #BV-${String(Math.floor(Math.random() * 9000) + 1000)} · Villa, night shift`
   $invoice.querySelector('.invoice-lines').innerHTML = lines.map(([label, detail, amount]) =>
     `<tr><td>${label}</td><td class="detail">${detail}</td><td class="amount ${amount < 0 ? 'minus' : ''}">${euro(amount)}</td></tr>`).join('')
@@ -281,6 +300,8 @@ const showInvoice = () => {
   $total.classList.toggle('minus', total < 0)
   $invoice.querySelector('.invoice-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars)
   $invoice.querySelector('.invoice-note').textContent = `"${notes[stars]}" — the boss`
+  // the boss reads it out loud (no Kokoro: silent)
+  invoiceSpeech?.then((line) => { if (line) audio.speech(line.samples, line.sampleRate) })
 }
 // play again / restart: a new shift on a fresh page, so WebGPU, physics, ghosts, props, sound and every timer
 // really start from zero (#again: the intro skips the voicemail you already heard)

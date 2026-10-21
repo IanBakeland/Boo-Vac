@@ -203,7 +203,7 @@ export const createIntro = ({ audio, voice, $start }) => {
     $playButton.disabled = true
     audio.click()
     // Kokoro still busy? wait for it (at most maxWait s), then the lines that aren't ready use speechSynthesis
-    $hint.textContent = 'Loading voice…'
+    $hint.textContent = 'Loading the voicemail…'
     await Promise.race([voice.ready, wait(INTRO.kokoro.maxWait)])
     if (state !== 'ready') return
     updateEstimate()
