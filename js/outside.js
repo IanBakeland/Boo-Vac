@@ -27,9 +27,11 @@ export const createOutside = ({ $start, audio, lightning }) => {
     const $bubble = document.createElement('p')
     $bubble.className = 'poke-bubble'
     $bubble.textContent = text
-    $bubble.style.left = `${x}px`
-    $bubble.style.top = `${y}px`
     $start.append($bubble)
+    // centered on the click, but kept inside the window (things near the edge, like the mailbox)
+    const half = $bubble.offsetWidth / 2 + 8
+    $bubble.style.left = `${Math.min(Math.max(x, half), window.innerWidth - half)}px`
+    $bubble.style.top = `${Math.max(y, $bubble.offsetHeight * 2 + 8)}px` // it floats up about 2x its height
     $bubble.animate(
       [
         { opacity: 0, translate: '-50% -60%' },
